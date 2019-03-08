@@ -29,3 +29,4 @@ Alpha-ML is compatible with: __Python 3.6__.
 
 - __Travis CI__ TODO.
 - __Nose__ TODO.
+- __Setuptools__ TODO.
