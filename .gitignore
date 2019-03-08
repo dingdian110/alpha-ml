@@ -1,0 +1,24 @@
+*.DS_Store
+*.pyc
+*.swp
+temp/*
+dist/*
+build/*
+alpha-ml/datasets/data/*
+alpha-ml/datasets/temp/*
+docs/site/*
+docs/sources/*
+docs/theme/fonts/*
+docs/theme/img/*
+tags
+alpha-ml.egg-info
+examples/img/*
+
+# test-related
+.coverage
+.cache
+.pytest_cache
+
+# developer environments
+.idea
+.vscode
