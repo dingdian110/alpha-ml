@@ -1,8 +1,8 @@
 # Alpha-ML: Taking Human out of ML Applications.
-![alpha-ml logo](docs/images/alpha_ml.png)
-
 [![Build Status](https://travis-ci.org/keras-team/keras.svg?branch=master)](https://travis-ci.org/keras-team/keras)
 [![license](https://img.shields.io/github/license/mashape/apistatus.svg?maxAge=2592000)](https://github.com/keras-team/keras/blob/master/LICENSE)
+
+![alpha-ml logo](docs/images/alpha_ml.png)
 
 ## You have just found Alpha-ML.
 

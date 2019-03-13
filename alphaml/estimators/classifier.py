@@ -1,0 +1,143 @@
+# -*- encoding: utf-8 -*-
+
+import numpy as np
+from alphaml.estimators.base_estimator import BaseEstimator
+from alphaml.engine.automl import AutoMLClassifier
+
+
+class Classifier(BaseEstimator):
+    """This class implements the classification task. """
+
+    def fit(self, X, y,
+            X_test=None,
+            y_test=None,
+            metric=None,
+            feat_type=None,
+            dataset_name=None):
+        """Fit the classifier to given training set (X, y).
+
+        Fit both optimizes the machine learning models and builds an ensemble
+        out of them. To disable ensembling, set ``ensemble_size==0``.
+
+        Parameters
+        ----------
+
+        X : array-like or sparse matrix of shape = [n_samples, n_features]
+            The training input samples.
+
+        y : array-like, shape = [n_samples] or [n_samples, n_outputs]
+            The target classes.
+
+        X_test : array-like or sparse matrix of shape = [n_samples, n_features]
+            Test data input samples. Will be used to save test predictions for
+            all models. This allows to evaluate the performance of Auto-sklearn
+            over time.
+
+        y_test : array-like, shape = [n_samples] or [n_samples, n_outputs]
+            Test data target classes. Will be used to calculate the test error
+            of all models. This allows to evaluate the performance of
+            Auto-sklearn over time.
+
+        metric : callable, optional (default='autosklearn.metrics.accuracy')
+            An instance of :class:`autosklearn.metrics.Scorer` as created by
+            :meth:`autosklearn.metrics.make_scorer`. These are the `Built-in
+            Metrics`_.
+
+        feat_type : list, optional (default=None)
+            List of str of `len(X.shape[1])` describing the attribute type.
+            Possible types are `Categorical` and `Numerical`. `Categorical`
+            attributes will be automatically One-Hot encoded. The values
+            used for a categorical attribute must be integers, obtained for
+            example by `sklearn.preprocessing.LabelEncoder
+            <http://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.LabelEncoder.html>`_.
+
+        dataset_name : str, optional (default=None)
+            Create nicer output. If None, a string will be determined by the
+            md5 hash of the dataset.
+
+        Returns
+        -------
+        self
+
+        """
+        # Before running anything else, first check that the
+        # type of data is compatible with auto-sklearn. Legal target
+        # types are: binary, multiclass, multilabel-indicator.
+        # target_type = type_of_target(y)
+        # if target_type in ['multiclass-multioutput',
+        #                    'continuous',
+        #                    'continuous-multioutput',
+        #                    'unknown',
+        #                    ]:
+        #     raise ValueError("classification with data of type %s is"
+        #                      " not supported" % target_type)
+
+        # remember target type for using in predict_proba later.
+        # self.target_type = target_type
+
+        super().fit(
+            X=X,
+            y=y,
+            X_test=X_test,
+            y_test=y_test,
+            metric=metric,
+            feat_type=feat_type,
+            dataset_name=dataset_name,
+        )
+
+        return self
+
+    def predict(self, X, batch_size=None, n_jobs=1):
+        """Predict classes for X.
+
+        Parameters
+        ----------
+        X : array-like or sparse matrix of shape = [n_samples, n_features]
+
+        Returns
+        -------
+        y : array of shape = [n_samples] or [n_samples, n_labels]
+            The predicted classes.
+
+        """
+        return super().predict(X)
+
+    def predict_proba(self, X, batch_size=None, n_jobs=1):
+
+        """Predict probabilities of classes for all samples X.
+
+        Parameters
+        ----------
+        X : array-like or sparse matrix of shape = [n_samples, n_features]
+
+        batch_size : int (optional)
+            Number of data points to predict for (predicts all points at once
+            if ``None``.
+        n_jobs : int
+
+        Returns
+        -------
+        y : array of shape = [n_samples, n_classes] or [n_samples, n_labels]
+            The predicted class probabilities.
+
+        """
+        pred_proba = super().predict_proba(X)
+
+        # Check if all probabilities sum up to 1.
+        # Assert only if target type is not multilabel-indicator.
+        # if self.target_type not in ['multilabel-indicator']:
+        #     assert(
+        #         np.allclose(
+        #             np.sum(pred_proba, axis=1),
+        #             np.ones_like(pred_proba[:, 0]))
+        #     ), "prediction probability does not sum up to 1!"
+
+        # Check that all probability values lie between 0 and 1.
+        assert(
+            (pred_proba >= 0).all() and (pred_proba <= 1).all()
+        ), "found prediction probability value outside of [0, 1]!"
+
+        return pred_proba
+
+    def get_automl(self):
+        return AutoMLClassifier
