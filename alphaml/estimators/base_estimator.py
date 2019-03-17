@@ -3,14 +3,14 @@ class BaseEstimator(object):
 
     def __init__(
             self,
-                 time_budget=3600,
-                 each_run_budget=360,
-                 ensemble_size=10,
-                 memory_limit=1024,
-                 include_models=None,
-                 exclude_models=None,
-                 tmp_dir=None,
-                 output_dir=None):
+            time_budget=3600,
+            each_run_budget=360,
+            ensemble_size=10,
+            memory_limit=1024,
+            include_models=None,
+            exclude_models=None,
+            tmp_dir=None,
+            output_dir=None):
         self.time_budget = time_budget
         self.each_run_budget = each_run_budget
         self.ensemble_size = ensemble_size
@@ -27,6 +27,7 @@ class BaseEstimator(object):
             time_budget=self.time_budget,
             each_run_budget=self.each_run_budget,
             ensemble_size=self.ensemble_size,
+            memory_limit=self.memory_limit,
             include_models=self.include_models,
             exclude_models=self.exclude_models
         )

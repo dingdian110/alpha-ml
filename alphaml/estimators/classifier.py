@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 
-import numpy as np
+from sklearn.metrics import accuracy_score
 from alphaml.estimators.base_estimator import BaseEstimator
 from alphaml.engine.automl import AutoMLClassifier
 
@@ -11,7 +11,7 @@ class Classifier(BaseEstimator):
     def fit(self, X, y,
             X_test=None,
             y_test=None,
-            metric=None,
+            metric=accuracy_score,
             feat_type=None,
             dataset_name=None):
         """Fit the classifier to given training set (X, y).
@@ -38,10 +38,7 @@ class Classifier(BaseEstimator):
             of all models. This allows to evaluate the performance of
             Auto-sklearn over time.
 
-        metric : callable, optional (default='autosklearn.metrics.accuracy')
-            An instance of :class:`autosklearn.metrics.Scorer` as created by
-            :meth:`autosklearn.metrics.make_scorer`. These are the `Built-in
-            Metrics`_.
+        metric : callable, optional (default='autosklearn.metrics.accuracy_score').
 
         feat_type : list, optional (default=None)
             List of str of `len(X.shape[1])` describing the attribute type.
@@ -60,21 +57,6 @@ class Classifier(BaseEstimator):
         self
 
         """
-        # Before running anything else, first check that the
-        # type of data is compatible with auto-sklearn. Legal target
-        # types are: binary, multiclass, multilabel-indicator.
-        # target_type = type_of_target(y)
-        # if target_type in ['multiclass-multioutput',
-        #                    'continuous',
-        #                    'continuous-multioutput',
-        #                    'unknown',
-        #                    ]:
-        #     raise ValueError("classification with data of type %s is"
-        #                      " not supported" % target_type)
-
-        # remember target type for using in predict_proba later.
-        # self.target_type = target_type
-
         super().fit(
             X=X,
             y=y,
@@ -122,15 +104,6 @@ class Classifier(BaseEstimator):
 
         """
         pred_proba = super().predict_proba(X)
-
-        # Check if all probabilities sum up to 1.
-        # Assert only if target type is not multilabel-indicator.
-        # if self.target_type not in ['multilabel-indicator']:
-        #     assert(
-        #         np.allclose(
-        #             np.sum(pred_proba, axis=1),
-        #             np.ones_like(pred_proba[:, 0]))
-        #     ), "prediction probability does not sum up to 1!"
 
         # Check that all probability values lie between 0 and 1.
         assert(
