@@ -25,9 +25,7 @@ class BaseModel(object):
         """
         raise NotImplementedError()
 
-    def set_hyperparameters(self, configuration, init_params=None):
-        params = configuration.get_dictionary()
-
+    def set_hyperparameters(self, params, init_params=None):
         for param, value in params.items():
             if not hasattr(self, param):
                 raise ValueError('Cannot set hyperparameter %s for %s because '
