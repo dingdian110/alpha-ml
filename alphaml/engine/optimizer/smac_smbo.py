@@ -9,13 +9,18 @@ class SMAC_SMBO(BaseOptimizer):
         super().__init__(config_space, evaluator)
 
         # Scenario object
-        self.scenario = Scenario({"run_obj": "quality",
-                                  "runcount-limit": 200,
-                                  "cs": self.config_space,
-                                  "deterministic": "true"
-                                  })
+        scenario_dict = {
+            'abort_on_first_run_crash': False,
+            "run_obj": "quality",
+            "cs": self.config_space,
+            "deterministic": "true",
+            "runcount-limit": 50
+        }
+        self.scenario = Scenario(scenario_dict)
         self.smac = SMAC(scenario=self.scenario, rng=np.random.RandomState(42), tae_runner=self.evaluator)
 
     def run(self):
-        inc = self.smac.optimize()
-        return inc
+        self.smac.optimize()
+        self.runhistory = self.smac.solver.runhistory
+        self.trajectory = self.smac.solver.intensifier.traj_logger.trajectory
+        return self.runhistory, self.trajectory

@@ -31,7 +31,7 @@ class ComponentsManager(object):
         """
         cs = ConfigurationSpace()
         # TODO: set the default model.
-        model_option = CategoricalHyperparameter("classifier", model_candidates, default_value=model_candidates[0])
+        model_option = CategoricalHyperparameter("estimator", model_candidates, default_value=model_candidates[0])
         cs.add_hyperparameter(model_option)
 
         for model_item in model_candidates:

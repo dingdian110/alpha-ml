@@ -16,6 +16,9 @@ class DataManager(object):
         if train_X is not None and train_y is not None and (self.val_X is None or self.val_y is None):
             self.split(val_size, random_state)
 
+        self.test_X = None
+        self.test_y = None
+
     def split(self, val_size=0.2, random_state=42):
         assert self.train_X is not None and self.train_y is not None
 
@@ -23,7 +26,7 @@ class DataManager(object):
         self.train_X,  self.val_X, self.train_y, self.val_y = train_test_split(
             self.train_X, self.train_y, test_size=val_size, random_state=random_state)
 
-    def load_csv_file(self, file_location, label_col=-1):
+    def load_train_csv(self, file_location, label_col=-1):
         data = pd.read_csv(file_location).values
         swap_data = data[:, -1]
         data[:, -1] = data[:, label_col]
@@ -31,6 +34,15 @@ class DataManager(object):
         self.train_X = data[:, :-1]
         self.train_y = data[:, -1]
         self.split(self.split_size, self.random_seed)
+
+    def load_test_csv(self, file_location):
+        self.test_X = pd.read_csv(file_location).values
+
+    def set_testX(self, test_X):
+        self.test_X = test_X
+
+    def set_testy(self, test_y):
+        self.test_y = test_y
 
     def get_val(self):
         return self.val_X, self.val_y

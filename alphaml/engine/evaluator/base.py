@@ -1,4 +1,3 @@
-import sklearn
 from alphaml.engine.components.models.classification import _classifiers
 
 
@@ -29,6 +28,27 @@ class BaseEvaluator(object):
 
         # Validate it on val data.
         y_pred = estimator.predict(self.data_manager.val_X)
+        metric = self.metric_func(self.data_manager.val_y, y_pred)
+
+        # Turn it to a minimization problem.
+        return 1 - metric
+
+
+class HPOEvaluator(object):
+    def __init__(self, data, metric, estimator):
+        self.data_manager = data
+        self.metric_func = metric
+        self.estimator = estimator
+
+    def __call__(self, config):
+        print(config.get_dictionary())
+        self.estimator.set_hyperparameters(config.get_dictionary())
+
+        # Fit the estimator on the training data.
+        self.estimator.fit(self.data_manager.train_X, self.data_manager.train_y)
+
+        # Validate it on val data.
+        y_pred = self.estimator.predict(self.data_manager.val_X)
         metric = self.metric_func(self.data_manager.val_y, y_pred)
 
         # Turn it to a minimization problem.

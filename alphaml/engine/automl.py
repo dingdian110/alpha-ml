@@ -2,6 +2,7 @@ from alphaml.engine.components.componets_manager import ComponentsManager
 from alphaml.engine.components.data_manager import DataManager
 from alphaml.engine.evaluator.base import BaseEvaluator
 from alphaml.engine.optimizer.smac_smbo import SMAC_SMBO
+from alphaml.engine.optimizer.ts_smbo import TS_SMBO
 
 
 class AutoML(object):
@@ -43,9 +44,24 @@ class AutoML(object):
         # Create evaluator & assign the required data to it.
         evaluator = BaseEvaluator(data, metric)
 
-        # Create optimizer.
-        smac_smbo = SMAC_SMBO(config_space, evaluator)
-        smac_smbo.run()
+        optimizer = 'ts_smac'
+        if optimizer == 'smac':
+            # Create optimizer.
+            smac_smbo = SMAC_SMBO(config_space, evaluator)
+            runhistory, _ = smac_smbo.run()
+
+            # Show the results.
+            configs = runhistory.get_all_configs()
+            perfs = list()
+            for config in configs:
+                perfs.append(runhistory.get_cost(config))
+            print(len(perfs))
+            print(perfs)
+        elif optimizer == 'ts_smac':
+            # Create optimizer.
+            ts_smbo = TS_SMBO(config_space, evaluator, metric)
+            ts_smbo.run()
+
         return self
 
     def predict(self, X):
