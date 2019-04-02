@@ -1,5 +1,6 @@
-import numpy as np
 from alphaml.engine.components.componets_manager import ComponentsManager
+from alphaml.engine.components.data_manager import DataManager
+from alphaml.engine.evaluator.base import BaseEvaluator
 from alphaml.engine.optimizer.smac_smbo import SMAC_SMBO
 
 
@@ -20,7 +21,7 @@ class AutoML(object):
         self.exclude_models = exclude_models
         self.component_manager = ComponentsManager()
 
-    def fit(self, X: np.ndarray, y: np.ndarray):
+    def fit(self, data: DataManager, **kwargs):
         """
         1. Define the ML pipeline.
            1) the configuration space.
@@ -31,13 +32,19 @@ class AutoML(object):
         :param y: array-like, shape = [n_samples], the training target.
         :return: self
         """
-        # Detect the task type.
-        task_type = 3
+
+        task_type = kwargs['task_type']
+        metric = kwargs['metric']
+
         # Get the configuration space for the automl task.
         config_space = self.component_manager.get_hyperparameter_search_space(
             task_type, self.include_models, self.exclude_models)
 
-        smac_smbo = SMAC_SMBO(config_space)
+        # Create evaluator & assign the required data to it.
+        evaluator = BaseEvaluator(data, metric)
+
+        # Create optimizer.
+        smac_smbo = SMAC_SMBO(config_space, evaluator)
         smac_smbo.run()
         return self
 
@@ -49,6 +56,5 @@ class AutoML(object):
 
 
 class AutoMLClassifier(AutoML):
-    def fit(self, X: np.ndarray, y: np.ndarray, **kwargs):
-        return super().fit(X, y)
-
+    def fit(self, data, **kwargs):
+        return super().fit(data, **kwargs)

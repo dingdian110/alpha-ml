@@ -1,8 +1,8 @@
 from ConfigSpace import ConfigurationSpace
 from ConfigSpace.hyperparameters import CategoricalHyperparameter
-from ConfigSpace.conditions import InCondition
-from alphaml.engine.constants import *
+
 from alphaml.engine.components.models.classification import _classifiers
+from alphaml.utils.constants import *
 
 
 class ComponentsManager(object):
@@ -18,7 +18,7 @@ class ComponentsManager(object):
                     if model in self.builtin_cls_models:
                         model_candidates.add(model)
                     else:
-                        ValueError("The estimator %s is NOT available in alpha-ml!")
+                        raise ValueError("The estimator %s is NOT available in alpha-ml!")
             if exclude is not None:
                 for model in exclude:
                     if model in model_candidates:

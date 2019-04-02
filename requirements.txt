@@ -2,3 +2,4 @@ numpy>=1.7
 scipy>=0.13.3
 nose
 pyyaml
+sklearn

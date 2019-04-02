@@ -1,14 +1,11 @@
 import numpy as np
 import sklearn.ensemble
-
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import UniformFloatHyperparameter, \
     UniformIntegerHyperparameter, UnParametrizedHyperparameter, Constant, \
     CategoricalHyperparameter
 
-
 from alphaml.engine.components.models.base_model import BaseClassificationModel, IterativeComponentWithSampleWeight
-from alphaml.engine.constants import *
 from alphaml.utils.common import check_none
 
 

@@ -1,0 +1,18 @@
+"""Constants used in TASK TYPE.
+"""
+BINARY_CLS = 1
+MULTICLASS_CLS = 2
+REGRESSION = 3
+
+REG_TASKS = [REGRESSION]
+CLS_TASKS = [BINARY_CLS, MULTICLASS_CLS]
+
+SUPPORTED_TASK_TYPES = REG_TASKS + CLS_TASKS
+
+TASK_TYPE2STR = {BINARY_CLS: "binary",
+     MULTICLASS_CLS: "multiclass",
+     REGRESSION: "regression"}
+
+TASK_STR2TYPE = {"binary": BINARY_CLS,
+     "multiclass": MULTICLASS_CLS,
+     "regression": REGRESSION}

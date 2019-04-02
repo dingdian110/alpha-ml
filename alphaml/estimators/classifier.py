@@ -1,16 +1,16 @@
-# -*- encoding: utf-8 -*-
-
+import numpy as np
 from sklearn.metrics import accuracy_score
+from sklearn.utils.multiclass import type_of_target
 from alphaml.estimators.base_estimator import BaseEstimator
 from alphaml.engine.automl import AutoMLClassifier
+from alphaml.engine.components.data_manager import DataManager
 
 
 class Classifier(BaseEstimator):
     """This class implements the classification task. """
 
-    def fit(self, X, y,
-            X_test=None,
-            y_test=None,
+    def fit(self,
+            data,
             metric=accuracy_score,
             feat_type=None,
             dataset_name=None):
@@ -57,14 +57,23 @@ class Classifier(BaseEstimator):
         self
 
         """
+        # Check the task type: {binary, multiclass}
+        task_type = type_of_target(data.train_y)
+        if task_type in ['multiclass-multioutput',
+                           'continuous',
+                           'continuous-multioutput',
+                           'unknown',
+                           ]:
+            raise ValueError("UNSUPPORTED TASK TYPE: %s!" % task_type)
+        self.task_type = task_type
+        assert data is not None and isinstance(data, DataManager)
+
         super().fit(
-            X=X,
-            y=y,
-            X_test=X_test,
-            y_test=y_test,
+            data,
             metric=metric,
             feat_type=feat_type,
             dataset_name=dataset_name,
+            task_type=self.task_type
         )
 
         return self
@@ -82,7 +91,7 @@ class Classifier(BaseEstimator):
             The predicted classes.
 
         """
-        return super().predict(X)
+        return super().predict(X, batch_size=batch_size, n_jobs=n_jobs)
 
     def predict_proba(self, X, batch_size=None, n_jobs=1):
 
@@ -99,11 +108,18 @@ class Classifier(BaseEstimator):
 
         Returns
         -------
-        y : array of shape = [n_samples, n_classes] or [n_samples, n_labels]
+        y : array of shape = [n_samples, n_classes]
             The predicted class probabilities.
 
         """
-        pred_proba = super().predict_proba(X)
+        pred_proba = super().predict_proba(X, batch_size=batch_size, n_jobs=n_jobs)
+
+        if self.task_type not in ['multilabel-indicator']:
+            assert(
+                np.allclose(
+                    np.sum(pred_proba, axis=1),
+                    np.ones_like(pred_proba[:, 0]))
+            ), "prediction probability does not sum up to 1!"
 
         # Check that all probability values lie between 0 and 1.
         assert(

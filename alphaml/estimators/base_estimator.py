@@ -33,19 +33,19 @@ class BaseEstimator(object):
         )
         return engine
 
-    def fit(self, **kwargs):
+    def fit(self, data, **kwargs):
         self._ml_engine = self.build_engine()
-        self._ml_engine.fit(**kwargs)
+        self._ml_engine.fit(data, **kwargs)
         return self
 
-    def predict(self, X):
-        return self._ml_engine.predict(X)
+    def predict(self, X, batch_size=None, n_jobs=1):
+        return self._ml_engine.predict(X, batch_size=batch_size, n_jobs=n_jobs)
 
-    def score(self, X, y):
-        return self._ml_engine.score(X, y)
+    def score(self):
+        return self._ml_engine.score()
 
-    def predict_proba(self, X):
-        return self._ml_engine.predict_proba(X)
+    def predict_proba(self, X, batch_size=None, n_jobs=1):
+        return self._ml_engine.predict_proba(X, batch_size=None, n_jobs=1)
 
     def get_automl(self):
         raise NotImplementedError()

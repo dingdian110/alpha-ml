@@ -12,15 +12,10 @@ def update_config(config):
     return config_dict
 
 
-class SimpleEvaluator():
-    def __init__(self):
-        X, y = sklearn.datasets.load_breast_cancer(return_X_y=True)
-        X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, random_state=1)
-        self.X_train = X_train
-        self.y_train = y_train
-        self.X_val = X_test
-        self.y_val = y_test
-        self.metric_func = sklearn.metrics.accuracy_score
+class BaseEvaluator(object):
+    def __init__(self, data, metric):
+        self.data_manager = data
+        self.metric_func = metric
 
     def __call__(self, config):
         params_num = len(config.get_dictionary().keys()) - 1
@@ -28,7 +23,13 @@ class SimpleEvaluator():
         estimator = _classifiers[classifier_type](*[None]*params_num)
         config = update_config(config)
         estimator.set_hyperparameters(config)
-        estimator.fit(self.X_train, self.y_train)
-        y_pred = estimator.predict(self.X_val)
-        acc = self.metric_func(y_pred, self.y_val)
-        return acc
+
+        # Fit the estimator on the training data.
+        estimator.fit(self.data_manager.train_X, self.data_manager.train_y)
+
+        # Validate it on val data.
+        y_pred = estimator.predict(self.data_manager.val_X)
+        metric = self.metric_func(self.data_manager.val_y, y_pred)
+
+        # Turn it to a minimization problem.
+        return 1 - metric

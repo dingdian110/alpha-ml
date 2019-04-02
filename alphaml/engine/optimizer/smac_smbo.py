@@ -1,22 +1,21 @@
 import numpy as np
 from smac.scenario.scenario import Scenario
 from smac.facade.smac_facade import SMAC
-from alphaml.engine.evaluator.base import SimpleEvaluator
+from alphaml.engine.optimizer.base_optimizer import BaseOptimizer
 
 
-class SMAC_SMBO(object):
-    def __init__(self, config_space):
-        self.config_space = config_space
+class SMAC_SMBO(BaseOptimizer):
+    def __init__(self, config_space, evaluator):
+        super().__init__(config_space, evaluator)
 
-    def run(self):
         # Scenario object
-        scenario = Scenario({"run_obj": "quality",
+        self.scenario = Scenario({"run_obj": "quality",
                                   "runcount-limit": 200,
                                   "cs": self.config_space,
                                   "deterministic": "true"
                                   })
-        ta = SimpleEvaluator()
-        smac = SMAC(scenario=scenario, rng=np.random.RandomState(42), tae_runner=ta)
+        self.smac = SMAC(scenario=self.scenario, rng=np.random.RandomState(42), tae_runner=self.evaluator)
 
-        inc = smac.optimize()
-        print(inc)
+    def run(self):
+        inc = self.smac.optimize()
+        return inc

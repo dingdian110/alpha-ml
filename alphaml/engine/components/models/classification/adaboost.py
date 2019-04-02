@@ -2,7 +2,6 @@ from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import UniformFloatHyperparameter, \
     UniformIntegerHyperparameter, CategoricalHyperparameter
 
-from alphaml.engine.constants import *
 from alphaml.engine.components.models.base_model import BaseClassificationModel
 
 

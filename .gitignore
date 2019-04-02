@@ -22,3 +22,6 @@ examples/img/*
 # developer environments
 .idea
 .vscode
+
+# logs from SMAC3
+smac3*/
