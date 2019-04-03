@@ -18,7 +18,7 @@ class BaseEvaluator(object):
 
     def __call__(self, config):
         params_num = len(config.get_dictionary().keys()) - 1
-        classifier_type = config['classifier']
+        classifier_type = config['estimator']
         estimator = _classifiers[classifier_type](*[None]*params_num)
         config = update_config(config)
         estimator.set_hyperparameters(config)
@@ -41,7 +41,6 @@ class HPOEvaluator(object):
         self.estimator = estimator
 
     def __call__(self, config):
-        print(config.get_dictionary())
         self.estimator.set_hyperparameters(config.get_dictionary())
 
         # Fit the estimator on the training data.

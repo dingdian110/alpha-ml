@@ -43,21 +43,10 @@ class AutoML(object):
         config_space = self.component_manager.get_hyperparameter_search_space(
             task_type, self.include_models, self.exclude_models)
 
-        # Create evaluator & assign the required data to it.
-        evaluator = BaseEvaluator(data, metric)
-
         if self.optimizer == 'smac':
             # Create optimizer.
-            smac_smbo = SMAC_SMBO(config_space, evaluator)
-            runhistory, _ = smac_smbo.run()
-
-            # Show the results.
-            configs = runhistory.get_all_configs()
-            perfs = list()
-            for config in configs:
-                perfs.append(runhistory.get_cost(config))
-            print(len(perfs))
-            print(perfs)
+            smac_smbo = SMAC_SMBO(config_space, data, metric)
+            smac_smbo.run()
         elif self.optimizer == 'ts_smac':
             # Create optimizer.
             ts_smbo = TS_SMBO(config_space, data, metric)

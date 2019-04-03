@@ -1,7 +1,8 @@
 class BaseOptimizer(object):
-    def __init__(self, configspace, evaluator):
-        self.config_space = configspace
-        self.evaluator = evaluator
+    def __init__(self, config_space, data, metric):
+        self.config_space = config_space
+        self.data = data
+        self.metric = metric
 
     def run(self):
         raise NotImplementedError
