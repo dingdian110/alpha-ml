@@ -13,7 +13,8 @@ class AutoML(object):
             memory_limit,
             ensemble_size,
             include_models,
-            exclude_models):
+            exclude_models,
+            optimizer='ts_smac'):
         self.time_budget = time_budget
         self.each_run_budget = each_run_budget
         self.ensemble_size = ensemble_size
@@ -21,6 +22,7 @@ class AutoML(object):
         self.include_models = include_models
         self.exclude_models = exclude_models
         self.component_manager = ComponentsManager()
+        self.optimizer = optimizer
 
     def fit(self, data: DataManager, **kwargs):
         """
@@ -44,8 +46,7 @@ class AutoML(object):
         # Create evaluator & assign the required data to it.
         evaluator = BaseEvaluator(data, metric)
 
-        optimizer = 'ts_smac'
-        if optimizer == 'smac':
+        if self.optimizer == 'smac':
             # Create optimizer.
             smac_smbo = SMAC_SMBO(config_space, evaluator)
             runhistory, _ = smac_smbo.run()
@@ -57,9 +58,9 @@ class AutoML(object):
                 perfs.append(runhistory.get_cost(config))
             print(len(perfs))
             print(perfs)
-        elif optimizer == 'ts_smac':
+        elif self.optimizer == 'ts_smac':
             # Create optimizer.
-            ts_smbo = TS_SMBO(config_space, evaluator, metric)
+            ts_smbo = TS_SMBO(config_space, data, metric)
             ts_smbo.run()
 
         return self

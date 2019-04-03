@@ -23,8 +23,9 @@ class TS_SMBO(BaseOptimizer):
 
         for estimator in self.estimator_arms:
             # Scenario object
-            estimator_model = _classifiers[estimator]
             config_space = _classifiers[estimator].get_hyperparameter_search_space()
+            params_num = len(config_space.get_hyperparameters())
+            estimator_model = _classifiers[estimator](*[None]*params_num)
             scenario_dict = {
                 'abort_on_first_run_crash': False,
                 "run_obj": "quality",
@@ -62,3 +63,4 @@ class TS_SMBO(BaseOptimizer):
             self.ts_params[estimator][1] = 1./(self.ts_params[estimator][1] + 1)
 
         print(incubent_values)
+        print(max(incubent_values))
