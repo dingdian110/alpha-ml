@@ -18,7 +18,7 @@ class ComponentsManager(object):
                     if model in self.builtin_cls_models:
                         model_candidates.add(model)
                     else:
-                        raise ValueError("The estimator %s is NOT available in alpha-ml!")
+                        raise ValueError("The estimator %s is NOT available in alpha-ml!" % str(model))
             else:
                 model_candidates = set(self.builtin_cls_models)
 
