@@ -1,6 +1,5 @@
 from alphaml.engine.components.componets_manager import ComponentsManager
 from alphaml.engine.components.data_manager import DataManager
-from alphaml.engine.evaluator.base import BaseEvaluator
 from alphaml.engine.optimizer.smac_smbo import SMAC_SMBO
 from alphaml.engine.optimizer.ts_smbo import TS_SMBO
 
@@ -14,7 +13,8 @@ class AutoML(object):
             ensemble_size,
             include_models,
             exclude_models,
-            optimizer='ts_smac'):
+            optimizer,
+            random_seed=42):
         self.time_budget = time_budget
         self.each_run_budget = each_run_budget
         self.ensemble_size = ensemble_size
@@ -23,6 +23,7 @@ class AutoML(object):
         self.exclude_models = exclude_models
         self.component_manager = ComponentsManager()
         self.optimizer = optimizer
+        self.seed = random_seed
 
     def fit(self, data: DataManager, **kwargs):
         """
@@ -42,16 +43,17 @@ class AutoML(object):
         # Get the configuration space for the automl task.
         config_space = self.component_manager.get_hyperparameter_search_space(
             task_type, self.include_models, self.exclude_models)
-
+        print(self.optimizer)
         if self.optimizer == 'smac':
             # Create optimizer.
-            smac_smbo = SMAC_SMBO(config_space, data, metric)
+            smac_smbo = SMAC_SMBO(config_space, data, metric, self.seed)
             smac_smbo.run()
         elif self.optimizer == 'ts_smac':
             # Create optimizer.
-            ts_smbo = TS_SMBO(config_space, data, metric)
+            ts_smbo = TS_SMBO(config_space, data, metric, self.seed)
             ts_smbo.run()
-
+        else:
+            raise ValueError('UNSUPPORTED optimizer: %s' % self.optimizer)
         return self
 
     def predict(self, X):

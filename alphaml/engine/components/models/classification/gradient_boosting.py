@@ -7,6 +7,7 @@ from ConfigSpace.hyperparameters import UniformFloatHyperparameter, \
 
 from alphaml.engine.components.models.base_model import BaseClassificationModel, IterativeComponentWithSampleWeight
 from alphaml.utils.common import check_none
+from alphaml.utils.constants import *
 
 
 class GradientBoostingClassifier(IterativeComponentWithSampleWeight, BaseClassificationModel):

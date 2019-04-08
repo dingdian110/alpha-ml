@@ -83,3 +83,14 @@ class IterativeComponentWithSampleWeight(BaseModel):
             self.iterative_fit(X, y, n_iter=n_iter, sample_weight=sample_weight)
             iteration += 1
         return self
+
+
+class IterativeComponent(BaseModel):
+    def fit(self, X, y, sample_weight=None):
+        self.iterative_fit(X, y, n_iter=2, refit=True)
+        iteration = 2
+        while not self.configuration_fully_fitted():
+            n_iter = int(2 ** iteration / 2)
+            self.iterative_fit(X, y, n_iter=n_iter, refit=False)
+            iteration += 1
+        return self

@@ -3,6 +3,7 @@ from ConfigSpace.hyperparameters import UniformFloatHyperparameter, \
     UniformIntegerHyperparameter, CategoricalHyperparameter
 
 from alphaml.engine.components.models.base_model import BaseClassificationModel
+from alphaml.utils.constants import *
 
 
 class AdaboostClassifier(BaseClassificationModel):

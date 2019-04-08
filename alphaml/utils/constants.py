@@ -16,3 +16,11 @@ TASK_TYPE2STR = {BINARY_CLS: "binary",
 TASK_STR2TYPE = {"binary": BINARY_CLS,
      "multiclass": MULTICLASS_CLS,
      "regression": REGRESSION}
+
+DENSE = 5
+SPARSE = 6
+PREDICTIONS = 7
+INPUT = 8
+
+SIGNED_DATA = 9
+UNSIGNED_DATA = 10

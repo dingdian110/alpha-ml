@@ -12,13 +12,16 @@ class ComponentsManager(object):
 
     def get_hyperparameter_search_space(self, task_type, include=None, exclude=None):
         if task_type != REGRESSION:
-            model_candidates = set(self.builtin_cls_models)
+            model_candidates = set()
             if include is not None:
                 for model in include:
                     if model in self.builtin_cls_models:
                         model_candidates.add(model)
                     else:
                         raise ValueError("The estimator %s is NOT available in alpha-ml!")
+            else:
+                model_candidates = set(self.builtin_cls_models)
+
             if exclude is not None:
                 for model in exclude:
                     if model in model_candidates:

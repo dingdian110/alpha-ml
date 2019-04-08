@@ -18,7 +18,13 @@ def test_auto():
     from alphaml.estimators.classifier import Classifier
 
     X, y = load_breast_cancer(return_X_y=True)
-    Classifier().fit(DataManager(X, y))
+    # Classifier(exclude_models=['libsvm_svc']).fit(DataManager(X, y))
+
+    for _ in range(5):
+        Classifier(include_models=['adaboost', 'gradient_boosting', 'random_forest'], optimizer='ts_smac').fit(DataManager(X, y))
+
+    for _ in range(5):
+        Classifier(include_models=['adaboost', 'gradient_boosting', 'random_forest'], optimizer='smac').fit(DataManager(X, y))
 
 
 if __name__ == "__main__":

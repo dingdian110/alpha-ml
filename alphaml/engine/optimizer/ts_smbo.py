@@ -8,10 +8,10 @@ from alphaml.engine.components.models.classification import _classifiers
 
 
 class TS_SMBO(BaseOptimizer):
-    def __init__(self, config_space, data, metric):
-        super().__init__(config_space, data, metric)
+    def __init__(self, config_space, data, metric, seed):
+        super().__init__(config_space, data, metric, seed)
 
-        self.iter_num = 50
+        self.iter_num = 25
         self.estimator_arms = self.config_space.get_hyperparameter('estimator').choices
 
         self.smac_containers = dict()
@@ -33,7 +33,7 @@ class TS_SMBO(BaseOptimizer):
 
             # Create evaluator.
             evaluator = HPOEvaluator(data, metric, estimator_model)
-            smac = SMAC(scenario=Scenario(scenario_dict), rng=np.random.RandomState(42), tae_runner=evaluator)
+            smac = SMAC(scenario=Scenario(scenario_dict), rng=np.random.RandomState(self.seed), tae_runner=evaluator)
             self.smac_containers[estimator] = smac
             self.ts_params[estimator] = [0, 1]
             self.ts_cnts[estimator] = 0
@@ -66,8 +66,8 @@ class TS_SMBO(BaseOptimizer):
         for arm in self.estimator_arms:
             runhistory = self.smac_containers[arm].solver.runhistory
             configs = runhistory.get_all_configs()
-            perfs = list()
             for config in configs:
                 perfs.append(runhistory.get_cost(config))
+        print(len(perfs))
         print(perfs)
-        print(1 - min(perfs), 1 - max(perfs))
+        print(min(perfs), max(perfs))

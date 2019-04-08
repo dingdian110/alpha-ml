@@ -6,8 +6,8 @@ from alphaml.engine.evaluator.base import BaseEvaluator
 
 
 class SMAC_SMBO(BaseOptimizer):
-    def __init__(self, config_space, data, metric):
-        super().__init__(config_space, data, metric)
+    def __init__(self, config_space, data, metric, seed):
+        super().__init__(config_space, data, metric, seed)
 
         # Create evaluator & assign the required data to it.
         self.evaluator = BaseEvaluator(data, metric)
@@ -18,10 +18,10 @@ class SMAC_SMBO(BaseOptimizer):
             "run_obj": "quality",
             "cs": self.config_space,
             "deterministic": "true",
-            "runcount-limit": 100
+            "runcount-limit": 53
         }
         self.scenario = Scenario(scenario_dict)
-        self.smac = SMAC(scenario=self.scenario, rng=np.random.RandomState(42), tae_runner=self.evaluator)
+        self.smac = SMAC(scenario=self.scenario, rng=np.random.RandomState(self.seed), tae_runner=self.evaluator)
 
     def run(self):
         self.smac.optimize()
