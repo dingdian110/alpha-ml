@@ -1,4 +1,4 @@
-from alphaml.engine.components.componets_manager import ComponentsManager
+from alphaml.engine.components.components_manager import ComponentsManager
 from alphaml.engine.components.data_manager import DataManager
 from alphaml.engine.optimizer.smac_smbo import SMAC_SMBO
 from alphaml.engine.optimizer.ts_smbo import TS_SMBO

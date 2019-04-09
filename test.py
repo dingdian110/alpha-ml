@@ -1,6 +1,6 @@
 
 def test_configspace():
-    from alphaml.engine.components.componets_manager import ComponentsManager
+    from alphaml.engine.components.components_manager import ComponentsManager
     from alphaml.engine.components.models.classification import _classifiers
 
     # print(_classifiers)
