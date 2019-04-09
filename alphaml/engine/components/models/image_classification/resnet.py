@@ -13,7 +13,8 @@ from ConfigSpace import ConfigurationSpace
 from ConfigSpace import UniformFloatHyperparameter, \
     UniformIntegerHyperparameter, CategoricalHyperparameter, \
     InCondition
-from alphaml.engine.components.models.base_model import BaseClassificationModel
+from ..base_model import BaseClassificationModel
+from ...data_preprocessing.image_preprocess import preprocess
 
 backend = get_keras_submodule('backend')
 engine = get_keras_submodule('engine')
@@ -82,42 +83,51 @@ class ResNetClassifier(BaseClassificationModel):
         cs.add_conditions([sgd_lr_cond, sgd_decay_cond, sgd_momentum_cond, adam_lr_cond, adam_decay_cond])
         return cs
 
-    def fit(self, x, y, sample_weight=None):
+    def fit(self, x_train, y_train, x_valid=None, y_valid=None, sample_weight=None):
         timestr = time.strftime('%Y-%m-%d-%H:%M:%S', time.localtime(time.time()))
+        if x_valid is None and y_valid is None:
+            if_valid = False
+        else:
+            if_valid = True
+
         if self.optimizer == 'SGD':
-            optimizer = SGD(self.sgd_lr,self.sgd_momentum,self.sgd_decay)
+            optimizer = SGD(self.sgd_lr, self.sgd_momentum, self.sgd_decay)
         elif self.optimizer == 'Adam':
-            optimizer = Adam(self.adam_lr,decay=self.adam_decay)
+            optimizer = Adam(self.adam_lr, decay=self.adam_decay)
         else:
             raise ValueError('No optimizer named %s defined' % str(self.optimizer))
 
-        # trainpregen, validpregen, _ = preprocess()
-        # train_gen = trainpregen.flow(x, y, batch_size=self.batch_size)
-        # valid_gen = validpregen.flow(x_valid, y_valid, batch_size=self.batch_size)
-        #
-        # # model
-        # base_model = ResNet(input_shape=inputshape,
-        #                     res_kernel_size=self.res_kernel_size,
-        #                     res_stage2_block=self.res_stage2_block,
-        #                     res_stage3_block=self.res_stage3_block,
-        #                     res_stage4_block=self.res_stage4_block,
-        #                     res_stage5_block=self.res_stage5_block)
-        # y = base_model.output
-        # y = Dropout(1 - self.keep_prob)(y)
-        # y = Dense(classnum)(y)
-        # model = Model(inputs=base_model.input, outputs=y)
-        # checkpoint = ModelCheckpoint(filepath='model_%s.hdf5' % timestr,
-        #                              monitor='val_acc',
-        #                              save_best_only=True,
-        #                              period=1)
-        # earlystop = EarlyStopping(monitor='val_acc', patience=8)
-        # model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['acc'])
-        # model.fit_generator(generator=train_gen,
-        #                     epochs=120,
-        #                     validation_data=valid_gen,
-        #                     callbacks=[checkpoint, earlystop])
-        # final_result = checkpoint.best
-        # return self  # minimize validation accuracy
+        trainpregen, validpregen, _ = preprocess()
+        train_gen = trainpregen.flow(x_train, y_train, batch_size=self.batch_size)
+        if if_valid:
+            valid_gen = validpregen.flow(x_valid, y_valid, batch_size=self.batch_size)
+
+        # remain to get
+        inputshape = (32, 32, 3)
+        classnum = 10
+        # model
+        base_model = ResNet(input_shape=inputshape,
+                            res_kernel_size=self.res_kernel_size,
+                            res_stage2_block=self.res_stage2_block,
+                            res_stage3_block=self.res_stage3_block,
+                            res_stage4_block=self.res_stage4_block,
+                            res_stage5_block=self.res_stage5_block)
+        y = base_model.output
+        y = Dropout(1 - self.keep_prob)(y)
+        y = Dense(classnum)(y)
+        model = Model(inputs=base_model.input, outputs=y)
+        checkpoint = ModelCheckpoint(filepath='model_%s.hdf5' % timestr,
+                                     monitor='val_acc',
+                                     save_best_only=True,
+                                     period=1)
+        earlystop = EarlyStopping(monitor='val_acc', patience=8)
+        model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['acc'])
+        model.fit_generator(generator=train_gen,
+                            epochs=120,
+                            validation_data=valid_gen,
+                            callbacks=[checkpoint, earlystop])
+        final_result = checkpoint.best
+        return self  # minimize validation accuracy
 
 
 def identity_block(input_tensor, kernel_size, filters, stage, block):
