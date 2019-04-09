@@ -76,6 +76,7 @@ class BaseImageClaasificationModel(BaseClassificationModel):
     def fit(self, x_train, y_train, x_valid=None, y_valid=None, sample_weight=None):
         raise NotImplementedError()
 
+
 class IterativeComponentWithSampleWeight(BaseModel):
     def fit(self, X, y, sample_weight=None):
         self.iterative_fit(

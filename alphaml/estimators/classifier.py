@@ -62,8 +62,7 @@ class Classifier(BaseEstimator):
         if task_type in ['multiclass-multioutput',
                            'continuous',
                            'continuous-multioutput',
-                           'unknown',
-                           ]:
+                           'unknown']:
             raise ValueError("UNSUPPORTED TASK TYPE: %s!" % task_type)
         self.task_type = task_type
         assert data is not None and isinstance(data, DataManager)

@@ -12,9 +12,9 @@ def update_config(config):
 
 
 class BaseEvaluator(object):
-    def __init__(self, data, metric):
-        self.data_manager = data
-        self.metric_func = metric
+    def __init__(self):
+        self.data_manager = None
+        self.metric_func = None
 
     def __call__(self, config):
         params_num = len(config.get_dictionary().keys()) - 1

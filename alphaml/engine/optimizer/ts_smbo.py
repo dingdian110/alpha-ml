@@ -8,8 +8,8 @@ from alphaml.engine.components.models.classification import _classifiers
 
 
 class TS_SMBO(BaseOptimizer):
-    def __init__(self, config_space, data, metric, seed):
-        super().__init__(config_space, data, metric, seed)
+    def __init__(self, evaluator, config_space, data, metric, seed):
+        super().__init__(evaluator, config_space, data, metric, seed)
 
         self.iter_num = 25
         self.estimator_arms = self.config_space.get_hyperparameter('estimator').choices

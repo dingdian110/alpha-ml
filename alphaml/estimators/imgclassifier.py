@@ -1,10 +1,10 @@
 import numpy as np
 from sklearn.metrics import accuracy_score
 from sklearn.utils.multiclass import type_of_target
-from alphaml.estimators.base_estimator import BaseEstimator
 from alphaml.estimators.classifier import Classifier
-from alphaml.engine.automl import AutoMLClassifier
+from alphaml.engine.automl import AutoIMGClassifier
 from alphaml.engine.components.data_manager import DataManager
+
 
 class ImageClassifier(Classifier):
     """This class implements the classification task. """
@@ -64,12 +64,14 @@ class ImageClassifier(Classifier):
                            'continuous-multioutput',
                            'unknown',
                            ]:
-            raise ValueError("UNSUPPORTED TASK TYPE: %s!" % task_type)
+            raise ValueError("Problematic Task Type: %s!" % task_type)
 
-        # Task using deep learning networks
-        task_type='DL_'+task_type
-        self.task_type = task_type
+        assert task_type in ['binary', 'multiclass']
         assert data is not None and isinstance(data, DataManager)
+
+        # Image classification task.
+        task_type = 'img_' + task_type
+        self.task_type = task_type
 
         super().fit(
             data,
@@ -132,4 +134,4 @@ class ImageClassifier(Classifier):
         return pred_proba
 
     def get_automl(self):
-        return AutoMLClassifier
+        return AutoIMGClassifier

@@ -1,5 +1,6 @@
-from ..components.models.image_classification import _img_classifiers
-from .base import BaseEvaluator,update_config
+from alphaml.engine.components.models.image_classification import _img_classifiers
+from alphaml.engine.evaluator.base import BaseEvaluator, update_config
+
 
 class DLEvaluator(BaseEvaluator):
     def __call__(self, config):

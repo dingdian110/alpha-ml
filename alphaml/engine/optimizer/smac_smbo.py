@@ -6,11 +6,8 @@ from alphaml.engine.evaluator.base import BaseEvaluator
 
 
 class SMAC_SMBO(BaseOptimizer):
-    def __init__(self, config_space, data, metric, seed):
-        super().__init__(config_space, data, metric, seed)
-
-        # Create evaluator & assign the required data to it.
-        self.evaluator = BaseEvaluator(data, metric)
+    def __init__(self, evaluator, config_space, data, metric, seed):
+        super().__init__(evaluator, config_space, data, metric, seed)
 
         # Scenario object
         scenario_dict = {
