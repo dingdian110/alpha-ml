@@ -2,7 +2,7 @@ from alphaml.engine.components.models.image_classification import _img_classifie
 from alphaml.engine.evaluator.base import BaseEvaluator, update_config
 
 
-class DLEvaluator(BaseEvaluator):
+class BaseImgEvaluator(BaseEvaluator):
     def __call__(self, config):
         params_num = len(config.get_dictionary().keys()) - 1
         classifier_type = config['estimator']

@@ -13,8 +13,9 @@ from ConfigSpace import ConfigurationSpace
 from ConfigSpace import UniformFloatHyperparameter, \
     UniformIntegerHyperparameter, CategoricalHyperparameter, \
     InCondition
-from ..base_model import BaseClassificationModel
-from ...data_preprocessing.image_preprocess import preprocess
+from alphaml.engine.components.models.base_model import BaseImageClassificationModel
+from alphaml.engine.components.data_preprocessing.image_preprocess import preprocess
+from alphaml.utils.constants import *
 
 backend = get_keras_submodule('backend')
 engine = get_keras_submodule('engine')
@@ -23,7 +24,7 @@ models = get_keras_submodule('models')
 keras_utils = get_keras_submodule('utils')
 
 
-class ResNetClassifier(BaseClassificationModel):
+class ResNetClassifier(BaseImageClassificationModel):
     def __init__(self, batch_size, keep_prob, optimizer,
                  sgd_lr, sgd_decay, sgd_momentum,
                  adam_lr, adam_decay,
@@ -44,6 +45,16 @@ class ResNetClassifier(BaseClassificationModel):
         self.res_stage4_block = res_stage4_block
         self.res_stage5_block = res_stage5_block
         self.estimator = None
+
+    def get_properties(dataset_properties=None):
+        return {'shortname': 'ResNet',
+                'name': 'ResNet Image Classifier',
+                'handles_regression': False,
+                'handles_classification': True,
+                'handles_multiclass': True,
+                'handles_multilabel': True,
+                'input': (), # TODO: Define inputs
+                'output': (PREDICTIONS,)}
 
     def get_hyperparameter_search_space(self):
         cs = ConfigurationSpace()
@@ -83,7 +94,7 @@ class ResNetClassifier(BaseClassificationModel):
         cs.add_conditions([sgd_lr_cond, sgd_decay_cond, sgd_momentum_cond, adam_lr_cond, adam_decay_cond])
         return cs
 
-    def fit(self, x_train, y_train, x_valid=None, y_valid=None, sample_weight=None):
+    def fit(self, x_train, y_train, x_valid=None, y_valid=None, **karg):
         timestr = time.strftime('%Y-%m-%d-%H:%M:%S', time.localtime(time.time()))
         if x_valid is None and y_valid is None:
             if_valid = False
@@ -102,7 +113,7 @@ class ResNetClassifier(BaseClassificationModel):
         if if_valid:
             valid_gen = validpregen.flow(x_valid, y_valid, batch_size=self.batch_size)
 
-        # remain to get
+        # TODO: Validate datasets
         inputshape = (32, 32, 3)
         classnum = 10
         # model

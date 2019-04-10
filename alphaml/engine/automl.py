@@ -1,6 +1,7 @@
 from alphaml.engine.components.components_manager import ComponentsManager
 from alphaml.engine.components.data_manager import DataManager
 from alphaml.engine.evaluator.base import BaseEvaluator
+from alphaml.engine.evaluator.dl_evaluator import BaseImgEvaluator
 from alphaml.engine.optimizer.smac_smbo import SMAC_SMBO
 from alphaml.engine.optimizer.ts_smbo import TS_SMBO
 
@@ -104,7 +105,7 @@ class AutoIMGClassifier(AutoML):
                          exclude_models, optimizer, random_seed)
 
         # TODO: evaluator for IMG CLS.
-        self.evaluator = BaseEvaluator()
+        self.evaluator = BaseImgEvaluator()
 
     def fit(self, data, **kwargs):
         return super().fit(data, **kwargs)
