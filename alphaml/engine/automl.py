@@ -14,7 +14,7 @@ class AutoML(object):
             ensemble_size,
             include_models,
             exclude_models,
-            optimizer,
+            optimizer_type,
             random_seed=42):
         self.time_budget = time_budget
         self.each_run_budget = each_run_budget
@@ -23,7 +23,8 @@ class AutoML(object):
         self.include_models = include_models
         self.exclude_models = exclude_models
         self.component_manager = ComponentsManager()
-        self.optimizer = optimizer
+        self.optimizer_type = optimizer_type
+        self.optimizer = None
         self.evaluator = None
         self.seed = random_seed
 
@@ -46,23 +47,23 @@ class AutoML(object):
         config_space = self.component_manager.get_hyperparameter_search_space(
             task_type, self.include_models, self.exclude_models)
 
-        if self.optimizer == 'smac':
+        if self.optimizer_type == 'smac':
             # Create optimizer.
-            smac_smbo = SMAC_SMBO(self.evaluator, config_space, data, metric, self.seed)
-            smac_smbo.run()
-        elif self.optimizer == 'ts_smac':
+            self.optimizer = SMAC_SMBO(self.evaluator, config_space, data, metric, self.seed)
+            self.optimizer.run()
+        elif self.optimizer_type == 'ts_smac':
             # Create optimizer.
-            ts_smbo = TS_SMBO(self.evaluator, config_space, data, metric, self.seed)
-            ts_smbo.run()
+            self.optimizer = TS_SMBO(self.evaluator, config_space, data, metric, self.seed)
+            self.optimizer.run()
         else:
             raise ValueError('UNSUPPORTED optimizer: %s' % self.optimizer)
         return self
 
     def predict(self, X):
-        return None
+        return NotImplementedError
 
     def score(self, X, y):
-        return None
+        return NotImplementedError
 
 
 class AutoMLClassifier(AutoML):
@@ -81,6 +82,12 @@ class AutoMLClassifier(AutoML):
 
     def fit(self, data, **kwargs):
         return super().fit(data, **kwargs)
+
+    def predict(self, X):
+        # For traditional ML task:
+        #   fit the optimized model on the whole training data and predict the input data's labels.
+        pred = self.evaluator.fit_inference(self.optimizer.incumbent, X)
+        return pred
 
 
 class AutoIMGClassifier(AutoML):

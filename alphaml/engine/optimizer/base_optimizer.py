@@ -3,9 +3,10 @@ class BaseOptimizer(object):
         # Prepare the basics for evaluator.
         self.evaluator = evaluator
         self.evaluator.data_manager = data
-        self.evaluator.metric = metric
+        self.evaluator.metric_func = metric
         self.config_space = config_space
         self.seed = seed
+        self.incumbent = None
 
     def run(self):
         raise NotImplementedError

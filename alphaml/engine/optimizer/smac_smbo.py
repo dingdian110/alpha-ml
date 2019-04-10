@@ -24,13 +24,14 @@ class SMAC_SMBO(BaseOptimizer):
         self.smac.optimize()
         self.runhistory = self.smac.solver.runhistory
         self.trajectory = self.smac.solver.intensifier.traj_logger.trajectory
-
-        # Show the results.
+        self.incumbent = self.smac.solver.incumbent
+        # Fetch the results.
         configs = self.runhistory.get_all_configs()
-        perfs = list()
+        perfs = dict()
         for config in configs:
-            perfs.append(self.runhistory.get_cost(config))
-        print(len(perfs))
-        print(perfs)
-        print(min(perfs), max(perfs))
+            perfs[config] = self.runhistory.get_cost(config)
+        print(perfs.values())
+        print(min(perfs.values()))
+        print(perfs[self.incumbent])
+        print(self.incumbent in perfs)
         return self.runhistory, self.trajectory

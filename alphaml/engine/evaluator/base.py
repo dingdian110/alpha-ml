@@ -33,6 +33,22 @@ class BaseEvaluator(object):
         # Turn it to a minimization problem.
         return 1 - metric
 
+    def fit_predict(self, config, test_X=None):
+        params_num = len(config.get_dictionary().keys()) - 1
+        classifier_type = config['estimator']
+        estimator = _classifiers[classifier_type](*[None] * params_num)
+        config = update_config(config)
+        estimator.set_hyperparameters(config)
+
+        # Fit the estimator on the training data.
+        estimator.fit(self.data_manager.train_X, self.data_manager.train_y)
+
+        # Inference.
+        if test_X is None:
+            test_X = self.data_manager.test_X
+        y_pred = estimator.predict(test_X)
+        return y_pred
+
 
 class HPOEvaluator(object):
     def __init__(self, data, metric, estimator):
