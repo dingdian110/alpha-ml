@@ -83,7 +83,7 @@ class ResNetClassifier(BaseClassificationModel):
         cs.add_conditions([sgd_lr_cond, sgd_decay_cond, sgd_momentum_cond, adam_lr_cond, adam_decay_cond])
         return cs
 
-    def fit(self, x_train, y_train, x_valid=None, y_valid=None, sample_weight=None):
+    def fit(self, x_train, y_train, x_valid=None, y_valid=None, **karg):
         timestr = time.strftime('%Y-%m-%d-%H:%M:%S', time.localtime(time.time()))
         if x_valid is None and y_valid is None:
             if_valid = False

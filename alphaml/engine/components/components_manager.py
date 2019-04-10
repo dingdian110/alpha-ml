@@ -11,7 +11,7 @@ class ComponentsManager(object):
             builtin_models = _classifiers.keys()
             builtin_estimators = _classifiers
         elif task_type in ['img_binary', 'img_multiclass']:
-            builtin_models = _classifiers.keys()
+            builtin_models = _img_classifiers.keys()
             builtin_estimators = _img_classifiers
         else:
             raise ValueError('Undefined Task Type: %s' % task_type)

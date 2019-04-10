@@ -72,7 +72,7 @@ class BaseClassificationModel(BaseModel):
         return self.estimator
 
 
-class BaseImageClaasificationModel(BaseClassificationModel):
+class BaseImageClassificationModel(BaseClassificationModel):
     def fit(self, x_train, y_train, x_valid=None, y_valid=None, sample_weight=None):
         raise NotImplementedError()
 
