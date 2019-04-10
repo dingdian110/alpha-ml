@@ -1,12 +1,12 @@
 import numpy as np
 from sklearn.metrics import accuracy_score
 from sklearn.utils.multiclass import type_of_target
-from alphaml.estimators.classifier import Classifier
+from alphaml.estimators.base_estimator import BaseEstimator
 from alphaml.engine.automl import AutoIMGClassifier
 from alphaml.engine.components.data_manager import DataManager
 
 
-class ImageClassifier(Classifier):
+class ImageClassifier(BaseEstimator):
     """This class implements the classification task. """
 
     def fit(self,
