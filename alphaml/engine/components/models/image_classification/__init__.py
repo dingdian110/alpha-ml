@@ -7,4 +7,3 @@ Load the buildin classifiers.
 """
 classifiers_directory = os.path.split(__file__)[0]
 _img_classifiers = find_components(__package__, classifiers_directory, BaseImageClassificationModel)
-print(_img_classifiers)

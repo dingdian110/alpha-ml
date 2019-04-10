@@ -3,6 +3,7 @@ from __future__ import division
 from __future__ import print_function
 
 import time
+import numpy as np
 import keras
 from keras_applications import get_keras_submodule
 from keras import Model
@@ -25,38 +26,48 @@ keras_utils = get_keras_submodule('utils')
 
 
 class ResNetClassifier(BaseImageClassificationModel):
-    def __init__(self, batch_size, keep_prob, optimizer,
-                 sgd_lr, sgd_decay, sgd_momentum,
-                 adam_lr, adam_decay,
-                 res_kernel_size, res_stage2_block,
-                 res_stage3_block, res_stage4_block,
-                 res_stage5_block, **arg):
-        self.batch_size = batch_size
-        self.keep_prob = keep_prob
-        self.optimizer = optimizer
-        self.sgd_lr = sgd_lr
-        self.sgd_decay = sgd_decay
-        self.sgd_momentum = sgd_momentum
-        self.adam_lr = adam_lr
-        self.adam_decay = adam_decay
-        self.res_kernel_size = res_kernel_size
-        self.res_stage2_block = res_stage2_block
-        self.res_stage3_block = res_stage3_block
-        self.res_stage4_block = res_stage4_block
-        self.res_stage5_block = res_stage5_block
+    def __init__(self, *arg, **karg):
+        # self.batch_size = batch_size
+        # self.keep_prob = keep_prob
+        # self.optimizer = optimizer
+        # self.sgd_lr = sgd_lr
+        # self.sgd_decay = sgd_decay
+        # self.sgd_momentum = sgd_momentum
+        # self.adam_lr = adam_lr
+        # self.adam_decay = adam_decay
+        # self.res_kernel_size = res_kernel_size
+        # self.res_stage2_block = res_stage2_block
+        # self.res_stage3_block = res_stage3_block
+        # self.res_stage4_block = res_stage4_block
+        # self.res_stage5_block = res_stage5_block
+        self.batch_size = None
+        self.keep_prob = None
+        self.optimizer = None
+        self.sgd_lr = None
+        self.sgd_decay = None
+        self.sgd_momentum = None
+        self.adam_lr = None
+        self.adam_decay = None
+        self.res_kernel_size = None
+        self.res_stage2_block = None
+        self.res_stage3_block = None
+        self.res_stage4_block = None
+        self.res_stage5_block = None
         self.estimator = None
 
+    @staticmethod
     def get_properties(dataset_properties=None):
         return {'shortname': 'ResNet',
                 'name': 'ResNet Image Classifier',
                 'handles_regression': False,
                 'handles_classification': True,
                 'handles_multiclass': True,
-                'handles_multilabel': True,
-                'input': (), # TODO: Define inputs
+                'handles_multilabel': False,
+                'input': (),  # TODO: Define inputs
                 'output': (PREDICTIONS,)}
 
-    def get_hyperparameter_search_space(self):
+    @staticmethod
+    def get_hyperparameter_search_space(dataset_properties=None):
         cs = ConfigurationSpace()
         # base config
         batch_size = CategoricalHyperparameter('batch_size', [16, 32], default_value=32)
@@ -108,10 +119,14 @@ class ResNetClassifier(BaseImageClassificationModel):
         else:
             raise ValueError('No optimizer named %s defined' % str(self.optimizer))
 
-        trainpregen, validpregen, _ = preprocess()
+        trainpregen, validpregen = preprocess()
         train_gen = trainpregen.flow(x_train, y_train, batch_size=self.batch_size)
         if if_valid:
             valid_gen = validpregen.flow(x_valid, y_valid, batch_size=self.batch_size)
+            checkpoint_monitor = 'val_acc'
+        else:
+            valid_gen = None
+            checkpoint_monitor = 'acc'
 
         # TODO: Validate datasets
         inputshape = (32, 32, 3)
@@ -125,10 +140,10 @@ class ResNetClassifier(BaseImageClassificationModel):
                             res_stage5_block=self.res_stage5_block)
         y = base_model.output
         y = Dropout(1 - self.keep_prob)(y)
-        y = Dense(classnum)(y)
+        y = Dense(classnum, activation='softmax', name='Dense_final')(y)
         model = Model(inputs=base_model.input, outputs=y)
         checkpoint = ModelCheckpoint(filepath='model_%s.hdf5' % timestr,
-                                     monitor='val_acc',
+                                     monitor=checkpoint_monitor,
                                      save_best_only=True,
                                      period=1)
         earlystop = EarlyStopping(monitor='val_acc', patience=8)
@@ -137,8 +152,21 @@ class ResNetClassifier(BaseImageClassificationModel):
                             epochs=120,
                             validation_data=valid_gen,
                             callbacks=[checkpoint, earlystop])
-        final_result = checkpoint.best
-        return self  # minimize validation accuracy
+        self.estimator = model
+        self.best_result = checkpoint.best
+        return self
+
+    def predict(self, x):
+        if self.estimator is None:
+            raise TypeError("Unsupported estimator type 'NoneType'!")
+        outputs = self.estimator.predict(x, batch_size=32)
+        predictions = np.argmax(outputs, axis=-1)
+        return predictions
+
+    def predict_proba(self, x):
+        if self.estimator is None:
+            raise TypeError("Unsupported estimator type 'NoneType'!")
+        return self.estimator.predict(x, batch_size=32)
 
 
 def identity_block(input_tensor, kernel_size, filters, stage, block):
