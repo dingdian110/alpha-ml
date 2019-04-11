@@ -36,6 +36,7 @@ class BaseEvaluator(object):
         y_pred = estimator.predict(self.data_manager.val_X)
         metric = self.metric_func(self.data_manager.val_y, y_pred)
 
+        print('--....')
         # Turn it to a minimization problem.
         return 1 - metric
 

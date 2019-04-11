@@ -1,5 +1,4 @@
 import numpy as np
-from sklearn.metrics import accuracy_score
 from sklearn.utils.multiclass import type_of_target
 from alphaml.estimators.base_estimator import BaseEstimator
 from alphaml.engine.automl import AutoMLClassifier
@@ -9,34 +8,13 @@ from alphaml.engine.components.data_manager import DataManager
 class Classifier(BaseEstimator):
     """This class implements the classification task. """
 
-    def fit(self,
-            data,
-            metric=accuracy_score,
-            feat_type=None,
-            dataset_name=None):
-        """Fit the classifier to given training set (X, y).
-
-        Fit both optimizes the machine learning models and builds an ensemble
-        out of them. To disable ensembling, set ``ensemble_size==0``.
+    def fit(self, data, **kwargs):
+        """Fit the classifier to given training data.
 
         Parameters
         ----------
 
-        X : array-like or sparse matrix of shape = [n_samples, n_features]
-            The training input samples.
-
-        y : array-like, shape = [n_samples] or [n_samples, n_outputs]
-            The target classes.
-
-        X_test : array-like or sparse matrix of shape = [n_samples, n_features]
-            Test data input samples. Will be used to save test predictions for
-            all models. This allows to evaluate the performance of Auto-sklearn
-            over time.
-
-        y_test : array-like, shape = [n_samples] or [n_samples, n_outputs]
-            Test data target classes. Will be used to calculate the test error
-            of all models. This allows to evaluate the performance of
-            Auto-sklearn over time.
+        data : instance of DataManager.
 
         metric : callable, optional (default='autosklearn.metrics.accuracy_score').
 
@@ -57,6 +35,13 @@ class Classifier(BaseEstimator):
         self
 
         """
+
+        # metric = None if 'metric' not in kwargs else kwargs['metric']
+        # feat_type = None if 'feat_type' not in kwargs else kwargs['feat_type']
+        # dataset_name = None if 'dataset_name' not in kwargs else kwargs['dataset_name']
+        # # The number of evaluations.
+        # runcount = None if 'runcount' not in kwargs else kwargs['runcount']
+
         # Check the task type: {binary, multiclass}
         task_type = type_of_target(data.train_y)
         if task_type in ['multiclass-multioutput',
@@ -65,15 +50,31 @@ class Classifier(BaseEstimator):
                            'unknown']:
             raise ValueError("UNSUPPORTED TASK TYPE: %s!" % task_type)
         self.task_type = task_type
+        kwargs['task_type'] = task_type
         assert data is not None and isinstance(data, DataManager)
 
-        super().fit(
-            data,
-            metric=metric,
-            feat_type=feat_type,
-            dataset_name=dataset_name,
-            task_type=self.task_type
-        )
+        # Options for multicalss averaging.
+        average = 'weighted'
+        metric = kwargs['metric']
+        if isinstance(metric, str):
+            from sklearn.metrics import accuracy_score, f1_score, auc, precision_score, recall_score
+            if metric == 'accuracy':
+                metric = accuracy_score
+            elif metric == 'f1':
+                metric = f1_score
+            elif metric == 'auc':
+                metric = auc
+            elif metric == 'precision':
+                metric = precision_score
+            elif metric == 'recall':
+                metric = recall_score
+            else:
+                raise ValueError('UNSUPPORTED metric: %s' % metric)
+        if not hasattr(metric, '__call__'):
+            raise ValueError('Input metric is not callable!')
+        kwargs['metric'] = metric
+
+        super().fit(data, **kwargs)
 
         return self
 

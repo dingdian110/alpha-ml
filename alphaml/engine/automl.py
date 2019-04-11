@@ -50,11 +50,11 @@ class AutoML(object):
 
         if self.optimizer_type == 'smbo':
             # Create optimizer.
-            self.optimizer = SMAC_SMBO(self.evaluator, config_space, data, self.metric, self.seed)
+            self.optimizer = SMAC_SMBO(self.evaluator, config_space, data, self.seed, **kwargs)
             self.optimizer.run()
         elif self.optimizer_type == 'ts_smbo':
             # Create optimizer.
-            self.optimizer = TS_SMBO(self.evaluator, config_space, data, self.metric, self.seed)
+            self.optimizer = TS_SMBO(self.evaluator, config_space, data, self.seed, **kwargs)
             self.optimizer.run()
         else:
             raise ValueError('UNSUPPORTED optimizer: %s' % self.optimizer)
@@ -68,7 +68,7 @@ class AutoML(object):
 
     def score(self, X, y):
         pred_y = self.predict(X)
-        score = self.metric(pred_y, y)
+        score = self.metric(y, pred_y)
         return score
 
 

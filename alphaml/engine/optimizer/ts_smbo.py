@@ -8,11 +8,12 @@ from alphaml.engine.components.models.classification import _classifiers
 
 
 class TS_SMBO(BaseOptimizer):
-    def __init__(self, evaluator, config_space, data, metric, seed):
-        super().__init__(evaluator, config_space, data, metric, seed)
+    def __init__(self, evaluator, config_space, data, seed, **kwargs):
+        super().__init__(evaluator, config_space, data, kwargs['metric'], seed)
 
-        self.iter_num = 25
+        self.iter_num = int(1e10) if ('runcount' not in kwargs or kwargs['runcount'] is None) else kwargs['runcount']
         self.estimator_arms = self.config_space.get_hyperparameter('estimator').choices
+        self.iter_num -= len(self.estimator_arms)
 
         self.smac_containers = dict()
         self.ts_params = dict()
@@ -72,7 +73,6 @@ class TS_SMBO(BaseOptimizer):
             configs = runhistory.get_all_configs()
             for config in configs:
                 perfs.append(runhistory.get_cost(config))
-        print(len(perfs))
-        print(perfs)
-        print(min(perfs), max(perfs))
+        print('The size of evaluations: %d' % len(perfs))
+        print('The best performance found: %f' % min(perfs))
         self.incumbent = incumbent
