@@ -1,16 +1,15 @@
 from ConfigSpace import ConfigurationSpace
 from ConfigSpace.hyperparameters import CategoricalHyperparameter
 
-from alphaml.engine.components.models.classification import _classifiers
-from alphaml.engine.components.models.image_classification import _img_classifiers
-
 
 class ComponentsManager(object):
     def get_hyperparameter_search_space(self, task_type, include=None, exclude=None):
         if task_type in ['binary', 'multiclass']:
+            from alphaml.engine.components.models.classification import _classifiers
             builtin_models = _classifiers.keys()
             builtin_estimators = _classifiers
         elif task_type in ['img_binary', 'img_multiclass']:
+            from alphaml.engine.components.models.image_classification import _img_classifiers
             builtin_models = _img_classifiers.keys()
             builtin_estimators = _img_classifiers
         else:
