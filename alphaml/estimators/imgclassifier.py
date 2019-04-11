@@ -60,13 +60,12 @@ class ImageClassifier(BaseEstimator):
         # Check the task type: {binary, multiclass}
         task_type = type_of_target(data.train_y)
         if task_type in ['multiclass-multioutput',
-                           'continuous',
-                           'continuous-multioutput',
-                           'unknown',
-                           ]:
+                         'continuous',
+                         'continuous-multioutput',
+                         'unknown',
+                         ]:
             raise ValueError("Problematic Task Type: %s!" % task_type)
-
-        assert task_type in ['binary', 'multiclass']
+        assert task_type in ['binary', 'multiclass', 'multilabel-indicator']
         assert data is not None and isinstance(data, DataManager)
 
         # Image classification task.
@@ -120,15 +119,15 @@ class ImageClassifier(BaseEstimator):
         pred_proba = super().predict_proba(X, batch_size=batch_size, n_jobs=n_jobs)
 
         if self.task_type not in ['multilabel-indicator']:
-            assert(
+            assert (
                 np.allclose(
                     np.sum(pred_proba, axis=1),
                     np.ones_like(pred_proba[:, 0]))
             ), "prediction probability does not sum up to 1!"
 
         # Check that all probability values lie between 0 and 1.
-        assert(
-            (pred_proba >= 0).all() and (pred_proba <= 1).all()
+        assert (
+                (pred_proba >= 0).all() and (pred_proba <= 1).all()
         ), "found prediction probability value outside of [0, 1]!"
 
         return pred_proba

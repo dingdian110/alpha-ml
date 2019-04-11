@@ -8,7 +8,7 @@ class ComponentsManager(object):
             from alphaml.engine.components.models.classification import _classifiers
             builtin_models = _classifiers.keys()
             builtin_estimators = _classifiers
-        elif task_type in ['img_binary', 'img_multiclass']:
+        elif task_type in ['img_binary', 'img_multiclass', 'img_multilabel-indicator']:
             from alphaml.engine.components.models.image_classification import _img_classifiers
             builtin_models = _img_classifiers.keys()
             builtin_estimators = _img_classifiers
