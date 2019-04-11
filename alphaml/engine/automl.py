@@ -24,9 +24,10 @@ class AutoML(object):
         self.exclude_models = exclude_models
         self.component_manager = ComponentsManager()
         self.optimizer_type = optimizer_type
+        self.seed = random_seed
         self.optimizer = None
         self.evaluator = None
-        self.seed = random_seed
+        self.metric = None
 
     def fit(self, data: DataManager, **kwargs):
         """
@@ -41,29 +42,34 @@ class AutoML(object):
         """
 
         task_type = kwargs['task_type']
-        metric = kwargs['metric']
+        self.metric = kwargs['metric']
 
         # Get the configuration space for the automl task.
         config_space = self.component_manager.get_hyperparameter_search_space(
             task_type, self.include_models, self.exclude_models)
 
-        if self.optimizer_type == 'smac':
+        if self.optimizer_type == 'smbo':
             # Create optimizer.
-            self.optimizer = SMAC_SMBO(self.evaluator, config_space, data, metric, self.seed)
+            self.optimizer = SMAC_SMBO(self.evaluator, config_space, data, self.metric, self.seed)
             self.optimizer.run()
-        elif self.optimizer_type == 'ts_smac':
+        elif self.optimizer_type == 'ts_smbo':
             # Create optimizer.
-            self.optimizer = TS_SMBO(self.evaluator, config_space, data, metric, self.seed)
+            self.optimizer = TS_SMBO(self.evaluator, config_space, data, self.metric, self.seed)
             self.optimizer.run()
         else:
             raise ValueError('UNSUPPORTED optimizer: %s' % self.optimizer)
         return self
 
-    def predict(self, X):
-        return NotImplementedError
+    def predict(self, X, **kwargs):
+        # For traditional ML task:
+        #   fit the optimized model on the whole training data and predict the input data's labels.
+        pred = self.evaluator.fit_predict(self.optimizer.incumbent, X)
+        return pred
 
     def score(self, X, y):
-        return NotImplementedError
+        pred_y = self.predict(X)
+        score = self.metric(pred_y, y)
+        return score
 
 
 class AutoMLClassifier(AutoML):
@@ -74,20 +80,14 @@ class AutoMLClassifier(AutoML):
                  ensemble_size,
                  include_models,
                  exclude_models,
-                 optimizer,
+                 optimizer_type,
                  random_seed=42):
         super().__init__(time_budget, each_run_budget, memory_limit, ensemble_size, include_models,
-                         exclude_models, optimizer, random_seed)
+                         exclude_models, optimizer_type, random_seed)
         self.evaluator = BaseEvaluator()
 
     def fit(self, data, **kwargs):
         return super().fit(data, **kwargs)
-
-    def predict(self, X, **kwargs):
-        # For traditional ML task:
-        #   fit the optimized model on the whole training data and predict the input data's labels.
-        pred = self.evaluator.fit_predict(self.optimizer.incumbent, X)
-        return pred
 
 
 class AutoIMGClassifier(AutoML):

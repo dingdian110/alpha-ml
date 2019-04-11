@@ -3,7 +3,7 @@ class BaseEstimator(object):
 
     def __init__(
             self,
-            optimizer='ts_smac',
+            optimizer='ts_smbo',
             time_budget=3600,
             each_run_budget=360,
             ensemble_size=10,
@@ -12,7 +12,7 @@ class BaseEstimator(object):
             exclude_models=None,
             tmp_dir=None,
             output_dir=None):
-        self.optimizer = optimizer
+        self.optimizer_type = optimizer
         self.time_budget = time_budget
         self.each_run_budget = each_run_budget
         self.ensemble_size = ensemble_size
@@ -32,7 +32,7 @@ class BaseEstimator(object):
             memory_limit=self.memory_limit,
             include_models=self.include_models,
             exclude_models=self.exclude_models,
-            optimizer=self.optimizer
+            optimizer_type=self.optimizer_type
         )
         return engine
 

@@ -36,8 +36,8 @@ def test_auto():
     # Classifier(exclude_models=['libsvm_svc']).fit(DataManager(X, y))
     # Classifier(include_models=['adaboost', 'gradient_boosting', 'random_forest'],
     # optimizer='ts_smac').fit(DataManager(X, y))
-    cls = Classifier(include_models=['adaboost', 'gradient_boosting', 'random_forest'], optimizer='smac').fit(DataManager(X, y))
-    print(cls.predict(X[:10]))
+    cls = Classifier(include_models=['adaboost', 'gradient_boosting', 'random_forest'], optimizer='ts_smbo').fit(DataManager(X, y))
+    print(cls.predict(X))
 
 
 if __name__ == "__main__":

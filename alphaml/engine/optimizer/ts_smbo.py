@@ -1,9 +1,9 @@
 import numpy as np
 from scipy.stats import norm
+from ConfigSpace.hyperparameters import CategoricalHyperparameter
 from litesmac.scenario.scenario import Scenario
 from litesmac.facade.smac_facade import SMAC
 from alphaml.engine.optimizer.base_optimizer import BaseOptimizer
-from alphaml.engine.evaluator.base import HPOEvaluator
 from alphaml.engine.components.models.classification import _classifiers
 
 
@@ -22,8 +22,8 @@ class TS_SMBO(BaseOptimizer):
         for estimator in self.estimator_arms:
             # Scenario object
             config_space = _classifiers[estimator].get_hyperparameter_search_space()
-            params_num = len(config_space.get_hyperparameters())
-            estimator_model = _classifiers[estimator](*[None]*params_num)
+            estimator_hp = CategoricalHyperparameter("estimator", [estimator], default_value=estimator)
+            config_space.add_hyperparameter(estimator_hp)
             scenario_dict = {
                 'abort_on_first_run_crash': False,
                 "run_obj": "quality",
@@ -31,9 +31,8 @@ class TS_SMBO(BaseOptimizer):
                 "deterministic": "true"
             }
 
-            # Create evaluator.
-            evaluator = HPOEvaluator(data, metric, estimator_model)
-            smac = SMAC(scenario=Scenario(scenario_dict), rng=np.random.RandomState(self.seed), tae_runner=evaluator)
+            smac = SMAC(scenario=Scenario(scenario_dict),
+                        rng=np.random.RandomState(self.seed), tae_runner=self.evaluator)
             self.smac_containers[estimator] = smac
             self.ts_params[estimator] = [0, 1]
             self.ts_cnts[estimator] = 0
@@ -63,11 +62,17 @@ class TS_SMBO(BaseOptimizer):
             self.ts_params[estimator][1] = 1./(self.ts_params[estimator][1] + 1)
 
         perfs = list()
+        incumbent, inc_val = None, np.inf
         for arm in self.estimator_arms:
             runhistory = self.smac_containers[arm].solver.runhistory
+            inc = self.smac_containers[arm].solver.incumbent
+            if runhistory.get_cost(inc) < inc_val:
+                incumbent, inc_val = inc, runhistory.get_cost(inc)
+
             configs = runhistory.get_all_configs()
             for config in configs:
                 perfs.append(runhistory.get_cost(config))
         print(len(perfs))
         print(perfs)
         print(min(perfs), max(perfs))
+        self.incumbent = incumbent
