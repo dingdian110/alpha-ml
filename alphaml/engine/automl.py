@@ -98,14 +98,18 @@ class AutoIMGClassifier(AutoML):
                  ensemble_size,
                  include_models,
                  exclude_models,
-                 optimizer,
+                 optimizer_type,
                  random_seed=42):
         super().__init__(time_budget, each_run_budget, memory_limit, ensemble_size, include_models,
-                         exclude_models, optimizer, random_seed)
+                         exclude_models, optimizer_type, random_seed)
 
         # TODO: evaluator for IMG CLS.
         from alphaml.engine.evaluator.dl_evaluator import BaseImgEvaluator
         self.evaluator = BaseImgEvaluator()
 
     def fit(self, data, **kwargs):
+        task_type=kwargs['task_type']
+        # TODO: convert into one-hot labels
+        if task_type in ['binary','multiclass']:
+            pass
         return super().fit(data, **kwargs)
