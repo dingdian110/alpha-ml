@@ -95,7 +95,7 @@ class ResNetClassifier(BaseImageClassificationModel):
         res_kernel_size = CategoricalHyperparameter('res_kernel_size', [3, 5], default_value=3)
         res_stage2_block = UniformIntegerHyperparameter('res_stage2_block', 1, 3, default_value=2)
         res_stage3_block = UniformIntegerHyperparameter('res_stage3_block', 1, 11, default_value=3)
-        res_stage4_block = UniformIntegerHyperparameter('res_stage4_block', 1, 47, default_value=5)
+        res_stage4_block = UniformIntegerHyperparameter('res_stage4_block', 1, 47, default_value=22)
         res_stage5_block = UniformIntegerHyperparameter('res_stage5_block', 1, 3, default_value=2)
 
         cs.add_hyperparameters([batch_size, keep_prob,
@@ -149,7 +149,7 @@ class ResNetClassifier(BaseImageClassificationModel):
         earlystop = EarlyStopping(monitor='val_acc', patience=8)
         model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['acc'])
         model.fit_generator(generator=train_gen,
-                            epochs=120,
+                            epochs=200,
                             validation_data=valid_gen,
                             callbacks=[checkpoint, earlystop])
         self.estimator = model

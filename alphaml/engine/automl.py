@@ -3,6 +3,7 @@ from alphaml.engine.components.data_manager import DataManager
 from alphaml.engine.evaluator.base import BaseEvaluator
 from alphaml.engine.optimizer.smac_smbo import SMAC_SMBO
 from alphaml.engine.optimizer.ts_smbo import TS_SMBO
+from alphaml.utils.label_util import to_categorical, map_label
 
 
 class AutoML(object):
@@ -106,10 +107,18 @@ class AutoIMGClassifier(AutoML):
         # TODO: evaluator for IMG CLS.
         from alphaml.engine.evaluator.dl_evaluator import BaseImgEvaluator
         self.evaluator = BaseImgEvaluator()
+        self.map_dict = None
+        self.rev_map_dict = None
 
-    def fit(self, data, **kwargs):
-        task_type=kwargs['task_type']
-        # TODO: convert into one-hot labels
-        if task_type in ['binary','multiclass']:
+    def fit(self, data: DataManager, **kwargs):
+        task_type = kwargs['task_type']
+        if task_type == 'multiclass':
+            data.train_y, self.map_dict, self.rev_map_dict = map_label(data.train_y)
+            data.train_y = to_categorical(data.train_y)
+            data.val_y, _, _ = map_label(data.val_y, self.map_dict)
+            data.val_y = to_categorical(data.val_y)
+
+        # TODO: support binary labels
+        elif task_type == 'binary':
             pass
         return super().fit(data, **kwargs)
