@@ -1,6 +1,9 @@
 # -*- encoding: utf-8 -*-
 import os
 import sys
+import json
+import logging.config
+from os import path, remove
 
 from alphaml.utils import dependencies
 from alphaml.__version__ import __version__
@@ -30,3 +33,16 @@ if sys.version_info < (3, 5):
         'Unsupported python version %s found. Auto-sklearn requires Python '
         '3.5 or higher.' % sys.version_info
     )
+
+
+# If applicable, delete the existing log file to generate a fresh log file during each execution
+if path.isfile("python_logging.log"):
+    remove("python_logging.log")
+
+with open("logging_configuration.json", 'r') as logging_configuration_file:
+    config_dict = json.load(logging_configuration_file)
+
+logging.config.dictConfig(config_dict)
+
+# Log that the logger was configured
+logger = logging.getLogger(__name__)

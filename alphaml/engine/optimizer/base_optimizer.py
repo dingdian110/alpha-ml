@@ -1,3 +1,4 @@
+import logging
 from alphaml.engine.evaluator.base import BaseEvaluator
 
 
@@ -11,6 +12,7 @@ class BaseOptimizer(object):
         self.config_space = config_space
         self.seed = seed
         self.incumbent = None
+        self.logger = logging.getLogger(__name__)
 
     def run(self):
         raise NotImplementedError
