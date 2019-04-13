@@ -30,10 +30,11 @@ def to_categorical(y, num_classes=None):
     return categorical
 
 
-def map_label(y, map_dict=None):
+def map_label(y, map_dict={}, if_binary=False):
     """Convert a class vector (all types) to a class vector (integers)
 
-    E.g. for use with to_categorical. ['a', 'b', 4, 7, 'a'] -> [0, 1, 2, 3, 0]
+    E.g. for use with to_categorical. ['a', 'b', 4, 7, 'a'] -> [0, 1, 2, 3, 0],
+        ['a', 'b', 'a', 'a'] -> [0, 1, 0, 0]
 
     # Arguments
         y: class vector to be converted
@@ -42,16 +43,15 @@ def map_label(y, map_dict=None):
     # Returns:
         A converted class vector and two dictionaries of mapping relations.
     """
-
+    assert isinstance(map_dict, dict)
     y = np.array(y)
-    input_shape = y.shape
-    if input_shape and input_shape[-1] == 1 and len(input_shape) > 1:
-        input_shape = tuple(input_shape[:-1])
     y = y.ravel()
-    if map_dict is None:
+    if not map_dict:
         if_validate = False
-        map_dict = {}
     else:
+        if if_binary and len(map_dict) != 2:
+            raise ValueError(
+                "Expected a dictionary of 2 elements in map_dict while received %d elements!" % len(map_dict))
         if_validate = True
     rev_map_dict = {}
     class_idx = 0
@@ -63,6 +63,24 @@ def map_label(y, map_dict=None):
             map_dict[label_element] = class_idx
             rev_map_dict[class_idx] = label_element
             class_idx += 1
+            if if_binary and class_idx > 1:
+                raise ValueError("Found more than 2 classes in label inputs!")
         int_y.append(map_dict[label_element])
     int_y = np.array(int_y, dtype='int')
     return int_y, map_dict, rev_map_dict
+
+def get_classnum(y):
+    """Get classnum from one-hot label inputs 'y'. Note that this function will not validate the label inputs
+
+    # Arguments
+        y: label inputs
+
+    # Returns:
+        The number of classes in 'y'
+    """
+    assert isinstance(y,np.ndarray)
+    inputshape=y.shape
+    if len(inputshape)==2:
+        return inputshape[-1]
+    else:
+        raise ValueError("Input labels should be a 2-dim one-hot vector!")

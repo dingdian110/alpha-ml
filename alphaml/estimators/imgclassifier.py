@@ -57,7 +57,7 @@ class ImageClassifier(BaseEstimator):
         self
 
         """
-        # Check the task type: {binary, multiclass}
+        # Check the task type: {binary, multiclass， multilabel-indicator}
         task_type = type_of_target(data.train_y)
         if task_type in ['multiclass-multioutput',
                          'continuous',
@@ -72,6 +72,13 @@ class ImageClassifier(BaseEstimator):
         task_type = 'img_' + task_type
         self.task_type = task_type
 
+        data.train_X=np.array(data.train_X)
+        data.train_y=np.array(data.train_y)
+        data.val_X=np.array(data.val_X)
+        data.val_y=np.array(data.val_y)
+        data.test_X=np.array(data.test_X)
+
+        # TODO: Implement more metric functions using Keras APIs
         super().fit(
             data,
             metric=metric,

@@ -3,7 +3,8 @@ from alphaml.engine.components.data_manager import DataManager
 from alphaml.engine.evaluator.base import BaseEvaluator
 from alphaml.engine.optimizer.smac_smbo import SMAC_SMBO
 from alphaml.engine.optimizer.ts_smbo import TS_SMBO
-from alphaml.utils.label_util import to_categorical, map_label
+from alphaml.utils.label_util import to_categorical, map_label, get_classnum
+import numpy as np
 
 
 class AutoML(object):
@@ -91,6 +92,9 @@ class AutoMLClassifier(AutoML):
         return super().fit(data, **kwargs)
 
 
+from alphaml.engine.evaluator.dl_evaluator import BaseImgEvaluator
+
+
 class AutoIMGClassifier(AutoML):
     def __init__(self,
                  time_budget,
@@ -105,20 +109,29 @@ class AutoIMGClassifier(AutoML):
                          exclude_models, optimizer_type, random_seed)
 
         # TODO: evaluator for IMG CLS.
-        from alphaml.engine.evaluator.dl_evaluator import BaseImgEvaluator
-        self.evaluator = BaseImgEvaluator()
+        self.evaluator = None
         self.map_dict = None
         self.rev_map_dict = None
 
     def fit(self, data: DataManager, **kwargs):
         task_type = kwargs['task_type']
-        if task_type == 'multiclass':
+        inputshape = data.train_X.shape[1:]
+        classnum = None
+        if task_type == 'img_multiclass':
             data.train_y, self.map_dict, self.rev_map_dict = map_label(data.train_y)
             data.train_y = to_categorical(data.train_y)
             data.val_y, _, _ = map_label(data.val_y, self.map_dict)
             data.val_y = to_categorical(data.val_y)
+            classnum = len(self.rev_map_dict)
 
-        # TODO: support binary labels
-        elif task_type == 'binary':
-            pass
+        elif task_type == 'img_binary':
+            data.train_y, self.map_dict, self.rev_map_dict = map_label(data.train_y, if_binary=True)
+            data.val_y, _, _ = map_label(data.val_y, self.map_dict, if_binary=True)
+            classnum = 1
+
+        elif task_type == 'img_multilabel-indicator':
+            classnum = get_classnum(data.train_y)
+
+        self.evaluator = BaseImgEvaluator(inputshape, classnum)
+
         return super().fit(data, **kwargs)

@@ -73,6 +73,10 @@ class BaseClassificationModel(BaseModel):
 
 
 class BaseImageClassificationModel(BaseClassificationModel):
+    def set_model_config(self, inputshape, classnum, *args, **kwargs):
+        self.inputshape = inputshape
+        self.classnum = classnum
+
     def fit(self, x_train, y_train, x_valid=None, y_valid=None, sample_weight=None):
         raise NotImplementedError()
 

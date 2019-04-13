@@ -3,13 +3,18 @@ from alphaml.engine.evaluator.base import BaseEvaluator, update_config
 
 
 class BaseImgEvaluator(BaseEvaluator):
+    def __init__(self, inputshape, classnum):
+        super().__init__()
+        self.inputshape = inputshape
+        self.classnum = classnum
+
     def __call__(self, config):
         params_num = len(config.get_dictionary().keys()) - 1
         classifier_type = config['estimator']
         estimator = _img_classifiers[classifier_type]()
         config = update_config(config)
         estimator.set_hyperparameters(config)
-
+        estimator.set_model_config(self.inputshape,self.classnum)
         # Fit the estimator on the training data.
         estimator.fit(self.data_manager.train_X, self.data_manager.train_y,
                       self.data_manager.val_X, self.data_manager.val_y)

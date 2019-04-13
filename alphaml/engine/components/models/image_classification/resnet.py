@@ -54,6 +54,8 @@ class ResNetClassifier(BaseImageClassificationModel):
         self.res_stage4_block = None
         self.res_stage5_block = None
         self.estimator = None
+        self.inputshape = None
+        self.classnum = None
 
     @staticmethod
     def get_properties(dataset_properties=None):
@@ -105,7 +107,7 @@ class ResNetClassifier(BaseImageClassificationModel):
         cs.add_conditions([sgd_lr_cond, sgd_decay_cond, sgd_momentum_cond, adam_lr_cond, adam_decay_cond])
         return cs
 
-    def fit(self, x_train, y_train, x_valid=None, y_valid=None, **karg):
+    def fit(self, x_train, y_train, x_valid=None, y_valid=None, **kwarg):
         timestr = time.strftime('%Y-%m-%d-%H:%M:%S', time.localtime(time.time()))
         if x_valid is None and y_valid is None:
             if_valid = False
@@ -128,11 +130,15 @@ class ResNetClassifier(BaseImageClassificationModel):
             valid_gen = None
             checkpoint_monitor = 'acc'
 
-        # TODO: Validate datasets
-        inputshape = (32, 32, 3)
-        classnum = 10
         # model
-        base_model = ResNet(input_shape=inputshape,
+        if self.classnum == 1:
+            final_activation = 'sigmoid'
+            loss = 'binary_crossentropy'
+        else:
+            final_activation = 'softmax'
+            loss = 'categorical_crossentropy'
+
+        base_model = ResNet(input_shape=self.inputshape,
                             res_kernel_size=self.res_kernel_size,
                             res_stage2_block=self.res_stage2_block,
                             res_stage3_block=self.res_stage3_block,
@@ -140,14 +146,14 @@ class ResNetClassifier(BaseImageClassificationModel):
                             res_stage5_block=self.res_stage5_block)
         y = base_model.output
         y = Dropout(1 - self.keep_prob)(y)
-        y = Dense(classnum, activation='softmax', name='Dense_final')(y)
+        y = Dense(self.classnum, activation=final_activation, name='Dense_final')(y)
         model = Model(inputs=base_model.input, outputs=y)
         checkpoint = ModelCheckpoint(filepath='model_%s.hdf5' % timestr,
                                      monitor=checkpoint_monitor,
                                      save_best_only=True,
                                      period=1)
         earlystop = EarlyStopping(monitor='val_acc', patience=8)
-        model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['acc'])
+        model.compile(optimizer=optimizer, loss=loss, metrics=['acc'])
         model.fit_generator(generator=train_gen,
                             epochs=200,
                             validation_data=valid_gen,
@@ -271,7 +277,7 @@ def conv_block(input_tensor, kernel_size, filters,
     return x
 
 
-def ResNet(input_shape, **args):
+def ResNet(input_shape, **kwargs):
     """Instantiates the ResNet architecture.
 
     # Arguments
@@ -294,7 +300,7 @@ def ResNet(input_shape, **args):
         stage5_block: [1,4]
     """
 
-    args = {k: args[k] for k in args if args[k]}  # Remove None value in args
+    args = {k: kwargs[k] for k in kwargs if kwargs[k]}  # Remove None value in args
 
     assert isinstance(args, dict)
     kernel_size = args['res_kernel_size']
