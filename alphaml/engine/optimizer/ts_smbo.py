@@ -67,7 +67,7 @@ class TS_SMBO(BaseOptimizer):
         for arm in self.estimator_arms:
             runhistory = self.smac_containers[arm].solver.runhistory
             inc = self.smac_containers[arm].solver.incumbent
-            if runhistory.get_cost(inc) < inc_val:
+            if inc is not None and runhistory.get_cost(inc) < inc_val:
                 incumbent, inc_val = inc, runhistory.get_cost(inc)
 
             configs = runhistory.get_all_configs()

@@ -4,6 +4,8 @@ from alphaml.engine.components.models.classification import _classifiers
 def update_config(config):
     config_dict = {}
     for param in config:
+        if param == 'estimator':
+            continue
         if param.find(":") != -1:
             value = config[param]
             new_name = param.split(':')[-1]

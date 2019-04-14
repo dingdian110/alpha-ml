@@ -92,9 +92,6 @@ class AutoMLClassifier(AutoML):
         return super().fit(data, **kwargs)
 
 
-from alphaml.engine.evaluator.dl_evaluator import BaseImgEvaluator
-
-
 class AutoIMGClassifier(AutoML):
     def __init__(self,
                  time_budget,
@@ -114,6 +111,7 @@ class AutoIMGClassifier(AutoML):
         self.rev_map_dict = None
 
     def fit(self, data: DataManager, **kwargs):
+        from alphaml.engine.evaluator.dl_evaluator import BaseImgEvaluator
         task_type = kwargs['task_type']
         inputshape = data.train_X.shape[1:]
         classnum = None

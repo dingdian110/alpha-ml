@@ -46,14 +46,14 @@ def test_cash_module():
     from alphaml.estimators.classifier import Classifier
     from alphaml.datasets.cls_dataset.dataset_loader import load_data
 
-    X, y, _ = load_data('dermatology')
+    X, y, _ = load_data('digits')
     print(X.shape, y.shape)
     # Classifier(exclude_models=['libsvm_svc']).fit(DataManager(X, y))
     # Classifier(include_models=['adaboost', 'gradient_boosting', 'random_forest'],
     # optimizer='ts_smac').fit(DataManager(X, y))
-    cls = Classifier(include_models=['adaboost', 'gradient_boosting', 'random_forest'],
-                     optimizer='smbo'
-                     ).fit(DataManager(X, y), metric='accuracy', runcount=10)
+    cls = Classifier(include_models=['adaboost', 'gradient_boosting', 'random_forest', 'gaussian_nb', 'k_nearest_neighbors'],
+                     optimizer='ts_smbo'
+                     ).fit(DataManager(X, y), metric='accuracy', runcount=5)
     print(cls.predict(X))
 
 
