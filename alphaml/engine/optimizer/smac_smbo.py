@@ -27,11 +27,12 @@ class SMAC_SMBO(BaseOptimizer):
         self.incumbent = self.smac.solver.incumbent
         # Fetch the results.
         configs = self.runhistory.get_all_configs()
-        perfs = dict()
+        perfs = list()
         for config in configs:
-            perfs[config] = self.runhistory.get_cost(config)
-        # print(perfs.values())
-        # print(min(perfs.values()))
-        print('Best perf found: %f' % perfs[self.incumbent])
-        # print(self.incumbent in perfs)
-        return self.runhistory, self.trajectory
+            perfs.append(self.runhistory.get_cost(config))
+
+        flag = 'SMAC smbo ==> '
+        self.logger.info(flag + 'the size of evaluations: %d' % len(perfs))
+        if len(perfs) > 0:
+            self.logger.info(flag + 'The best performance found: %f' % min(perfs))
+            self.logger.info(flag + 'The best HP found: %s' % self.incumbent)

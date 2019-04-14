@@ -48,12 +48,13 @@ class TS_SMBO(BaseOptimizer):
                 sample = norm.rvs(loc=self.ts_params[estimator][0], scale=self.ts_params[estimator][1])
                 samples.append(sample)
             best_arm = self.estimator_arms[np.argmax(samples)]
+            self.logger.info('Choosing to optimize %s arm' % best_arm)
             self.smac_containers[best_arm].iterate()
             runhistory = self.smac_containers[best_arm].solver.runhistory
 
             # Observe the reward.
             reward = 1 - runhistory.get_cost(runhistory.get_all_configs()[-1])
-            self.logger.debug('The chosen arm is %s and its reward is %f' % (best_arm, reward))
+            self.logger.info('The chosen arm is %s and its reward is %f' % (best_arm, reward))
             incubent_values.append(reward)
             self.ts_rewards[estimator].append(reward)
             self.ts_cnts[estimator] += 1
@@ -75,11 +76,14 @@ class TS_SMBO(BaseOptimizer):
             for config in configs:
                 perfs.append(runhistory.get_cost(config))
         # Print the parameters in Thompson sampling.
-        self.logger.debug('ts params: %s' % self.ts_params)
-        self.logger.debug('ts counts: %s' % self.ts_cnts)
-        self.logger.debug('ts rewards: %s' % self.ts_rewards)
+        self.logger.info('ts params: %s' % self.ts_params)
+        self.logger.info('ts counts: %s' % self.ts_cnts)
+        self.logger.info('ts rewards: %s' % self.ts_rewards)
 
         # Print the tuning result.
-        self.logger.debug('The size of evaluations: %d' % len(perfs))
-        self.logger('The best performance found: %f' % min(perfs))
+        flag = 'TS smbo ==> '
+        self.logger.info(flag + 'the size of evaluations: %d' % len(perfs))
+        if len(perfs) > 0:
+            self.logger.info(flag + 'The best performance found: %f' % min(perfs))
+            self.logger.info(flag + 'The best HP found: %s' % incumbent)
         self.incumbent = incumbent
