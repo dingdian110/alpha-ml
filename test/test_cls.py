@@ -16,7 +16,8 @@ def test_cash_module():
     from alphaml.estimators.classifier import Classifier
     from alphaml.datasets.cls_dataset.dataset_loader import load_data
 
-    X, y, _ = load_data('dermatology')
+    X, y, _ = load_data('connect_4')
+    print(min(y), max(y))
     print(X.shape, y.shape)
     # Classifier(exclude_models=['libsvm_svc']).fit(DataManager(X, y))
     # Classifier(include_models=['adaboost', 'gradient_boosting', 'random_forest'],
