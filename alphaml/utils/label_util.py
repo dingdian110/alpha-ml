@@ -47,9 +47,6 @@ def map_label(y, map_dict={}, if_binary=False):
     assert isinstance(map_dict, dict)
     y = np.array(y)
     y = y.ravel()
-    print(y.size)
-    if len(y.shape) == 0:
-        return None, None, None
     if not map_dict:
         if_validate = False
     else:
