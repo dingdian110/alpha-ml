@@ -25,9 +25,3 @@ examples/img/*
 
 # logs from SMAC3
 smac3*/
-
-# tmp dataset directory.
-data/
-
-# test directory
-test/
