@@ -122,11 +122,14 @@ class AutoIMGClassifier(AutoML):
             data.train_y = to_categorical(data.train_y)
             data.val_y, _, _ = map_label(data.val_y, self.map_dict)
             data.val_y = to_categorical(data.val_y)
+            data.test_y, _, _ = map_label(data.test_y, self.map_dict)
+            data.test_y = to_categorical(data.test_y)
             classnum = len(self.rev_map_dict)
 
         elif task_type == 'img_binary':
             data.train_y, self.map_dict, self.rev_map_dict = map_label(data.train_y, if_binary=True)
             data.val_y, _, _ = map_label(data.val_y, self.map_dict, if_binary=True)
+            data.test_y, _, _ = map_label(data.test_y, self.map_dict, if_binary=True)
             classnum = 1
 
         elif task_type == 'img_multilabel-indicator':

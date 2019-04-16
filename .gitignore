@@ -28,3 +28,6 @@ smac3*/
 
 # tmp dataset directory.
 data/
+
+# test directory
+test/

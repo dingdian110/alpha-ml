@@ -72,11 +72,12 @@ class ImageClassifier(BaseEstimator):
         task_type = 'img_' + task_type
         self.task_type = task_type
 
-        data.train_X=np.array(data.train_X)
-        data.train_y=np.array(data.train_y)
-        data.val_X=np.array(data.val_X)
-        data.val_y=np.array(data.val_y)
-        data.test_X=np.array(data.test_X)
+        data.train_X = np.array(data.train_X)
+        data.train_y = np.array(data.train_y)
+        data.val_X = np.array(data.val_X)
+        data.val_y = np.array(data.val_y)
+        data.test_X = np.array(data.test_X)
+        data.test_y = np.array(data.test_y)
 
         # TODO: Implement more metric functions using Keras APIs
         super().fit(
