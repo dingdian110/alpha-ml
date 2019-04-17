@@ -1,7 +1,3 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import numpy as np
 from keras import layers
 from keras import Model
@@ -31,6 +27,8 @@ class ResNetClassifier(BaseImageClassificationModel):
         self.estimator = None
         self.inputshape = None
         self.classnum = None
+        self.min_size=197
+        self.default_size=224
 
     @staticmethod
     def get_properties(dataset_properties=None):
@@ -197,17 +195,16 @@ def ResNet(input_shape, **kwargs):
         A Keras model instance.
 
     # ResNet configuration space:
-        kernel_size: 3,5,7
+        kernel_size: 3,5
         stage2_block: [1,3]
         stage3_block: [1,11]
         stage4_block: [1,47]
         stage5_block: [1,4]
     """
 
-    args = {k: kwargs[k] for k in kwargs if kwargs[k]}  # Remove None value in args
+    kwargs = {k: kwargs[k] for k in kwargs if kwargs[k]}  # Remove None value in args
 
-    assert isinstance(args, dict)
-    kernel_size = args['res_kernel_size']
+    kernel_size = kwargs['res_kernel_size']
     stages = 4
 
     img_input = layers.Input(shape=input_shape)
@@ -231,7 +228,7 @@ def ResNet(input_shape, **kwargs):
     # stage 2-5
     for stage in range(2, stages + 2):
         x = conv_block(x, kernel_size, [filters, filters, filters * 4], stage=stage, block='_0_', strides=(1, 1))
-        for i in range(args['res_stage' + str(stage) + '_block']):
+        for i in range(kwargs['res_stage' + str(stage) + '_block']):
             x = identity_block(x, 3, [filters, filters, filters * 4], stage=stage, block="_" + str(i + 1) + "_")
         filters *= 2
 

@@ -3,6 +3,7 @@ from __future__ import division
 from __future__ import print_function
 
 import time
+import warnings
 from keras import Model
 from keras import layers
 from keras.optimizers import SGD, Adam
@@ -16,6 +17,8 @@ from alphaml.engine.components.data_preprocessing.image_preprocess import prepro
 class BaseImageClassificationModel(BaseClassificationModel):
     def __init__(self):
         self.base_model = None
+        self.min_size = None
+        self.default_size = None
         super().__init__()
 
     def set_model_config(self, inputshape, classnum, *args, **kwargs):
@@ -51,11 +54,12 @@ class BaseImageClassificationModel(BaseClassificationModel):
         cs.add_conditions([sgd_lr_cond, sgd_decay_cond, sgd_momentum_cond, adam_lr_cond, adam_decay_cond])
 
     def fit(self, x_train, y_train, x_valid=None, y_valid=None, sample_weight=None):
-        timestr = time.strftime('%Y-%m-%d-%H:%M:%S', time.localtime(time.time()))
-        if x_valid is None and y_valid is None:
-            if_valid = False
-        else:
-            if_valid = True
+        if self.base_model is None:
+            raise AttributeError("Base model is not defined!")
+
+        if self.inputshape[0] < self.min_size or self.inputshape[1] < self.min_size:
+            warnings.warn("The minimum inputshape of the model is " + str((self.min_size, self.min_size)) +
+                          ", while " + str(self.inputshape[0:2]) + " given.")
 
         if self.optimizer == 'SGD':
             optimizer = SGD(self.sgd_lr, self.sgd_momentum, self.sgd_decay)
@@ -63,6 +67,12 @@ class BaseImageClassificationModel(BaseClassificationModel):
             optimizer = Adam(self.adam_lr, decay=self.adam_decay)
         else:
             raise ValueError('No optimizer named %s defined' % str(self.optimizer))
+
+        timestr = time.strftime('%Y-%m-%d-%H:%M:%S', time.localtime(time.time()))
+        if x_valid is None and y_valid is None:
+            if_valid = False
+        else:
+            if_valid = True
 
         trainpregen, validpregen = preprocess()
         train_gen = trainpregen.flow(x_train, y_train, batch_size=self.batch_size)
@@ -81,12 +91,12 @@ class BaseImageClassificationModel(BaseClassificationModel):
             final_activation = 'softmax'
             loss = 'categorical_crossentropy'
 
-        if self.base_model is None:
-            raise AttributeError("Base model is not defined!")
         y = self.base_model.output
         y = layers.Dropout(1 - self.keep_prob)(y)
         y = layers.Dense(self.classnum, activation=final_activation, name='Dense_final')(y)
         model = Model(inputs=self.base_model.input, outputs=y)
+
+        # TODO: load models after training
         checkpoint = ModelCheckpoint(filepath='model_%s.hdf5' % timestr,
                                      monitor=checkpoint_monitor,
                                      save_best_only=True,
@@ -100,3 +110,6 @@ class BaseImageClassificationModel(BaseClassificationModel):
         self.estimator = model
         self.best_result = checkpoint.best
         return self
+
+    def fit_from_directory(self, dirname, sample_weight=None):
+        pass

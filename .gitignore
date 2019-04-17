@@ -25,3 +25,5 @@ examples/img/*
 
 # logs from SMAC3
 smac3*/
+
+data/*
