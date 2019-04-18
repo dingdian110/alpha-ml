@@ -16,18 +16,22 @@ def test_cash_module():
     from alphaml.estimators.classifier import Classifier
     from alphaml.datasets.cls_dataset.dataset_loader import load_data
 
-    X, y, _ = load_data('connect_4')
-    print(min(y), max(y))
-    print(X.shape, y.shape)
-    # Classifier(exclude_models=['libsvm_svc']).fit(DataManager(X, y))
-    # Classifier(include_models=['adaboost', 'gradient_boosting', 'random_forest'],
-    # optimizer='ts_smac').fit(DataManager(X, y))
+    rep_num = 5
+    run_count = 100
+    datasets = ['dermatology']
+    for dataset in datasets:
+        for run_id in range(rep_num):
+            for optimizer in ['smbo', 'ts_smbo']:
+                task_format = dataset + '_%d'
+                X, y, _ = load_data(dataset)
+                print(min(y), max(y))
+                print(X.shape, y.shape)
 
-    cls = Classifier(
-        include_models=['adaboost', 'gradient_boosting', 'random_forest', 'gaussian_nb', 'k_nearest_neighbors'],
-        optimizer='ts_smbo'
-        ).fit(DataManager(X, y), metric='accuracy', runcount=100)
-    print(cls.predict(X))
+                cls = Classifier(
+                    include_models=['gaussian_nb', 'adaboost', 'random_forest', 'k_nearest_neighbors', 'gradient_boosting'],
+                    optimizer=optimizer
+                    ).fit(DataManager(X, y), metric='accuracy', runcount=run_count, task_name=task_format % run_id)
+                print(cls.predict(X))
 
 
 if __name__ == "__main__":

@@ -1,3 +1,5 @@
+import time
+import pickle
 import numpy as np
 from scipy.stats import norm
 from ConfigSpace.hyperparameters import CategoricalHyperparameter
@@ -13,8 +15,11 @@ class TS_SMBO(BaseOptimizer):
 
         self.iter_num = int(1e10) if ('runcount' not in kwargs or kwargs['runcount'] is None) else kwargs['runcount']
         self.estimator_arms = self.config_space.get_hyperparameter('estimator').choices
-        self.iter_num -= len(self.estimator_arms)
+        self.result_file = kwargs['task_name'] if 'task_name' in kwargs else 'default'
+        self.result_file += '_ts_smac.data'
 
+        self.update_mode = 1
+        self.gap_period = 5
         self.smac_containers = dict()
         self.ts_params = dict()
         self.ts_cnts = dict()
@@ -40,7 +45,11 @@ class TS_SMBO(BaseOptimizer):
             self.ts_rewards[estimator] = list()
 
     def run(self):
-        incubent_values = list()
+        configs_list = list()
+        config_values = list()
+        time_list = list()
+        iter_num = 0
+        start_time = time.time()
 
         for _ in range(self.iter_num):
             samples = list()
@@ -53,37 +62,63 @@ class TS_SMBO(BaseOptimizer):
             runhistory = self.smac_containers[best_arm].solver.runhistory
 
             # Observe the reward.
-            reward = 1 - runhistory.get_cost(runhistory.get_all_configs()[-1])
-            self.logger.info('The chosen arm is %s and its reward is %f' % (best_arm, reward))
-            incubent_values.append(reward)
-            self.ts_rewards[estimator].append(reward)
-            self.ts_cnts[estimator] += 1
+            runkeys = list(runhistory.data.keys())
+            for key in runkeys[self.ts_cnts[best_arm]:]:
+                reward = 1 - runhistory.data[key][0]
+                self.ts_rewards[best_arm].append(reward)
+                configs_list.append(runhistory.ids_config[key[0]])
+                config_values.append(reward)
+
+            # Record the time cost.
+            time_point = time.time() - start_time
+            tmp_list = list()
+            tmp_list.append(time_point)
+            for key in reversed(runkeys[self.ts_cnts[best_arm]+1:]):
+                time_point -= runhistory.data[key][1]
+                tmp_list.append(time_point)
+            time_list.extend(reversed(tmp_list))
+
+            self.logger.info('Iteration %d, the best reward found is %f' % (iter_num, max(config_values)))
+            iter_num += (len(runkeys) - self.ts_cnts[best_arm])
+            self.ts_cnts[best_arm] = len(runhistory.data.keys())
 
             # Update the posterior estimation.
             # TODO: rethinking.
-            self.ts_params[estimator][0] = np.mean(self.ts_rewards[estimator])
-            self.ts_params[estimator][1] = 1./(self.ts_params[estimator][1] + 1)
+            if self.update_mode == 0:
+                self.ts_params[best_arm][0] = np.mean(self.ts_rewards[best_arm])
+                self.ts_params[best_arm][1] = 1./(self.ts_params[best_arm][1] + 1)
+            elif self.update_mode == 1:
+                rewards = sorted(self.ts_rewards[best_arm], reverse=True)[:self.gap_period]
+                self.ts_params[best_arm][0] = np.mean(rewards)
+                # Variance methods: 1) std of rewards, 2) 1/n
+                # self.ts_params[best_arm][1] = np.std(rewards)
+                self.ts_params[best_arm][1] = 1. / (self.ts_cnts[best_arm] + 1)
+            else:
+                raise ValueError('Invalid update mode: %d' % self.update_mode)
+            if iter_num >= self.iter_num:
+                break
 
-        perfs = list()
-        incumbent, inc_val = None, np.inf
-        for arm in self.estimator_arms:
-            runhistory = self.smac_containers[arm].solver.runhistory
-            inc = self.smac_containers[arm].solver.incumbent
-            if inc is not None and runhistory.get_cost(inc) < inc_val:
-                incumbent, inc_val = inc, runhistory.get_cost(inc)
-
-            configs = runhistory.get_all_configs()
-            for config in configs:
-                perfs.append(runhistory.get_cost(config))
         # Print the parameters in Thompson sampling.
         self.logger.info('ts params: %s' % self.ts_params)
         self.logger.info('ts counts: %s' % self.ts_cnts)
         self.logger.info('ts rewards: %s' % self.ts_rewards)
 
         # Print the tuning result.
-        flag = 'TS smbo ==> '
-        self.logger.info(flag + 'the size of evaluations: %d' % len(perfs))
-        if len(perfs) > 0:
-            self.logger.info(flag + 'The best performance found: %f' % min(perfs))
-            self.logger.info(flag + 'The best HP found: %s' % incumbent)
-        self.incumbent = incumbent
+        self.logger.info('TS smbo ==> the size of evaluations: %d' % len(configs_list))
+        if len(configs_list) > 0:
+            id = np.argmax(config_values)
+            self.logger.info('TS smbo ==> The time points: %s' % time_list)
+            self.logger.info('TS smbo ==> The best performance found: %f' % config_values[id])
+            self.logger.info('TS smbo ==> The best HP found: %s' % configs_list[id])
+            self.incumbent = configs_list[id]
+
+            # Save the experimental results.
+            data = dict()
+            data['ts_params'] = self.ts_params
+            data['ts_cnts'] = self.ts_cnts
+            data['ts_rewards'] = self.ts_rewards
+            data['configs'] = configs_list
+            data['perfs'] = config_values
+            data['time_cost'] = time_list
+            with open('data/' + self.result_file, 'wb') as f:
+                pickle.dump(data, f)
