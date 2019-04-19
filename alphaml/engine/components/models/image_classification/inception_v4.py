@@ -1,7 +1,7 @@
 from keras import layers, backend
 from keras import Model
 from ConfigSpace import ConfigurationSpace
-from ConfigSpace import UniformIntegerHyperparameter, CategoricalHyperparameter, UniformFloatHyperparameter
+from ConfigSpace import UniformIntegerHyperparameter
 
 from alphaml.engine.components.models.base_dl_model import BaseImageClassificationModel
 from alphaml.utils.constants import *
@@ -9,9 +9,24 @@ from alphaml.utils.constants import *
 
 class Inceptionv4Classifier(BaseImageClassificationModel):
     def __init__(self, *args, **kwargs):
+        self.batch_size = None
+        self.keep_prob = None
+        self.optimizer = None
+        self.sgd_lr = None
+        self.sgd_decay = None
+        self.sgd_momentum = None
+        self.adam_lr = None
+        self.adam_decay = None
+        self.inceptionv4_block_a = None
+        self.inceptionv4_block_b = None
+        self.inceptionv4_block_c = None
+        self.estimator = None
+        self.inputshape = None
+        self.classnum = None
         self.default_size = 299
-        self.min_size = 299
-        pass
+        self.work_size = 299
+        self.min_size = 128
+        self.model_name = 'InceptionV4'
 
     @staticmethod
     def get_properties():
@@ -26,10 +41,21 @@ class Inceptionv4Classifier(BaseImageClassificationModel):
 
     @staticmethod
     def get_hyperparameter_search_space():
-        raise NotImplementedError()
+        cs = ConfigurationSpace()
+        BaseImageClassificationModel.set_training_space(cs)
+        BaseImageClassificationModel.set_optimizer_space(cs)
+        inceptionv4_block_a = UniformIntegerHyperparameter('inceptionv4_block_a', 3, 5, default_value=4)
+        inceptionv4_block_b = UniformIntegerHyperparameter('inceptionv4_block_b', 6, 8, default_value=7)
+        inceptionv4_block_c = UniformIntegerHyperparameter('inceptionv4_block_c', 2, 4, default_value=3)
+        cs.add_hyperparameters([inceptionv4_block_a, inceptionv4_block_b, inceptionv4_block_c])
+        return cs
 
     def fit(self, x_train, y_train, x_valid=None, y_valid=None, **kwarg):
-        raise NotImplementedError()
+        self.validate_inputshape()
+        self.base_model = Inception_v4(self.inputshape,
+                                       inceptionv4_block_a=self.inceptionv4_block_a,
+                                       inceptionv4_block_b=self.inceptionv4_block_b,
+                                       inceptionv4_block_c=self.inceptionv4_block_c)
         super().fit(x_train, y_train, x_valid, y_valid, **kwarg)
 
 
@@ -192,7 +218,7 @@ def reduction_A(x):
         channel_axis = -1
     nameprefix = 'reduction_a'
     branch_a = layers.MaxPooling2D(pool_size=(3, 3), strides=(2, 2), padding='valid',
-                                   name=nameprefix + "branch1_maxpool")(x)
+                                   name=nameprefix + "_branch1_maxpool")(x)
 
     branch_b = conv2d_bn(x, 384, 3, 3, strides=(2, 2), padding='valid', name=nameprefix + "_branch2_conv1")
 
@@ -228,9 +254,6 @@ def reduction_B(x):
 def Inception_v4(input_shape, **kwargs):
     kwargs = {k: kwargs[k] for k in kwargs if kwargs[k]}  # Remove None value in args
 
-    kernel_size = kwargs['res_kernel_size']
-
-    blocks = [kwargs['inceptionv4_block_a'], kwargs['inceptionv4_block_b'], kwargs['inceptionv4_block_c']]
     img_input = layers.Input(shape=input_shape)
 
     x = stem(img_input)
@@ -245,7 +268,11 @@ def Inception_v4(input_shape, **kwargs):
 
     x = reduction_B(x)
 
+    for i in range(1, kwargs['inceptionv4_block_c'] + 1):
+        x = inception_C(x, i)
+
     x = layers.GlobalAveragePooling2D()(x)
     # create model
     model = Model(inputs=img_input, outputs=x, name='InceptionV4')
+    model.summary()
     return model

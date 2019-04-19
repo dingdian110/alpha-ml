@@ -26,8 +26,10 @@ class VGGNetClassifier(BaseImageClassificationModel):
         self.estimator = None
         self.inputshape = None
         self.classnum = None
-        self.min_size = 48
+        self.min_size = 32
+        self.work_size = 48
         self.default_size = 224
+        self.model_name = 'VGGNet'
 
     @staticmethod
     def get_properties(dataset_properties=None):
@@ -56,6 +58,7 @@ class VGGNetClassifier(BaseImageClassificationModel):
         return cs
 
     def fit(self, x_train, y_train, x_valid=None, y_valid=None, **kwarg):
+        self.validate_inputshape()
         self.base_model = VGGNet(input_shape=self.inputshape,
                                  vgg_kernel_size=self.vgg_kernel_size,
                                  vgg_keep_prob=self.keep_prob,

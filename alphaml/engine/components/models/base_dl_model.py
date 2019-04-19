@@ -17,6 +17,8 @@ from alphaml.engine.components.data_preprocessing.image_preprocess import prepro
 class BaseImageClassificationModel(BaseClassificationModel):
     def __init__(self):
         self.base_model = None
+        self.model_name = None
+        self.work_size = None
         self.min_size = None
         self.default_size = None
         super().__init__()
@@ -53,16 +55,23 @@ class BaseImageClassificationModel(BaseClassificationModel):
         cs.add_hyperparameters([optimizer, sgd_lr, sgd_decay, sgd_momentum, adam_lr, adam_decay])
         cs.add_conditions([sgd_lr_cond, sgd_decay_cond, sgd_momentum_cond, adam_lr_cond, adam_decay_cond])
 
-    def fit(self, x_train, y_train, x_valid=None, y_valid=None, sample_weight=None):
+    def validate_inputshape(self):
+        if self.inputshape[0] < self.min_size or self.inputshape[1] < self.min_size:
+            raise ValueError(
+                "The minimum inputshape of " + self.model_name + " is " + str((self.min_size, self.min_size)) +
+                ", while " + str(self.inputshape[0:2]) + " given.")
+
+        if self.inputshape[0] < self.work_size or self.inputshape[1] < self.work_size:
+            warnings.warn(
+                "The minimum recommended inputshape of the model is " + str((self.work_size, self.work_size)) +
+                ", while " + str(self.inputshape[0:2]) + " given.")
+
+    def fit(self, x_train, y_train, x_valid=None, y_valid=None, **kwargs):
         if self.base_model is None:
             raise AttributeError("Base model is not defined!")
 
-        if self.inputshape[0] < self.min_size or self.inputshape[1] < self.min_size:
-            warnings.warn("The minimum inputshape of the model is " + str((self.min_size, self.min_size)) +
-                          ", while " + str(self.inputshape[0:2]) + " given.")
-
         if self.optimizer == 'SGD':
-            optimizer = SGD(self.sgd_lr, self.sgd_momentum, self.sgd_decay)
+            optimizer = SGD(self.sgd_lr, self.sgd_momentum, self.sgd_decay, nesterov=True)
         elif self.optimizer == 'Adam':
             optimizer = Adam(self.adam_lr, decay=self.adam_decay)
         else:

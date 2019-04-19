@@ -27,8 +27,10 @@ class ResNetClassifier(BaseImageClassificationModel):
         self.estimator = None
         self.inputshape = None
         self.classnum = None
-        self.min_size=197
-        self.default_size=224
+        self.min_size = 32
+        self.work_size = 197
+        self.default_size = 224
+        self.model_name = 'ResNet'
 
     @staticmethod
     def get_properties(dataset_properties=None):
@@ -49,13 +51,14 @@ class ResNetClassifier(BaseImageClassificationModel):
         res_kernel_size = CategoricalHyperparameter('res_kernel_size', [3, 5], default_value=3)
         res_stage2_block = UniformIntegerHyperparameter('res_stage2_block', 1, 3, default_value=2)
         res_stage3_block = UniformIntegerHyperparameter('res_stage3_block', 1, 11, default_value=3)
-        res_stage4_block = UniformIntegerHyperparameter('res_stage4_block', 1, 47, default_value=22)
+        res_stage4_block = UniformIntegerHyperparameter('res_stage4_block', 1, 47, default_value=5)
         res_stage5_block = UniformIntegerHyperparameter('res_stage5_block', 1, 3, default_value=2)
         cs.add_hyperparameters(
             [res_kernel_size, res_stage2_block, res_stage3_block, res_stage4_block, res_stage5_block])
         return cs
 
     def fit(self, x_train, y_train, x_valid=None, y_valid=None, **kwarg):
+        self.validate_inputshape()
         self.base_model = ResNet(input_shape=self.inputshape,
                                  res_kernel_size=self.res_kernel_size,
                                  res_stage2_block=self.res_stage2_block,
@@ -227,7 +230,10 @@ def ResNet(input_shape, **kwargs):
 
     # stage 2-5
     for stage in range(2, stages + 2):
-        x = conv_block(x, kernel_size, [filters, filters, filters * 4], stage=stage, block='_0_', strides=(1, 1))
+        if stage == 2:
+            x = conv_block(x, kernel_size, [filters, filters, filters * 4], stage=stage, block='_0_', strides=(1, 1))
+        else:
+            x = conv_block(x, kernel_size, [filters, filters, filters * 4], stage=stage, block='_0_')
         for i in range(kwargs['res_stage' + str(stage) + '_block']):
             x = identity_block(x, 3, [filters, filters, filters * 4], stage=stage, block="_" + str(i + 1) + "_")
         filters *= 2
