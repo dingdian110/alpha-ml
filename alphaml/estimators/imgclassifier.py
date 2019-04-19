@@ -11,9 +11,7 @@ class ImageClassifier(BaseEstimator):
 
     def fit(self,
             data,
-            metric=accuracy_score,
-            feat_type=None,
-            dataset_name=None):
+            **kwargs):
         """Fit the classifier to given training set (X, y).
 
         Fit both optimizes the machine learning models and builds an ensemble
@@ -70,22 +68,17 @@ class ImageClassifier(BaseEstimator):
 
         # Image classification task.
         task_type = 'img_' + task_type
-        self.task_type = task_type
+        kwargs['task_type'] = task_type
 
-        data.train_X=np.array(data.train_X)
-        data.train_y=np.array(data.train_y)
-        data.val_X=np.array(data.val_X)
-        data.val_y=np.array(data.val_y)
-        data.test_X=np.array(data.test_X)
+        data.train_X = np.array(data.train_X)
+        data.train_y = np.array(data.train_y)
+        data.val_X = np.array(data.val_X)
+        data.val_y = np.array(data.val_y)
+        data.test_X = np.array(data.test_X)
+        data.test_y = np.array(data.test_y)
 
         # TODO: Implement more metric functions using Keras APIs
-        super().fit(
-            data,
-            metric=metric,
-            feat_type=feat_type,
-            dataset_name=dataset_name,
-            task_type=self.task_type
-        )
+        super().fit(data, **kwargs)
 
         return self
 
