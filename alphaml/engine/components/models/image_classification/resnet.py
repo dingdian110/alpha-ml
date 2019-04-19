@@ -67,18 +67,6 @@ class ResNetClassifier(BaseImageClassificationModel):
                                  res_stage5_block=self.res_stage5_block)
         super().fit(x_train, y_train, x_valid, y_valid, **kwarg)
 
-    def predict(self, x):
-        if self.estimator is None:
-            raise TypeError("Unsupported estimator type 'NoneType'!")
-        outputs = self.estimator.predict(x, batch_size=32)
-        predictions = np.argmax(outputs, axis=-1)
-        return predictions
-
-    def predict_proba(self, x):
-        if self.estimator is None:
-            raise TypeError("Unsupported estimator type 'NoneType'!")
-        return self.estimator.predict(x, batch_size=32)
-
 
 def identity_block(input_tensor, kernel_size, filters, stage, block):
     """The identity block is the block that has no conv layer at shortcut.

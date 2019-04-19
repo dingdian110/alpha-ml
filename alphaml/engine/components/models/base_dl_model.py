@@ -122,3 +122,8 @@ class BaseImageClassificationModel(BaseClassificationModel):
 
     def fit_from_directory(self, dirname, sample_weight=None):
         pass
+
+    def predict(self, X):
+        if self.estimator is None:
+            raise TypeError("Unsupported estimator type 'NoneType'!")
+        return self.estimator.predict(X, batch_size=32)

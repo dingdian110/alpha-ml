@@ -136,3 +136,11 @@ class AutoIMGClassifier(AutoML):
         self.evaluator = BaseImgEvaluator(inputshape, classnum)
 
         return super().fit(data, **kwargs)
+
+    def predict(self, X, **kwargs):
+        y_pred = super().predict(X, **kwargs)
+        if self.rev_map_dict is not None:
+            y_pred = np.argmax(y_pred, axis=-1)
+            y_pred = [self.rev_map_dict[i] for i in y_pred]
+            y_pred = np.array(y_pred)
+        return y_pred
