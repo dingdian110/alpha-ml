@@ -26,7 +26,7 @@ def test_load_data():
 def plot(dataset, rep_num):
     color_list = ['purple', 'royalblue', 'green', 'red', 'brown', 'orange', 'yellowgreen']
     markers = ['s', '^', '2', 'o', 'v', 'p', '*']
-    mth_list = ['smac', 'ts_smac']
+    mth_list = ['smac']
     lw = 2
     ms = 4
     me = 10
@@ -48,6 +48,7 @@ def plot(dataset, rep_num):
                 data = pickle.load(f)
             perfs.append(data['perfs'])
         perfs = np.mean(perfs, axis=0)
+        print(max(perfs), max(perfs[:27]))
         x_num = len(perfs)
         ax.plot(list(range(x_num)), perfs, label=mth, lw=lw, color=color_dict[mth],
                 marker=marker_dict[mth], markersize=ms, markevery=me)
@@ -63,4 +64,4 @@ def plot(dataset, rep_num):
 
 
 if __name__ == "__main__":
-    plot('dermatology', 5)
+    plot('poker', 1)

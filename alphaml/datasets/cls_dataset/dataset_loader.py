@@ -68,5 +68,6 @@ def load_data(dataset_name):
         num_cls = 2
     else:
         raise ValueError('Invalid dataset name!')
-
+    print(X.shape, y.shape)
+    print(min(y), max(y), num_cls)
     return X, y, num_cls
