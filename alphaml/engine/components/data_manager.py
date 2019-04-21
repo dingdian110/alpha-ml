@@ -4,7 +4,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from alphaml.engine.components.data_preprocessing.imputer import impute_df
 
-COL_TYPE = ["NUMERICAL", "DISCRETE", "CATEGORICAL", "TEXT"]
+_COL_TYPE = ["Float", "Discrete", "Categorical", "Text", "One-Hot"]
 
 
 class DataManager(object):
@@ -16,7 +16,7 @@ class DataManager(object):
         self.val_y = val_y
         self.split_size = val_size
         self.random_seed = random_state
-        self.col_type = []
+        self.feature_types = None
 
         if train_X is not None and train_y is not None and (self.val_X is None or self.val_y is None):
             self.split(val_size, random_state)
@@ -31,11 +31,26 @@ class DataManager(object):
         self.train_X,  self.val_X, self.train_y, self.val_y = train_test_split(
             self.train_X, self.train_y, test_size=val_size, random_state=random_state)
 
-    def set_col_type(self):
-        pass
+    def set_col_type(self, df):
+        self.feature_types = []
+        for col in list(df.columns):
+            dtype = df[col].dtype
+            if dtype in [np.int, np.int16, np.int32, np.int64]:
+                self.feature_types.append("Discrete")
+            elif dtype in [np.float, np.float16, np.float32, np.float64, np.float128, np.double]:
+                self.feature_types.append("Float")
+            elif dtype in [np.str, np.str_, np.string_, np.object]:
+                self.feature_types.append("Categorical")
+            else:
+                raise TypeError("Unknow data type:", dtype)
 
     def load_train_csv(self, file_location, label_col=-1):
-        data = impute_df(pd.read_csv(file_location)).values
+        df = impute_df(pd.read_csv(file_location))
+        # set the feature types
+        if self.feature_types is None:
+            self.set_col_type(df)
+        data = df.values
+
         swap_data = data[:, -1]
         data[:, -1] = data[:, label_col]
         data[:, label_col] = swap_data
@@ -44,7 +59,11 @@ class DataManager(object):
         self.split(self.split_size, self.random_seed)
 
     def load_test_csv(self, file_location):
-        self.test_X = pd.read_csv(file_location).values
+        df = impute_df(pd.read_csv(file_location))
+        # set the feature types
+        if self.feature_types is None:
+            self.set_col_type(df)
+        self.test_X = df.values
 
     def load_train_libsvm(self, file_location):
         pass
@@ -63,3 +82,6 @@ class DataManager(object):
 
     def get_train(self):
         return self.train_X, self.train_y
+
+    def get_test(self):
+        return self.test_X, self.test_y
