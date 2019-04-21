@@ -26,7 +26,7 @@ def test_load_data():
 def plot(dataset, rep_num):
     color_list = ['purple', 'royalblue', 'green', 'red', 'brown', 'orange', 'yellowgreen']
     markers = ['s', '^', '2', 'o', 'v', 'p', '*']
-    mth_list = ['smac']
+    mth_list = ['smac', 'ts_smac']
     lw = 2
     ms = 4
     me = 10
@@ -63,5 +63,34 @@ def plot(dataset, rep_num):
     plt.show()
 
 
+def debug(dataset, id):
+    for mth in ['smac', 'ts_smac']:
+        file_id = 'data/%s_%d_%s.data' % (dataset, id, mth)
+        with open(file_id, 'rb') as f:
+            data = pickle.load(f)
+
+        count_dict = dict()
+        perf_dict = dict()
+        for config, perf in zip(data['configs'], data['perfs']):
+            est = config['estimator']
+            if est not in count_dict:
+                count_dict[est] = 0
+                perf_dict[est] = list()
+            count_dict[est] += 1
+            perf_dict[est].append(perf)
+        print('='*30, mth, '='*30)
+        print(count_dict)
+
+        max_id = np.argmax(data['perfs'])
+        print(data['configs'][max_id])
+
+        for key in sorted(perf_dict.keys()):
+            print(key, np.mean(perf_dict[key]), np.std(perf_dict[key]))
+        if mth == 'ts_smac':
+            print(data['ts_params'])
+            print(data['ts_cnts'])
+        print(perf_dict)
+
+
 if __name__ == "__main__":
-    plot('poker', 1)
+    debug('poker', 0)

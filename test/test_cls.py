@@ -18,7 +18,7 @@ def test_cash_module():
 
     rep_num = 5
     run_count = 100
-    datasets = ['poker']
+    datasets = ['australian_scale']
     for dataset in datasets:
         for run_id in range(rep_num):
             for optimizer in ['smbo', 'ts_smbo']:
