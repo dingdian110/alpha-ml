@@ -1,3 +1,4 @@
+import logging
 from alphaml.engine.components.components_manager import ComponentsManager
 from alphaml.engine.components.data_manager import DataManager
 from alphaml.engine.evaluator.base import BaseEvaluator
@@ -30,6 +31,7 @@ class AutoML(object):
         self.optimizer = None
         self.evaluator = None
         self.metric = None
+        self.logger = logging.getLogger(__name__)
 
     def fit(self, data: DataManager, **kwargs):
         """
@@ -50,6 +52,7 @@ class AutoML(object):
         config_space = self.component_manager.get_hyperparameter_search_space(
             task_type, self.include_models, self.exclude_models)
 
+        self.logger.debug('The optimizer type is: %s' % self.optimizer_type)
         if self.optimizer_type == 'smbo':
             # Create optimizer.
             self.optimizer = SMAC_SMBO(self.evaluator, config_space, data, self.seed, **kwargs)
@@ -92,9 +95,6 @@ class AutoMLClassifier(AutoML):
         return super().fit(data, **kwargs)
 
 
-from alphaml.engine.evaluator.dl_evaluator import BaseImgEvaluator
-
-
 class AutoIMGClassifier(AutoML):
     def __init__(self,
                  time_budget,
@@ -114,6 +114,7 @@ class AutoIMGClassifier(AutoML):
         self.rev_map_dict = None
 
     def fit(self, data: DataManager, **kwargs):
+        from alphaml.engine.evaluator.dl_evaluator import BaseImgEvaluator
         task_type = kwargs['task_type']
         inputshape = data.train_X.shape[1:]
         classnum = None
@@ -135,3 +136,11 @@ class AutoIMGClassifier(AutoML):
         self.evaluator = BaseImgEvaluator(inputshape, classnum)
 
         return super().fit(data, **kwargs)
+
+    def predict(self, X, **kwargs):
+        y_pred = super().predict(X, **kwargs)
+        if self.rev_map_dict is not None:
+            y_pred = np.argmax(y_pred, axis=-1)
+            y_pred = [self.rev_map_dict[i] for i in y_pred]
+            y_pred = np.array(y_pred)
+        return y_pred

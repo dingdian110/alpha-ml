@@ -4,6 +4,8 @@ from alphaml.engine.components.models.classification import _classifiers
 def update_config(config):
     config_dict = {}
     for param in config:
+        if param == 'estimator':
+            continue
         if param.find(":") != -1:
             value = config[param]
             new_name = param.split(':')[-1]
@@ -29,6 +31,9 @@ class BaseEvaluator(object):
         config = update_config(config)
         estimator.set_hyperparameters(config)
 
+        # TODO: how to parallize.
+        if hasattr(estimator, 'n_jobs'):
+            setattr(estimator, 'n_jobs', 6)
         # Fit the estimator on the training data.
         estimator.fit(self.data_manager.train_X, self.data_manager.train_y)
 

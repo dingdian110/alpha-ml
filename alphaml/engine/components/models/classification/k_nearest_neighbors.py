@@ -13,6 +13,7 @@ class KNearestNeighborsClassifier(BaseClassificationModel):
         self.weights = weights
         self.p = p
         self.random_state = random_state
+        self.n_jobs = 1
 
     def fit(self, X, Y):
         import sklearn.neighbors

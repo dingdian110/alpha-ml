@@ -1,13 +1,13 @@
 import numpy as np
 
 
-def load_shuttle(data_folder):
+def load_sensit_vehicle(data_folder):
     L = []
-    file_path = data_folder + 'shuttle.scale'
+    file_path = data_folder + 'acoustic_scale'
     with open(file_path, 'r') as f:
         for line in f.readlines():
             items = line.strip().split('\n')[0].split(' ')
-            d = [0] * 10
+            d = [0] * 51
             d[0] = int(items[0]) - 1
             for item in items[1:]:
                 key, value = item.split(':')

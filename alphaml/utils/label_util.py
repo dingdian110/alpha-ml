@@ -43,6 +43,7 @@ def map_label(y, map_dict={}, if_binary=False):
     # Returns:
         A converted class vector and two dictionaries of mapping relations.
     """
+
     assert isinstance(map_dict, dict)
     y = np.array(y)
     y = y.ravel()
@@ -69,6 +70,7 @@ def map_label(y, map_dict={}, if_binary=False):
     int_y = np.array(int_y, dtype='int')
     return int_y, map_dict, rev_map_dict
 
+
 def get_classnum(y):
     """Get classnum from one-hot label inputs 'y'. Note that this function will not validate the label inputs
 
@@ -78,9 +80,9 @@ def get_classnum(y):
     # Returns:
         The number of classes in 'y'
     """
-    assert isinstance(y,np.ndarray)
-    inputshape=y.shape
-    if len(inputshape)==2:
+    assert isinstance(y, np.ndarray)
+    inputshape = y.shape
+    if len(inputshape) == 2:
         return inputshape[-1]
     else:
         raise ValueError("Input labels should be a 2-dim one-hot vector!")

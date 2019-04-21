@@ -1,5 +1,5 @@
 import os
-from alphaml.engine.components.models.base_model import BaseImageClassificationModel
+from alphaml.engine.components.models.base_dl_model import BaseImageClassificationModel
 from alphaml.utils.class_loader import find_components
 
 """

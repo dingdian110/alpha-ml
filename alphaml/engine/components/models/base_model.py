@@ -72,15 +72,6 @@ class BaseClassificationModel(BaseModel):
         return self.estimator
 
 
-class BaseImageClassificationModel(BaseClassificationModel):
-    def set_model_config(self, inputshape, classnum, *args, **kwargs):
-        self.inputshape = inputshape
-        self.classnum = classnum
-
-    def fit(self, x_train, y_train, x_valid=None, y_valid=None, sample_weight=None):
-        raise NotImplementedError()
-
-
 class IterativeComponentWithSampleWeight(BaseModel):
     def fit(self, X, y, sample_weight=None):
         self.iterative_fit(
