@@ -15,8 +15,8 @@ class TS_SMBO(BaseOptimizer):
 
         self.iter_num = int(1e10) if ('runcount' not in kwargs or kwargs['runcount'] is None) else kwargs['runcount']
         self.estimator_arms = self.config_space.get_hyperparameter('estimator').choices
-        self.result_file = kwargs['task_name'] if 'task_name' in kwargs else 'default'
-        self.result_file += '_ts_smac.data'
+        self.task_name = kwargs['task_name'] if 'task_name' in kwargs else 'default'
+        self.result_file = self.task_name + '_ts_smac.data'
 
         self.update_mode = 1
         self.gap_period = 5
@@ -50,6 +50,7 @@ class TS_SMBO(BaseOptimizer):
         time_list = list()
         iter_num = 0
         start_time = time.time()
+        self.logger.info('Start task: %s' % self.task_name)
 
         for _ in range(self.iter_num):
             samples = list()

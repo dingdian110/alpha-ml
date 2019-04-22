@@ -9,8 +9,8 @@ from alphaml.engine.optimizer.base_optimizer import BaseOptimizer
 class SMAC_SMBO(BaseOptimizer):
     def __init__(self, evaluator, config_space, data, seed, **kwargs):
         super().__init__(evaluator, config_space, data, kwargs['metric'], seed)
-        self.result_file = kwargs['task_name'] if 'task_name' in kwargs else 'default'
-        self.result_file += '_smac.data'
+        self.task_name = kwargs['task_name'] if 'task_name' in kwargs else 'default'
+        self.result_file = self.task_name + '_smac.data'
 
         # Scenario object
         scenario_dict = {
@@ -29,6 +29,7 @@ class SMAC_SMBO(BaseOptimizer):
         config_values = list()
         time_list = list()
         start_time = time.time()
+        self.logger.info('Start task: %s' % self.task_name)
 
         self.smac.optimize()
         runhistory = self.smac.solver.runhistory
