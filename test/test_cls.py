@@ -1,3 +1,6 @@
+import sys
+sys.path.append('/home/thomas/PycharmProjects/alpha-ml')
+
 def test_configspace():
     from alphaml.engine.components.components_manager import ComponentsManager
     from alphaml.engine.components.models.classification import _classifiers
@@ -18,7 +21,7 @@ def test_cash_module():
 
     rep_num = 5
     run_count = 100
-    datasets = ['australian_scale']
+    datasets = ['fall_detection']
     for dataset in datasets:
         for run_id in range(rep_num):
             for optimizer in ['smbo', 'ts_smbo']:

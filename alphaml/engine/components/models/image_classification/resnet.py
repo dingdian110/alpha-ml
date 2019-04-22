@@ -1,45 +1,16 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
-import time
 import numpy as np
-import keras
-from keras_applications import get_keras_submodule
+from keras import layers
 from keras import Model
-from keras.layers import Dropout, Dense
-from keras.optimizers import SGD, Adam
-from keras.callbacks import ModelCheckpoint, EarlyStopping
+from keras import backend
 from ConfigSpace import ConfigurationSpace
-from ConfigSpace import UniformFloatHyperparameter, \
-    UniformIntegerHyperparameter, CategoricalHyperparameter, \
-    InCondition
-from alphaml.engine.components.models.base_model import BaseImageClassificationModel
-from alphaml.engine.components.data_preprocessing.image_preprocess import preprocess
-from alphaml.utils.constants import *
+from ConfigSpace import UniformIntegerHyperparameter, CategoricalHyperparameter
 
-backend = get_keras_submodule('backend')
-engine = get_keras_submodule('engine')
-layers = get_keras_submodule('layers')
-models = get_keras_submodule('models')
-keras_utils = get_keras_submodule('utils')
+from alphaml.engine.components.models.base_dl_model import BaseImageClassificationModel
+from alphaml.utils.constants import *
 
 
 class ResNetClassifier(BaseImageClassificationModel):
     def __init__(self, *arg, **karg):
-        # self.batch_size = batch_size
-        # self.keep_prob = keep_prob
-        # self.optimizer = optimizer
-        # self.sgd_lr = sgd_lr
-        # self.sgd_decay = sgd_decay
-        # self.sgd_momentum = sgd_momentum
-        # self.adam_lr = adam_lr
-        # self.adam_decay = adam_decay
-        # self.res_kernel_size = res_kernel_size
-        # self.res_stage2_block = res_stage2_block
-        # self.res_stage3_block = res_stage3_block
-        # self.res_stage4_block = res_stage4_block
-        # self.res_stage5_block = res_stage5_block
         self.batch_size = None
         self.keep_prob = None
         self.optimizer = None
@@ -56,6 +27,10 @@ class ResNetClassifier(BaseImageClassificationModel):
         self.estimator = None
         self.inputshape = None
         self.classnum = None
+        self.min_size = 32
+        self.work_size = 197
+        self.default_size = 224
+        self.model_name = 'ResNet'
 
     @staticmethod
     def get_properties(dataset_properties=None):
@@ -65,114 +40,32 @@ class ResNetClassifier(BaseImageClassificationModel):
                 'handles_classification': True,
                 'handles_multiclass': True,
                 'handles_multilabel': False,
-                'input': (),  # TODO: Define inputs
+                'input': (DENSE),
                 'output': (PREDICTIONS,)}
 
     @staticmethod
     def get_hyperparameter_search_space(dataset_properties=None):
         cs = ConfigurationSpace()
-        # base config
-        batch_size = CategoricalHyperparameter('batch_size', [16, 32], default_value=32)
-        keep_prob = UniformFloatHyperparameter('keep_prob', 0, 0.99, default_value=0.5)
-
-        # optimizer config
-        optimizer = CategoricalHyperparameter('optimizer', ['SGD', 'Adam'], default_value='Adam')
-        sgd_lr = UniformFloatHyperparameter('sgd_lr', 0.00001, 0.1,
-                                            default_value=0.005, log=True)  # log scale
-        sgd_decay = UniformFloatHyperparameter('sgd_decay', 0.0001, 0.1,
-                                               default_value=0.05, log=True)  # log scale
-        sgd_momentum = UniformFloatHyperparameter('sgd_momentum', 0.3, 0.99, default_value=0.9)
-        adam_lr = UniformFloatHyperparameter('adam_lr', 0.00001, 0.1,
-                                             default_value=0.005, log=True)  # log scale
-        adam_decay = UniformFloatHyperparameter('adam_decay', 0.0001, 0.1,
-                                                default_value=0.05, log=True)  # log scale
-
-        sgd_lr_cond = InCondition(child=sgd_lr, parent=optimizer, values=['SGD'])
-        sgd_decay_cond = InCondition(child=sgd_decay, parent=optimizer, values=['SGD'])
-        sgd_momentum_cond = InCondition(child=sgd_momentum, parent=optimizer, values=['SGD'])
-        adam_lr_cond = InCondition(child=adam_lr, parent=optimizer, values=['Adam'])
-        adam_decay_cond = InCondition(child=adam_decay, parent=optimizer, values=['Adam'])
-
-        # network config
+        BaseImageClassificationModel.set_training_space(cs)
+        BaseImageClassificationModel.set_optimizer_space(cs)
         res_kernel_size = CategoricalHyperparameter('res_kernel_size', [3, 5], default_value=3)
         res_stage2_block = UniformIntegerHyperparameter('res_stage2_block', 1, 3, default_value=2)
         res_stage3_block = UniformIntegerHyperparameter('res_stage3_block', 1, 11, default_value=3)
-        res_stage4_block = UniformIntegerHyperparameter('res_stage4_block', 1, 47, default_value=22)
+        res_stage4_block = UniformIntegerHyperparameter('res_stage4_block', 1, 47, default_value=5)
         res_stage5_block = UniformIntegerHyperparameter('res_stage5_block', 1, 3, default_value=2)
-
-        cs.add_hyperparameters([batch_size, keep_prob,
-                                optimizer, sgd_lr, sgd_decay, sgd_momentum, adam_lr, adam_decay,
-                                res_kernel_size, res_stage2_block, res_stage3_block, res_stage4_block,
-                                res_stage5_block])
-        cs.add_conditions([sgd_lr_cond, sgd_decay_cond, sgd_momentum_cond, adam_lr_cond, adam_decay_cond])
+        cs.add_hyperparameters(
+            [res_kernel_size, res_stage2_block, res_stage3_block, res_stage4_block, res_stage5_block])
         return cs
 
     def fit(self, x_train, y_train, x_valid=None, y_valid=None, **kwarg):
-        timestr = time.strftime('%Y-%m-%d-%H:%M:%S', time.localtime(time.time()))
-        if x_valid is None and y_valid is None:
-            if_valid = False
-        else:
-            if_valid = True
-
-        if self.optimizer == 'SGD':
-            optimizer = SGD(self.sgd_lr, self.sgd_momentum, self.sgd_decay)
-        elif self.optimizer == 'Adam':
-            optimizer = Adam(self.adam_lr, decay=self.adam_decay)
-        else:
-            raise ValueError('No optimizer named %s defined' % str(self.optimizer))
-
-        trainpregen, validpregen = preprocess()
-        train_gen = trainpregen.flow(x_train, y_train, batch_size=self.batch_size)
-        if if_valid:
-            valid_gen = validpregen.flow(x_valid, y_valid, batch_size=self.batch_size)
-            checkpoint_monitor = 'val_acc'
-        else:
-            valid_gen = None
-            checkpoint_monitor = 'acc'
-
-        # model
-        if self.classnum == 1:
-            final_activation = 'sigmoid'
-            loss = 'binary_crossentropy'
-        else:
-            final_activation = 'softmax'
-            loss = 'categorical_crossentropy'
-
-        base_model = ResNet(input_shape=self.inputshape,
-                            res_kernel_size=self.res_kernel_size,
-                            res_stage2_block=self.res_stage2_block,
-                            res_stage3_block=self.res_stage3_block,
-                            res_stage4_block=self.res_stage4_block,
-                            res_stage5_block=self.res_stage5_block)
-        y = base_model.output
-        y = Dropout(1 - self.keep_prob)(y)
-        y = Dense(self.classnum, activation=final_activation, name='Dense_final')(y)
-        model = Model(inputs=base_model.input, outputs=y)
-        checkpoint = ModelCheckpoint(filepath='model_%s.hdf5' % timestr,
-                                     monitor=checkpoint_monitor,
-                                     save_best_only=True,
-                                     period=1)
-        earlystop = EarlyStopping(monitor='val_acc', patience=8)
-        model.compile(optimizer=optimizer, loss=loss, metrics=['acc'])
-        model.fit_generator(generator=train_gen,
-                            epochs=200,
-                            validation_data=valid_gen,
-                            callbacks=[checkpoint, earlystop])
-        self.estimator = model
-        self.best_result = checkpoint.best
-        return self
-
-    def predict(self, x):
-        if self.estimator is None:
-            raise TypeError("Unsupported estimator type 'NoneType'!")
-        outputs = self.estimator.predict(x, batch_size=32)
-        predictions = np.argmax(outputs, axis=-1)
-        return predictions
-
-    def predict_proba(self, x):
-        if self.estimator is None:
-            raise TypeError("Unsupported estimator type 'NoneType'!")
-        return self.estimator.predict(x, batch_size=32)
+        self.validate_inputshape()
+        self.base_model = ResNet(input_shape=self.inputshape,
+                                 res_kernel_size=self.res_kernel_size,
+                                 res_stage2_block=self.res_stage2_block,
+                                 res_stage3_block=self.res_stage3_block,
+                                 res_stage4_block=self.res_stage4_block,
+                                 res_stage5_block=self.res_stage5_block)
+        super().fit(x_train, y_train, x_valid, y_valid, **kwarg)
 
 
 def identity_block(input_tensor, kernel_size, filters, stage, block):
@@ -293,17 +186,16 @@ def ResNet(input_shape, **kwargs):
         A Keras model instance.
 
     # ResNet configuration space:
-        kernel_size: 3,5,7
+        kernel_size: 3,5
         stage2_block: [1,3]
         stage3_block: [1,11]
         stage4_block: [1,47]
         stage5_block: [1,4]
     """
 
-    args = {k: kwargs[k] for k in kwargs if kwargs[k]}  # Remove None value in args
+    kwargs = {k: kwargs[k] for k in kwargs if kwargs[k]}  # Remove None value in args
 
-    assert isinstance(args, dict)
-    kernel_size = args['res_kernel_size']
+    kernel_size = kwargs['res_kernel_size']
     stages = 4
 
     img_input = layers.Input(shape=input_shape)
@@ -326,12 +218,15 @@ def ResNet(input_shape, **kwargs):
 
     # stage 2-5
     for stage in range(2, stages + 2):
-        x = conv_block(x, kernel_size, [filters, filters, filters * 4], stage=stage, block='_0_', strides=(1, 1))
-        for i in range(args['res_stage' + str(stage) + '_block']):
+        if stage == 2:
+            x = conv_block(x, kernel_size, [filters, filters, filters * 4], stage=stage, block='_0_', strides=(1, 1))
+        else:
+            x = conv_block(x, kernel_size, [filters, filters, filters * 4], stage=stage, block='_0_')
+        for i in range(kwargs['res_stage' + str(stage) + '_block']):
             x = identity_block(x, 3, [filters, filters, filters * 4], stage=stage, block="_" + str(i + 1) + "_")
         filters *= 2
 
     x = layers.GlobalAveragePooling2D()(x)
     # Create model.
-    model = models.Model(img_input, x, name='resnet')
+    model = Model(img_input, x, name='resnet')
     return model
