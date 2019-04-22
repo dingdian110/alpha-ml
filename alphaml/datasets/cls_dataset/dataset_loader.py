@@ -66,8 +66,40 @@ def load_data(dataset_name):
         from alphaml.datasets.cls_dataset.epsilon import load_epsilon
         X, y = load_epsilon(data_dir_template % dataset_name)
         num_cls = 2
+    elif dataset_name == 'letter':
+        from alphaml.datasets.cls_dataset.letter import load_letter
+        X, y = load_letter(data_dir_template % dataset_name)
+        num_cls = 26
+    elif dataset_name == 'glass':
+        from alphaml.datasets.cls_dataset.glass import load_glass
+        X, y = load_glass(data_dir_template % dataset_name)
+        num_cls = 6
+    elif dataset_name == 'dna':
+        from alphaml.datasets.cls_dataset.dna import load_dna
+        X, y = load_dna(data_dir_template % dataset_name)
+        num_cls = 3
+    elif dataset_name == 'pendigits':
+        from alphaml.datasets.cls_dataset.pendigits import load_pendigits
+        X, y = load_pendigits(data_dir_template % dataset_name)
+        num_cls = 10
+    elif dataset_name == 'satimage':
+        from alphaml.datasets.cls_dataset.satimage import load_satimage
+        X, y = load_satimage(data_dir_template % dataset_name)
+        num_cls = 6
+    elif dataset_name == 'segment':
+        from alphaml.datasets.cls_dataset.segment import load_segment
+        X, y = load_segment(data_dir_template % dataset_name)
+        num_cls = 7
+    elif dataset_name == 'svmguide4':
+        from alphaml.datasets.cls_dataset.svm_guide4 import load_svmguide4
+        X, y = load_svmguide4(data_dir_template % dataset_name)
+        num_cls = 6
+    elif dataset_name == 'svmguide2':
+        from alphaml.datasets.cls_dataset.svm_guide2 import load_svmguide2
+        X, y = load_svmguide2(data_dir_template % dataset_name)
+        num_cls = 3
     else:
-        raise ValueError('Invalid dataset name!')
+        raise ValueError('Invalid dataset name: %s!' % dataset_name)
     print(X.shape, y.shape)
     print(min(y), max(y), num_cls)
     return X, y, num_cls

@@ -93,4 +93,4 @@ def debug(dataset, id):
 
 
 if __name__ == "__main__":
-    debug('poker', 0)
+    plot('svmguide4', 1)
