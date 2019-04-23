@@ -14,13 +14,16 @@ class BaseImgEvaluator(BaseEvaluator):
         estimator = _img_classifiers[classifier_type]()
         config = update_config(config)
         estimator.set_hyperparameters(config)
-        estimator.set_model_config(self.inputshape,self.classnum)
+        estimator.set_model_config(self.inputshape, self.classnum)
         # Fit the estimator on the training data.
-        estimator.fit(self.data_manager.train_X, self.data_manager.train_y,
-                      self.data_manager.val_X, self.data_manager.val_y)
+        estimator.fit(self.data_manager)
 
         # Get the best result on val data
         metric = estimator.best_result
 
         # Turn it to a minimization problem.
         return 1 - metric
+
+    # TODO
+    def predict(self):
+        raise NotImplementedError()

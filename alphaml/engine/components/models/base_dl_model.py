@@ -12,6 +12,7 @@ from ConfigSpace import ConfigurationSpace
 from ConfigSpace import UniformFloatHyperparameter, CategoricalHyperparameter, InCondition
 from alphaml.engine.components.models.base_model import BaseClassificationModel
 from alphaml.engine.components.data_preprocessing.image_preprocess import preprocess
+from alphaml.engine.components.data_manager import DataManager
 
 
 class BaseImageClassificationModel(BaseClassificationModel):
@@ -66,7 +67,7 @@ class BaseImageClassificationModel(BaseClassificationModel):
                 "The minimum recommended inputshape of the model is " + str((self.work_size, self.work_size)) +
                 ", while " + str(self.inputshape[0:2]) + " given.")
 
-    def fit(self, x_train, y_train, x_valid=None, y_valid=None, **kwargs):
+    def fit(self, data: DataManager, **kwargs):
         if self.base_model is None:
             raise AttributeError("Base model is not defined!")
 
@@ -78,19 +79,26 @@ class BaseImageClassificationModel(BaseClassificationModel):
             raise ValueError('No optimizer named %s defined' % str(self.optimizer))
 
         timestr = time.strftime('%Y-%m-%d-%H:%M:%S', time.localtime(time.time()))
-        if x_valid is None and y_valid is None:
-            if_valid = False
-        else:
-            if_valid = True
-
         trainpregen, validpregen = preprocess()
-        train_gen = trainpregen.flow(x_train, y_train, batch_size=self.batch_size)
-        if if_valid:
-            valid_gen = validpregen.flow(x_valid, y_valid, batch_size=self.batch_size)
-            checkpoint_monitor = 'val_acc'
+        if data.train_X is None and data.train_y is None:
+            if hasattr(data, 'train_valid_dir') or (hasattr(data, 'train_dir') and hasattr(data, 'valid_dir')):
+                if hasattr(data, 'train_valid_dir'):
+                    # TODO
+                    pass
+            else:
+                raise ValueError("Invalid data input!")
         else:
-            valid_gen = None
-            checkpoint_monitor = 'acc'
+            if data.val_X is None and data.val_y is None:
+                if_valid = False
+            else:
+                if_valid = True
+            train_gen = trainpregen.flow(data.train_X, data.train_y, batch_size=self.batch_size)
+            if if_valid:
+                valid_gen = validpregen.flow(data.val_X, data.val_y, batch_size=self.batch_size)
+                checkpoint_monitor = 'val_acc'
+            else:
+                valid_gen = None
+                checkpoint_monitor = 'acc'
 
         # model
         if self.classnum == 1:
@@ -119,9 +127,6 @@ class BaseImageClassificationModel(BaseClassificationModel):
         self.estimator = model
         self.best_result = checkpoint.best
         return self
-
-    def fit_from_directory(self, dirname, sample_weight=None):
-        pass
 
     def predict(self, X):
         if self.estimator is None:

@@ -1,5 +1,4 @@
 import numpy as np
-from sklearn.metrics import accuracy_score
 from sklearn.utils.multiclass import type_of_target
 from alphaml.estimators.base_estimator import BaseEstimator
 from alphaml.engine.automl import AutoIMGClassifier
@@ -80,6 +79,29 @@ class ImageClassifier(BaseEstimator):
         # TODO: Implement more metric functions using Keras APIs
         super().fit(data, **kwargs)
 
+        return self
+
+    def fit_from_directory(self, dirname, target_size=(256, 256), valid_split=0.2, **kwargs):
+        img_data_manager = DataManager()
+        if isinstance(dirname, (list, tuple)):
+            if len(dirname) != 2:
+                raise ValueError(
+                    "Expected one directory or a list or tuple of two directories for training and validation!")
+            img_data_manager.train_dir = dirname[0]
+            img_data_manager.valid_dir = dirname[1]
+        else:
+            img_data_manager.train_valid_dir = dirname
+        img_data_manager.target_size = target_size
+        img_data_manager.split_size = valid_split
+        kwargs['task_type'] = 'img_multilabel-indicator'
+        super().fit(img_data_manager, **kwargs)
+        return self
+
+    def predict_from_dirctory(self, dirname, target_size=(256, 256), **kwargs):
+        img_data_manager = DataManager()
+        img_data_manager.test_dir = dirname
+        img_data_manager.target_size = target_size
+        super().predict(img_data_manager, **kwargs)
         return self
 
     def predict(self, X, batch_size=None, n_jobs=1):

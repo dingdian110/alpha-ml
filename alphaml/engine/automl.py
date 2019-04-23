@@ -108,7 +108,6 @@ class AutoIMGClassifier(AutoML):
         super().__init__(time_budget, each_run_budget, memory_limit, ensemble_size, include_models,
                          exclude_models, optimizer_type, random_seed)
 
-        # TODO: evaluator for IMG CLS.
         self.evaluator = None
         self.map_dict = None
         self.rev_map_dict = None
