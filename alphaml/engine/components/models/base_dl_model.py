@@ -85,6 +85,12 @@ class BaseImageClassificationModel(BaseClassificationModel):
                 if hasattr(data, 'train_valid_dir'):
                     # TODO
                     pass
+                else:
+                    train_gen = trainpregen.flow_from_directory(data.train_dir, target_size=self.inputshape,
+                                                                batch_size=self.batch_size)
+                    valid_gen = validpregen.flow_from_directory(data.valid_dir, target_size=self.inputshape,
+                                                                batch_size=self.batch_size)
+                    monitor = 'val_acc'
             else:
                 raise ValueError("Invalid data input!")
         else:
@@ -95,10 +101,10 @@ class BaseImageClassificationModel(BaseClassificationModel):
             train_gen = trainpregen.flow(data.train_X, data.train_y, batch_size=self.batch_size)
             if if_valid:
                 valid_gen = validpregen.flow(data.val_X, data.val_y, batch_size=self.batch_size)
-                checkpoint_monitor = 'val_acc'
+                monitor = 'val_acc'
             else:
                 valid_gen = None
-                checkpoint_monitor = 'acc'
+                monitor = 'acc'
 
         # model
         if self.classnum == 1:
@@ -115,10 +121,10 @@ class BaseImageClassificationModel(BaseClassificationModel):
 
         # TODO: load models after training
         checkpoint = ModelCheckpoint(filepath='model_%s.hdf5' % timestr,
-                                     monitor=checkpoint_monitor,
+                                     monitor=monitor,
                                      save_best_only=True,
                                      period=1)
-        earlystop = EarlyStopping(monitor='val_acc', patience=8)
+        earlystop = EarlyStopping(monitor=monitor, patience=8)
         model.compile(optimizer=optimizer, loss=loss, metrics=['acc'])
         model.fit_generator(generator=train_gen,
                             epochs=200,

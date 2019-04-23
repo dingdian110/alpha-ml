@@ -24,6 +24,22 @@ class BaseImgEvaluator(BaseEvaluator):
         # Turn it to a minimization problem.
         return 1 - metric
 
-    # TODO
-    def predict(self):
-        raise NotImplementedError()
+    def predict(self, config, **kwargs):
+        if not hasattr(self, 'estimator'):
+            # Build the corresponding estimator.
+            params_num = len(config.get_dictionary().keys()) - 1
+            classifier_type = config['estimator']
+            estimator = _img_classifiers[classifier_type](*[None] * params_num)
+        else:
+            estimator = self.estimator
+        config = update_config(config)
+        estimator.set_hyperparameters(config)
+
+        # Fit the estimator on the training data.
+        estimator.fit(self.data_manager.train_X, self.data_manager.train_y)
+
+        # Inference.
+        if test_X is None:
+            test_X = self.data_manager.test_X
+        y_pred = estimator.predict(test_X)
+        return y_pred
