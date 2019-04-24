@@ -58,7 +58,7 @@ def test_cash_module():
     for dataset in datasets:
         for run_id in range(rep_num):
             for optimizer in ['smbo', 'ts_smbo']:
-                task_format = dataset + '_%d'
+                task_format = dataset + '_gap_1_%d'
                 X, y, _ = load_data(dataset)
 
                 cls = Classifier(

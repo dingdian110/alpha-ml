@@ -37,22 +37,52 @@ run_count = args.run_count
 datasets = args.datasets.split(',')
 algo_list = ['adaboost', 'random_forest', 'k_nearest_neighbors', 'gradient_boosting']
 print(rep_num, run_count, datasets)
+algo = algo_list[0]
 
 
-def test_no_free_lunch():
+def test_complexity():
     from alphaml.engine.components.data_manager import DataManager
     from alphaml.estimators.classifier import Classifier
     from alphaml.datasets.cls_dataset.dataset_loader import load_data
+
+    perfs_list = list()
     for dataset in datasets:
         for run_id in range(rep_num):
-            for algo in algo_list:
                 for optimizer in ['smbo']:
-                    task_format = dataset + algo + '_%d'
+                    task_format = dataset + '_complexity_%d'
                     X, y, _ = load_data(dataset)
-
-                    cls = Classifier(include_models=[algo], optimizer=optimizer).fit(
+                    cls = Classifier(include_models=algo_list, optimizer=optimizer).fit(
                     DataManager(X, y), metric='accuracy', runcount=run_count, task_name=task_format % run_id)
                     print(cls.predict(X))
+
+                    file_id = 'data/%s_complexity_%d_%s.data' % (dataset, run_id, 'smac')
+                    with open(file_id, 'rb') as f:
+                        data = pickle.load(f)
+
+                    perfs = list()
+                    for config, perf in zip(data['configs'], data['perfs']):
+                        if config['estimator'] == algo:
+                            perfs.append(perf)
+                    num_runs = len(perfs)
+                    print('='*20, max(perfs), num_runs)
+
+                    task_format = dataset + '_complexity_single_%d'
+                    cls = Classifier(include_models=[algo], optimizer=optimizer).fit(
+                        DataManager(X, y), metric='accuracy', runcount=num_runs, task_name=task_format % run_id)
+                    print(cls.predict(X))
+
+                    file_id = 'data/%s_complexity_single_%d_%s.data' % (dataset, run_id, 'smac')
+                    with open(file_id, 'rb') as f:
+                        data = pickle.load(f)
+                    perfs_single = data['perfs']
+                    print('='*20 + 'single', max(perfs_single), len(perfs_single))
+                    perfs_list.append((perfs, perfs_single))
+
+    for item in perfs_list:
+        item1, item2 = item
+        print(len(item1), max(item1), len(item2), max(item2))
+    print('='*50)
+    print(perfs_list)
 
 
 def plot():
@@ -97,5 +127,5 @@ def plot():
 
 
 if __name__ == "__main__":
-    # test_no_free_lunch()
-    plot()
+    test_complexity()
+    # plot()
