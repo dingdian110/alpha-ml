@@ -57,14 +57,12 @@ def test_cash_module():
 
     for dataset in datasets:
         for run_id in range(rep_num):
-            for optimizer in ['smbo', 'ts_smbo']:
-                task_format = dataset + '_gap_1_%d'
+            for optimizer in ['smbo']:
+                task_format = dataset + '_alpha_3_%d'
                 X, y, _ = load_data(dataset)
-
                 cls = Classifier(
                     include_models=['gaussian_nb', 'adaboost', 'random_forest', 'k_nearest_neighbors', 'gradient_boosting'],
-                    optimizer=optimizer
-                    ).fit(DataManager(X, y), metric='accuracy', runcount=run_count, task_name=task_format % run_id)
+                    optimizer=optimizer).fit(DataManager(X, y), metric='accuracy', runcount=run_count, task_name=task_format % run_id)
                 print(cls.predict(X))
 
 

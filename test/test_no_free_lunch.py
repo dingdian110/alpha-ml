@@ -97,5 +97,5 @@ def plot():
 
 
 if __name__ == "__main__":
-    # test_no_free_lunch()
-    plot()
+    test_no_free_lunch()
+    # plot()

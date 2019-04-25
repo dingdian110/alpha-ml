@@ -8,6 +8,7 @@ class BaseEstimator(object):
             each_run_budget=360,
             ensemble_size=10,
             memory_limit=1024,
+            seed=None,
             include_models=None,
             exclude_models=None,
             tmp_dir=None,
@@ -19,6 +20,7 @@ class BaseEstimator(object):
         self.memory_limit = memory_limit
         self.include_models = include_models
         self.exclude_models = exclude_models
+        self.seed = seed
         self.tmp_dir = tmp_dir
         self.output_dir = output_dir
 
@@ -32,7 +34,8 @@ class BaseEstimator(object):
             memory_limit=self.memory_limit,
             include_models=self.include_models,
             exclude_models=self.exclude_models,
-            optimizer_type=self.optimizer_type
+            optimizer_type=self.optimizer_type,
+            seed=self.seed
         )
         return engine
 
