@@ -14,7 +14,7 @@ class SMAC_SMBO(BaseOptimizer):
 
         # Scenario object
         scenario_dict = {
-            'abort_on_first_run_crash': False,
+            'abort_on_first_run_crash': True,
             "run_obj": "quality",
             "cs": self.config_space,
             "deterministic": "true"

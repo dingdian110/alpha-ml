@@ -16,7 +16,9 @@ class BaseImgEvaluator(BaseEvaluator):
         estimator.set_hyperparameters(config)
         estimator.set_model_config(self.inputshape, self.classnum)
         # Fit the estimator on the training data.
-        estimator.fit(self.data_manager)
+        kwargs = {}
+        kwargs['metric'] = self.metric_func
+        estimator.fit(self.data_manager, **kwargs)
 
         # Get the best result on val data
         metric = estimator.best_result
@@ -24,7 +26,7 @@ class BaseImgEvaluator(BaseEvaluator):
         # Turn it to a minimization problem.
         return 1 - metric
 
-    def predict(self, config, **kwargs):
+    def predict(self, config, test_X=None, **kwargs):
         if not hasattr(self, 'estimator'):
             # Build the corresponding estimator.
             params_num = len(config.get_dictionary().keys()) - 1

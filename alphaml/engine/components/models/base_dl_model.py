@@ -67,6 +67,52 @@ class BaseImageClassificationModel(BaseClassificationModel):
                 "The minimum recommended inputshape of the model is " + str((self.work_size, self.work_size)) +
                 ", while " + str(self.inputshape[0:2]) + " given.")
 
+    def parse_monitor(self):
+        if self.metricstr == 'mse':
+            self.monitor = 'mean_squared_error'
+        elif self.metricstr == 'mae':
+            self.monitor = 'mean_abstract_error'
+        else:
+            self.monitor = self.metricstr
+        return
+
+    def load_data(self, data, **kwargs):
+        trainpregen, validpregen = preprocess(data)
+        self.metricstr = kwargs['metric']
+        self.parse_monitor()
+        if data.train_X is None and data.train_y is None:
+            if hasattr(data, 'train_valid_dir') or (hasattr(data, 'train_dir') and hasattr(data, 'valid_dir')):
+                if hasattr(data, 'train_valid_dir'):
+                    self.train_gen = trainpregen.flow_from_directory(data.train_valid_dir,
+                                                                     target_size=self.inputshape[:2],
+                                                                     batch_size=self.batch_size, subset='training')
+                    self.valid_gen = trainpregen.flow_from_directory(data.train_valid_dir,
+                                                                     target_size=self.inputshape[:2],
+                                                                     batch_size=self.batch_size, subset='validation')
+                    self.classnum = self.train_gen.num_classes
+                    self.monitor = 'val_' + self.monitor
+                else:
+                    self.train_gen = trainpregen.flow_from_directory(data.train_dir, target_size=self.inputshape[:2],
+                                                                     batch_size=self.batch_size)
+                    self.valid_gen = validpregen.flow_from_directory(data.valid_dir, target_size=self.inputshape[:2],
+                                                                     batch_size=self.batch_size)
+                    self.classnum = self.train_gen.num_classes
+                    self.monitor = 'val_' + self.monitor
+            else:
+                raise ValueError("Invalid data input!")
+        else:
+            if data.val_X is None and data.val_y is None:
+                if_valid = False
+            else:
+                if_valid = True
+            self.train_gen = trainpregen.flow(data.train_X, data.train_y, batch_size=self.batch_size)
+            if if_valid:
+                self.valid_gen = validpregen.flow(data.val_X, data.val_y, batch_size=self.batch_size)
+                self.monitor = 'val_' + self.monitor
+            else:
+                self.valid_gen = None
+                self.monitor = self.monitor
+
     def fit(self, data: DataManager, **kwargs):
         if self.base_model is None:
             raise AttributeError("Base model is not defined!")
@@ -79,32 +125,6 @@ class BaseImageClassificationModel(BaseClassificationModel):
             raise ValueError('No optimizer named %s defined' % str(self.optimizer))
 
         timestr = time.strftime('%Y-%m-%d-%H:%M:%S', time.localtime(time.time()))
-        trainpregen, validpregen = preprocess()
-        if data.train_X is None and data.train_y is None:
-            if hasattr(data, 'train_valid_dir') or (hasattr(data, 'train_dir') and hasattr(data, 'valid_dir')):
-                if hasattr(data, 'train_valid_dir'):
-                    # TODO
-                    pass
-                else:
-                    train_gen = trainpregen.flow_from_directory(data.train_dir, target_size=self.inputshape,
-                                                                batch_size=self.batch_size)
-                    valid_gen = validpregen.flow_from_directory(data.valid_dir, target_size=self.inputshape,
-                                                                batch_size=self.batch_size)
-                    monitor = 'val_acc'
-            else:
-                raise ValueError("Invalid data input!")
-        else:
-            if data.val_X is None and data.val_y is None:
-                if_valid = False
-            else:
-                if_valid = True
-            train_gen = trainpregen.flow(data.train_X, data.train_y, batch_size=self.batch_size)
-            if if_valid:
-                valid_gen = validpregen.flow(data.val_X, data.val_y, batch_size=self.batch_size)
-                monitor = 'val_acc'
-            else:
-                valid_gen = None
-                monitor = 'acc'
 
         # model
         if self.classnum == 1:
@@ -118,17 +138,16 @@ class BaseImageClassificationModel(BaseClassificationModel):
         y = layers.Dropout(1 - self.keep_prob)(y)
         y = layers.Dense(self.classnum, activation=final_activation, name='Dense_final')(y)
         model = Model(inputs=self.base_model.input, outputs=y)
-
         # TODO: load models after training
         checkpoint = ModelCheckpoint(filepath='model_%s.hdf5' % timestr,
-                                     monitor=monitor,
+                                     monitor=self.monitor,
                                      save_best_only=True,
                                      period=1)
-        earlystop = EarlyStopping(monitor=monitor, patience=8)
-        model.compile(optimizer=optimizer, loss=loss, metrics=['acc'])
-        model.fit_generator(generator=train_gen,
+        earlystop = EarlyStopping(monitor=self.monitor, patience=8)
+        model.compile(optimizer=optimizer, loss=loss, metrics=[self.metricstr])
+        model.fit_generator(generator=self.train_gen,
                             epochs=200,
-                            validation_data=valid_gen,
+                            validation_data=self.valid_gen,
                             callbacks=[checkpoint, earlystop])
         self.estimator = model
         self.best_result = checkpoint.best

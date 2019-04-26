@@ -116,8 +116,8 @@ class AutoIMGClassifier(AutoML):
         from alphaml.engine.evaluator.dl_evaluator import BaseImgEvaluator
         task_type = kwargs['task_type']
         if data.train_X is None and data.train_y is None:
-            inputshape = data.target_size
-
+            inputshape = data.target_shape
+            classnum = None
         else:
             inputshape = data.train_X.shape[1:]
             classnum = None

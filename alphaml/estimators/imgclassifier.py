@@ -68,7 +68,7 @@ class ImageClassifier(BaseEstimator):
         # Image classification task.
         task_type = 'img_' + task_type
         kwargs['task_type'] = task_type
-
+        kwargs['metric'] = kwargs.get('metric', 'acc')
         data.train_X = np.array(data.train_X)
         data.train_y = np.array(data.train_y)
         data.val_X = np.array(data.val_X)
@@ -81,26 +81,30 @@ class ImageClassifier(BaseEstimator):
 
         return self
 
-    def fit_from_directory(self, dirname, target_size=(256, 256), valid_split=0.2, **kwargs):
+    def fit_from_directory(self, dirname, target_shape=(224, 224, 3), valid_split=0.2, **kwargs):
         img_data_manager = DataManager()
         if isinstance(dirname, (list, tuple)):
             if len(dirname) != 2:
                 raise ValueError(
                     "Expected one directory or a list or tuple of two directories for training and validation!")
-            img_data_manager.train_dir = dirname[0]
-            img_data_manager.valid_dir = dirname[1]
+            if dirname[1] is None:
+                img_data_manager.train_valid_dir = dirname[0]
+            else:
+                img_data_manager.train_dir = dirname[0]
+                img_data_manager.valid_dir = dirname[1]
         else:
             img_data_manager.train_valid_dir = dirname
-        img_data_manager.target_size = target_size
+        img_data_manager.target_shape = target_shape
         img_data_manager.split_size = valid_split
         kwargs['task_type'] = 'img_multilabel-indicator'
+        kwargs['metric'] = kwargs.get('metric', 'acc')
         super().fit(img_data_manager, **kwargs)
         return self
 
-    def predict_from_dirctory(self, dirname, target_size=(256, 256), **kwargs):
+    def predict_from_dirctory(self, dirname, target_shape=(224, 224, 3), **kwargs):
         img_data_manager = DataManager()
         img_data_manager.test_dir = dirname
-        img_data_manager.target_size = target_size
+        img_data_manager.target_shape = target_shape
         super().predict(img_data_manager, **kwargs)
         return self
 
