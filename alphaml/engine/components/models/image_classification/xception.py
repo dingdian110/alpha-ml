@@ -46,13 +46,14 @@ class XceptionClassifier(BaseImageClassificationModel):
         BaseImageClassificationModel.set_optimizer_space(cs)
         xception_middle_blocks = UniformIntegerHyperparameter('xception_middle_blocks', 6, 10, default_value=8)
         cs.add_hyperparameter(xception_middle_blocks)
-        raise NotImplementedError()
+        return cs
 
-    def fit(self, x_train, y_train, x_valid=None, y_valid=None, **kwargs):
+    def fit(self, data, **kwarg):
         self.validate_inputshape()
+        self.load_data(data, **kwarg)
         self.base_model = Xception(self.inputshape,
                                    xception_middle_blocks=self.xception_middle_blocks)
-        super().fit(x_train, y_train, x_valid, y_valid, **kwargs)
+        super().fit(data, **kwarg)
 
 
 def Xception(input_shape, **kwargs):

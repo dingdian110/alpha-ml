@@ -81,7 +81,7 @@ class ImageClassifier(BaseEstimator):
 
         return self
 
-    def fit_from_directory(self, dirname, target_shape=(224, 224, 3), valid_split=0.2, **kwargs):
+    def fit_from_directory(self, dirname, target_shape=(224, 224, 3), valid_split=0.1, **kwargs):
         img_data_manager = DataManager()
         if isinstance(dirname, (list, tuple)):
             if len(dirname) != 2:

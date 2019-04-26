@@ -3,6 +3,7 @@ from __future__ import division
 from __future__ import print_function
 
 import time
+import os
 import warnings
 from keras import Model
 from keras import layers
@@ -139,7 +140,7 @@ class BaseImageClassificationModel(BaseClassificationModel):
         y = layers.Dense(self.classnum, activation=final_activation, name='Dense_final')(y)
         model = Model(inputs=self.base_model.input, outputs=y)
         # TODO: load models after training
-        checkpoint = ModelCheckpoint(filepath='model_%s.hdf5' % timestr,
+        checkpoint = ModelCheckpoint(filepath=os.path.join('dl_models','model_%s.hdf5' % timestr),
                                      monitor=self.monitor,
                                      save_best_only=True,
                                      period=1)

@@ -57,8 +57,9 @@ class VGGNetClassifier(BaseImageClassificationModel):
             [vgg_kernel_size, vgg_keep_prob, vgg_block2_layer, vgg_block3_layer, vgg_block4_layer, vgg_block5_layer])
         return cs
 
-    def fit(self, x_train, y_train, x_valid=None, y_valid=None, **kwarg):
+    def fit(self, data, **kwarg):
         self.validate_inputshape()
+        self.load_data(data, **kwarg)
         self.base_model = VGGNet(input_shape=self.inputshape,
                                  vgg_kernel_size=self.vgg_kernel_size,
                                  vgg_keep_prob=self.keep_prob,
@@ -66,8 +67,7 @@ class VGGNetClassifier(BaseImageClassificationModel):
                                  vgg_block3_layer=self.vgg_block3_layer,
                                  vgg_block4_layer=self.vgg_block4_layer,
                                  vgg_block5_layer=self.vgg_block5_layer)
-        super().fit(x_train, y_train, x_valid, y_valid, **kwarg)
-
+        super().fit(data, **kwarg)
 
 def VGGNet(input_shape, **kwargs):
     """Instantiates the VGG architecture.
