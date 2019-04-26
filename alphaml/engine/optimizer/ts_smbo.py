@@ -1,3 +1,4 @@
+import math
 import time
 import pickle
 import numpy as np
@@ -19,15 +20,24 @@ class TS_SMBO(BaseOptimizer):
         self.result_file = self.task_name + '_ts_smac.data'
 
         self.update_mode = 1
-        self.gap_period = 5
         self.smac_containers = dict()
         self.ts_params = dict()
         self.ts_cnts = dict()
+        self.ts_nostationary_cnts = dict()
         self.ts_rewards = dict()
+        self.alphas = dict()
+
+        self.max_dim = 0
+        for estimator in self.estimator_arms:
+            # Scenario object
+            num_dim = len(_classifiers[estimator].get_hyperparameter_search_space().get_hyperparameters())
+            if num_dim > self.max_dim:
+                self.max_dim = num_dim
 
         for estimator in self.estimator_arms:
             # Scenario object
             config_space = _classifiers[estimator].get_hyperparameter_search_space()
+            num_dim = len(config_space.get_hyperparameters())
             estimator_hp = CategoricalHyperparameter("estimator", [estimator], default_value=estimator)
             config_space.add_hyperparameter(estimator_hp)
             scenario_dict = {
@@ -42,7 +52,12 @@ class TS_SMBO(BaseOptimizer):
             self.smac_containers[estimator] = smac
             self.ts_params[estimator] = [0, 1]
             self.ts_cnts[estimator] = 0
+            self.ts_nostationary_cnts[estimator] = 0
             self.ts_rewards[estimator] = list()
+            if num_dim == 0:
+                self.alphas[estimator] = 1e10
+            else:
+                self.alphas[estimator] = 10 * math.sqrt(self.max_dim/num_dim)
 
     def run(self):
         configs_list = list()
@@ -52,10 +67,12 @@ class TS_SMBO(BaseOptimizer):
         start_time = time.time()
         self.logger.info('Start task: %s' % self.task_name)
 
-        for _ in range(self.iter_num):
+        while True:
             samples = list()
             for estimator in self.estimator_arms:
                 sample = norm.rvs(loc=self.ts_params[estimator][0], scale=self.ts_params[estimator][1])
+                # while sample < self.ts_params[estimator][0]:
+                #     sample = norm.rvs(loc=self.ts_params[estimator][0], scale=self.ts_params[estimator][1])
                 samples.append(sample)
             best_arm = self.estimator_arms[np.argmax(samples)]
             self.logger.info('Choosing to optimize %s arm' % best_arm)
@@ -63,9 +80,14 @@ class TS_SMBO(BaseOptimizer):
             runhistory = self.smac_containers[best_arm].solver.runhistory
 
             # Observe the reward.
+            update_flag = False
+            best_reward = max(self.ts_rewards[best_arm]) if len(self.ts_rewards[best_arm]) > 0 else 0
             runkeys = list(runhistory.data.keys())
             for key in runkeys[self.ts_cnts[best_arm]:]:
                 reward = 1 - runhistory.data[key][0]
+                if reward > best_reward:
+                    update_flag = True
+                    best_reward = reward
                 self.ts_rewards[best_arm].append(reward)
                 configs_list.append(runhistory.ids_config[key[0]])
                 config_values.append(reward)
@@ -81,6 +103,7 @@ class TS_SMBO(BaseOptimizer):
 
             self.logger.info('Iteration %d, the best reward found is %f' % (iter_num, max(config_values)))
             iter_num += (len(runkeys) - self.ts_cnts[best_arm])
+            self.ts_nostationary_cnts[best_arm] += (len(runkeys) - self.ts_cnts[best_arm])
             self.ts_cnts[best_arm] = len(runhistory.data.keys())
 
             # Update the posterior estimation.
@@ -89,15 +112,25 @@ class TS_SMBO(BaseOptimizer):
                 self.ts_params[best_arm][0] = np.mean(self.ts_rewards[best_arm])
                 self.ts_params[best_arm][1] = 1./(self.ts_params[best_arm][1] + 1)
             elif self.update_mode == 1:
-                rewards = sorted(self.ts_rewards[best_arm], reverse=True)[:self.gap_period]
-                self.ts_params[best_arm][0] = np.mean(rewards)
-                # Variance methods: 1) std of rewards, 2) 1/n
-                # self.ts_params[best_arm][1] = np.std(rewards)
-                self.ts_params[best_arm][1] = 1. / (self.ts_cnts[best_arm] + 1)
+                self.ts_params[best_arm][0] = best_reward
+                if update_flag:
+                    smallest_count = 1000000
+                    for estimator in self.estimator_arms:
+                        if self.ts_nostationary_cnts[estimator] < 1:
+                            continue
+                        if self.ts_nostationary_cnts[estimator] < smallest_count:
+                            smallest_count = self.ts_nostationary_cnts[estimator]
+                    self.ts_nostationary_cnts[best_arm] = smallest_count
+
+                self.ts_params[best_arm][1] = 1. / (self.alphas[best_arm] * self.ts_nostationary_cnts[best_arm] + 1)
             else:
                 raise ValueError('Invalid update mode: %d' % self.update_mode)
             if iter_num >= self.iter_num:
                 break
+
+            # Print the parameters in Thompson sampling.
+            self.logger.info('ts params: %s' % self.ts_params)
+            self.logger.info('ts NON-ST cnts: %s' % self.ts_nostationary_cnts)
 
         # Print the parameters in Thompson sampling.
         self.logger.info('ts params: %s' % self.ts_params)

@@ -1,5 +1,7 @@
 import logging
+import numpy as np
 from alphaml.engine.evaluator.base import BaseEvaluator
+from alphaml.utils.constants import MAX_INT
 
 
 class BaseOptimizer(object):
@@ -10,9 +12,12 @@ class BaseOptimizer(object):
         self.evaluator.data_manager = data
         self.evaluator.metric_func = metric
         self.config_space = config_space
+        if seed is None:
+            seed = np.random.random_integers(MAX_INT)
         self.seed = seed
         self.incumbent = None
         self.logger = logging.getLogger(__name__)
+        self.logger.info('The random seed is: %d' % self.seed)
 
     def run(self):
         raise NotImplementedError

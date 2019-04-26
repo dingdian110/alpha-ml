@@ -19,9 +19,9 @@ plt.rc('legend', **{'fontsize': 12})
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--mode', choices=['master', 'daim213'], default='master')
-parser.add_argument('--rep', type=int, default=5)
-parser.add_argument('--run_count', type=int, default=100)
-parser.add_argument('--dataset', type=str, default='iris')
+parser.add_argument('--rep', type=int, default=10)
+parser.add_argument('--run_count', type=int, default=200)
+parser.add_argument('--datasets', type=str, default='iris')
 args = parser.parse_args()
 
 if args.mode == 'master':
@@ -34,28 +34,29 @@ else:
 
 rep_num = args.rep
 run_count = args.run_count
-dataset = args.dataset
+datasets = args.datasets.split(',')
 algo_list = ['adaboost', 'random_forest', 'k_nearest_neighbors', 'gradient_boosting']
-print(rep_num, run_count, dataset)
+print(rep_num, run_count, datasets)
 
 
 def test_no_free_lunch():
     from alphaml.engine.components.data_manager import DataManager
     from alphaml.estimators.classifier import Classifier
     from alphaml.datasets.cls_dataset.dataset_loader import load_data
-
-    for algo in algo_list:
+    for dataset in datasets:
         for run_id in range(rep_num):
-            for optimizer in ['smbo']:
-                task_format = dataset + algo + '_%d'
-                X, y, _ = load_data(dataset)
+            for algo in algo_list:
+                for optimizer in ['smbo']:
+                    task_format = dataset + algo + '_%d'
+                    X, y, _ = load_data(dataset)
 
-                cls = Classifier(include_models=[algo], optimizer=optimizer).fit(
+                    cls = Classifier(include_models=[algo], optimizer=optimizer).fit(
                     DataManager(X, y), metric='accuracy', runcount=run_count, task_name=task_format % run_id)
-                print(cls.predict(X))
+                    print(cls.predict(X))
 
 
 def plot():
+    dataset = datasets[0]
     color_list = ['purple', 'royalblue', 'green', 'red', 'brown', 'orange', 'yellowgreen']
     markers = ['s', '^', '2', 'o', 'v', 'p', '*']
     mth_list = algo_list
@@ -96,5 +97,5 @@ def plot():
 
 
 if __name__ == "__main__":
-    # test_no_free_lunch()
-    plot()
+    test_no_free_lunch()
+    # plot()
