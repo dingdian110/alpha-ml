@@ -49,6 +49,7 @@ def test_cash_module():
     from alphaml.engine.components.data_manager import DataManager
     from alphaml.estimators.classifier import Classifier
     from alphaml.datasets.cls_dataset.dataset_loader import load_data
+    from alphaml.utils.constants import MAX_INT
 
     rep_num = args.rep
     run_count = args.run_count
@@ -57,12 +58,18 @@ def test_cash_module():
 
     for dataset in datasets:
         for run_id in range(rep_num):
-            for optimizer in ['smbo']:
-                task_format = dataset + '_alpha_3_%d'
-                X, y, _ = load_data(dataset)
+            task_format = dataset + '_a6_%d'
+            X, y, _ = load_data(dataset)
+            dm = DataManager(X, y)
+            seed = np.random.random_integers(MAX_INT)
+            for optimizer in ['smbo', 'ts_smbo']:
                 cls = Classifier(
-                    include_models=['gaussian_nb', 'adaboost', 'random_forest', 'k_nearest_neighbors', 'gradient_boosting'],
-                    optimizer=optimizer).fit(DataManager(X, y), metric='accuracy', runcount=run_count, task_name=task_format % run_id)
+                    include_models=['gaussian_nb', 'adaboost', 'random_forest',
+                                    'k_nearest_neighbors', 'gradient_boosting'],
+                    optimizer=optimizer,
+                    seed=seed
+                ).fit(
+                    dm, metric='accuracy', runcount=run_count, task_name=task_format % run_id)
                 print(cls.predict(X))
 
 
