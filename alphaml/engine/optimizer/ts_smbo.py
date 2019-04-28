@@ -57,7 +57,7 @@ class TS_SMBO(BaseOptimizer):
             if num_dim == 0:
                 self.alphas[estimator] = 1e10
             else:
-                self.alphas[estimator] = 10 * math.sqrt(self.max_dim/num_dim)
+                self.alphas[estimator] = math.sqrt(self.max_dim/num_dim)
 
     def run(self):
         configs_list = list()

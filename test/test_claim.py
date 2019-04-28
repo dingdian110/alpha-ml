@@ -2,20 +2,6 @@ import sys
 import argparse
 import pickle
 import numpy as np
-import seaborn as sns
-import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
-import matplotlib.lines as mlines
-sns.set_style(style='whitegrid')
-
-plt.rc('text', usetex=True)
-plt.rc('font', size=12.0, family='Times New Roman')
-plt.rcParams['figure.figsize'] = (8.0, 4.0)
-plt.rcParams['text.latex.preamble'] = [r"\usepackage{amsmath}"]
-plt.rcParams["legend.frameon"] = True
-plt.rcParams["legend.facecolor"] = 'white'
-plt.rcParams["legend.edgecolor"] = 'black'
-plt.rc('legend', **{'fontsize': 12})
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--mode', choices=['master', 'daim213'], default='master')
@@ -39,7 +25,7 @@ algo_list = ['adaboost', 'random_forest', 'k_nearest_neighbors', 'gradient_boost
 print(rep_num, run_count, datasets)
 
 
-def test_complexity():
+def test_claim():
     from alphaml.engine.components.data_manager import DataManager
     from alphaml.estimators.classifier import Classifier
     from alphaml.datasets.cls_dataset.dataset_loader import load_data
@@ -99,47 +85,32 @@ def test_complexity():
     print(perfs_list)
 
 
-def plot():
-    dataset = datasets[0]
-    color_list = ['purple', 'royalblue', 'green', 'red', 'brown', 'orange', 'yellowgreen']
-    markers = ['s', '^', '2', 'o', 'v', 'p', '*']
-    mth_list = algo_list
-    lw = 2
-    ms = 4
-    me = 10
+def plot(dataset, rep_num):
+    perfs_list = list()
+    for run_id in range(rep_num):
+        file_id = 'data/%s/%s_claim_single_%d_%s.data' % (dataset, dataset, run_id, 'smac')
+        with open(file_id, 'rb') as f:
+            data = pickle.load(f)
+        estimator = data['configs'][0]['estimator']
+        perfs_1 = data['perfs']
 
-    color_dict, marker_dict = dict(), dict()
-    for index, mth in enumerate(mth_list):
-        color_dict[mth] = color_list[index]
-        marker_dict[mth] = markers[index]
+        file_id = 'data/%s/%s_claim_%d_%s.data' % (dataset, dataset, run_id, 'smac')
+        with open(file_id, 'rb') as f:
+            data = pickle.load(f)
+        perfs_2 = [item[1] for item in zip(data['configs'], data['perfs']) if item[0]['estimator'] == estimator]
+        assert len(perfs_1) == len(perfs_2)
+        perfs_list.append((perfs_1, perfs_2))
 
-    fig, ax = plt.subplots(1)
-    handles = list()
-    x_num = 20
+    cnt = 0
+    for item in perfs_list:
+        item1, item2 = item
+        print(len(item1), max(item1), len(item2), max(item2))
+        if max(item1) > max(item2):
+            cnt += 1
 
-    for mth in mth_list:
-        perfs = list()
-        for id in range(rep_num):
-            file_id = 'data/%s_%d_%s.data' % (dataset+mth, id, 'smac')
-            with open(file_id, 'rb') as f:
-                data = pickle.load(f)
-            perfs.append(data['perfs'])
-        perfs = np.mean(perfs, axis=0)
-        print(mth, max(perfs))
-        x_num = len(perfs)
-        ax.plot(list(range(x_num)), perfs, label=mth, lw=lw, color=color_dict[mth],
-                marker=marker_dict[mth], markersize=ms, markevery=me)
-        line = mlines.Line2D([], [], color=color_dict[mth], marker=marker_dict[mth],
-                             markersize=ms, label=r'\textbf{%s}' % mth.replace("_", "\\_"))
-        handles.append(line)
-
-    ax.xaxis.set_major_locator(ticker.MultipleLocator(x_num // 10))
-    legend = ax.legend(handles=handles, loc='best')
-    ax.set_xlabel('\\textbf{Iteration}', fontsize=15)
-    ax.set_ylabel('\\textbf{Validation accuracy}', fontsize=15)
-    plt.show()
+    print('='*50, cnt)
 
 
 if __name__ == "__main__":
-    test_complexity()
-    # plot()
+    # test_claim()
+    plot('svmguide2', 50)
