@@ -43,15 +43,19 @@ def test_no_free_lunch():
     from alphaml.engine.components.data_manager import DataManager
     from alphaml.estimators.classifier import Classifier
     from alphaml.datasets.cls_dataset.dataset_loader import load_data
+    from alphaml.utils.constants import MAX_INT
+
     for dataset in datasets:
         for run_id in range(rep_num):
+            X, y, _ = load_data(dataset)
+            dm = DataManager(X, y)
+            seed = np.random.random_integers(MAX_INT)
             for algo in algo_list:
                 for optimizer in ['smbo']:
                     task_format = dataset + algo + '_%d'
-                    X, y, _ = load_data(dataset)
-
-                    cls = Classifier(include_models=[algo], optimizer=optimizer).fit(
-                    DataManager(X, y), metric='accuracy', runcount=run_count, task_name=task_format % run_id)
+                    cls = Classifier(
+                        include_models=[algo], optimizer=optimizer, seed=seed).fit(
+                        dm, metric='accuracy', runcount=run_count, task_name=task_format % run_id)
                     print(cls.predict(X))
 
 

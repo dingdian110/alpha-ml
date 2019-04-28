@@ -37,46 +37,60 @@ run_count = args.run_count
 datasets = args.datasets.split(',')
 algo_list = ['adaboost', 'random_forest', 'k_nearest_neighbors', 'gradient_boosting']
 print(rep_num, run_count, datasets)
-algo = algo_list[0]
 
 
 def test_complexity():
     from alphaml.engine.components.data_manager import DataManager
     from alphaml.estimators.classifier import Classifier
     from alphaml.datasets.cls_dataset.dataset_loader import load_data
+    from alphaml.utils.constants import MAX_INT
 
     perfs_list = list()
     for dataset in datasets:
         for run_id in range(rep_num):
-                for optimizer in ['smbo']:
-                    task_format = dataset + '_complexity_%d'
-                    X, y, _ = load_data(dataset)
-                    cls = Classifier(include_models=algo_list, optimizer=optimizer).fit(
-                    DataManager(X, y), metric='accuracy', runcount=run_count, task_name=task_format % run_id)
-                    print(cls.predict(X))
+            X, y, _ = load_data(dataset)
+            dm = DataManager(X, y)
+            seed = np.random.random_integers(MAX_INT)
+            task_format = dataset + '_claim_%d'
 
-                    file_id = 'data/%s_complexity_%d_%s.data' % (dataset, run_id, 'smac')
-                    with open(file_id, 'rb') as f:
-                        data = pickle.load(f)
+            for optimizer in ['smbo']:
+                cls = Classifier(include_models=algo_list, optimizer=optimizer, seed=seed).fit(
+                    dm, metric='accuracy', runcount=run_count, task_name=task_format % run_id)
+                print(cls.predict(X))
 
-                    perfs = list()
-                    for config, perf in zip(data['configs'], data['perfs']):
-                        if config['estimator'] == algo:
-                            perfs.append(perf)
-                    num_runs = len(perfs)
-                    print('='*20, max(perfs), num_runs)
+                file_id = 'data/%s_claim_%d_%s.data' % (dataset, run_id, 'smac')
+                with open(file_id, 'rb') as f:
+                    data = pickle.load(f)
 
-                    task_format = dataset + '_complexity_single_%d'
-                    cls = Classifier(include_models=[algo], optimizer=optimizer).fit(
-                        DataManager(X, y), metric='accuracy', runcount=num_runs, task_name=task_format % run_id)
-                    print(cls.predict(X))
+                best_id = np.argmax(data['perfs'])
+                best_value = data['perfs'][best_id]
+                if data['perfs'].count(best_value) > 1:
+                    stats = dict()
+                    for conf, perf in zip(data['configs'], data['perfs']):
+                        if perf == best_value:
+                            est = conf['estimator']
+                            if est not in stats:
+                                stats[est] = 0
+                            stats[est] += 1
+                    tmp_id = np.argmax(stats.values())
+                    best_estimator = list(stats.keys())[tmp_id]
+                    print('=' * 20, best_value, stats)
+                else:
+                    best_estimator = data['configs'][best_id]['estimator']
+                    print('='*20, data['perfs'][best_id], data['configs'][best_id])
 
-                    file_id = 'data/%s_complexity_single_%d_%s.data' % (dataset, run_id, 'smac')
-                    with open(file_id, 'rb') as f:
-                        data = pickle.load(f)
-                    perfs_single = data['perfs']
-                    print('='*20 + 'single', max(perfs_single), len(perfs_single))
-                    perfs_list.append((perfs, perfs_single))
+                run_cnts = len([item for item in data['configs'] if item['estimator'] == best_estimator])
+
+                task_format = dataset + '_claim_single_%d'
+                cls = Classifier(include_models=[best_estimator], optimizer=optimizer, seed=seed).fit(
+                    dm, metric='accuracy', runcount=run_cnts, task_name=task_format % run_id)
+                print(cls.predict(X))
+
+                file_id = 'data/%s_claim_single_%d_%s.data' % (dataset, run_id, 'smac')
+                with open(file_id, 'rb') as f:
+                    data_s = pickle.load(f)
+                print('='*20 + 'single', max(data_s['perfs']))
+                perfs_list.append((data['perfs'], data_s['perfs']))
 
     for item in perfs_list:
         item1, item2 = item
