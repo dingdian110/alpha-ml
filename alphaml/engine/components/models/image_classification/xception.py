@@ -53,7 +53,7 @@ class XceptionClassifier(BaseImageClassificationModel):
         self.load_data(data, **kwarg)
         self.base_model = Xception(self.inputshape,
                                    xception_middle_blocks=self.xception_middle_blocks)
-        super().fit(data, **kwarg)
+        return super().fit(data, **kwarg)
 
 
 def Xception(input_shape, **kwargs):

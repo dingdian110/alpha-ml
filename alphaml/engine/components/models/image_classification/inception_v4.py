@@ -57,7 +57,7 @@ class Inceptionv4Classifier(BaseImageClassificationModel):
                                        inceptionv4_block_a=self.inceptionv4_block_a,
                                        inceptionv4_block_b=self.inceptionv4_block_b,
                                        inceptionv4_block_c=self.inceptionv4_block_c)
-        super().fit(data, **kwarg)
+        return super().fit(data, **kwarg)
 
 
 def conv2d_bn(x,

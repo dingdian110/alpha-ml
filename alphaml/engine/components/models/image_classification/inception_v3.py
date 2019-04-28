@@ -17,7 +17,9 @@ class Inceptionv3Classifier(BaseImageClassificationModel):
         self.sgd_momentum = None
         self.adam_lr = None
         self.adam_decay = None
-
+        self.inceptionv3_block_a = None
+        self.inceptionv3_block_b = None
+        self.inceptionv3_block_c = None
         self.estimator = None
         self.inputshape = None
         self.classnum = None
@@ -34,7 +36,7 @@ class Inceptionv3Classifier(BaseImageClassificationModel):
         inceptionv3_block_a = UniformIntegerHyperparameter('inceptionv3_block_a', 2, 4, default_value=3)
         inceptionv3_block_b = UniformIntegerHyperparameter('inceptionv3_block_b', 3, 5, default_value=4)
         inceptionv3_block_c = UniformIntegerHyperparameter('inceptionv3_block_c', 1, 3, default_value=2)
-        cs.add_hyperparameters(inceptionv3_block_a, inceptionv3_block_b, inceptionv3_block_c)
+        cs.add_hyperparameters([inceptionv3_block_a, inceptionv3_block_b, inceptionv3_block_c])
         return cs
 
     @staticmethod
@@ -55,7 +57,7 @@ class Inceptionv3Classifier(BaseImageClassificationModel):
                                        inceptionv3_block_a=self.inceptionv3_block_a,
                                        inceptionv3_block_b=self.inceptionv3_block_b,
                                        inceptionv3_block_c=self.inceptionv3_block_c)
-        super().fit(data, **kwarg)
+        return super().fit(data, **kwarg)
 
 
 def conv2d_bn(x,
@@ -247,7 +249,7 @@ def Inception_v3(input_shape, **kwargs):
     x = inception_a(x, 0, 32)
     index = 1
     for i in range(kwargs['inceptionv3_block_a'] - 1):
-        x = inception_a(x, i, 64)
+        x = inception_a(x, index, 64)
         index += 1
 
     x = reduction_a(x, index)
@@ -271,7 +273,3 @@ def Inception_v3(input_shape, **kwargs):
     # create model
     model = Model(inputs=img_input, outputs=x, name='InceptionV3')
     return model
-
-
-base = Inception_v3((256, 256, 3))
-base.summary()

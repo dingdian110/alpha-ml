@@ -67,7 +67,7 @@ class VGGNetClassifier(BaseImageClassificationModel):
                                  vgg_block3_layer=self.vgg_block3_layer,
                                  vgg_block4_layer=self.vgg_block4_layer,
                                  vgg_block5_layer=self.vgg_block5_layer)
-        super().fit(data, **kwarg)
+        return super().fit(data, **kwarg)
 
 def VGGNet(input_shape, **kwargs):
     """Instantiates the VGG architecture.

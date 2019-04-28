@@ -66,7 +66,7 @@ class ResNetClassifier(BaseImageClassificationModel):
                                  res_stage3_block=self.res_stage3_block,
                                  res_stage4_block=self.res_stage4_block,
                                  res_stage5_block=self.res_stage5_block)
-        super().fit(data, **kwarg)
+        return super().fit(data, **kwarg)
 
 
 def identity_block(input_tensor, kernel_size, filters, stage, block):

@@ -139,8 +139,11 @@ class BaseImageClassificationModel(BaseClassificationModel):
         y = layers.Dropout(1 - self.keep_prob)(y)
         y = layers.Dense(self.classnum, activation=final_activation, name='Dense_final')(y)
         model = Model(inputs=self.base_model.input, outputs=y)
-        # TODO: load models after training
-        checkpoint = ModelCheckpoint(filepath=os.path.join('dl_models','model_%s.hdf5' % timestr),
+        # TODO: save models after training
+        if not os.path.exists('dl_models'):
+            os.makedirs('dl_models')
+        modelpath = os.path.join('dl_models', 'model_%s.hdf5' % timestr)
+        checkpoint = ModelCheckpoint(filepath=modelpath,
                                      monitor=self.monitor,
                                      save_best_only=True,
                                      period=1)
@@ -152,7 +155,7 @@ class BaseImageClassificationModel(BaseClassificationModel):
                             callbacks=[checkpoint, earlystop])
         self.estimator = model
         self.best_result = checkpoint.best
-        return self
+        return self, modelpath
 
     def predict(self, X):
         if self.estimator is None:
