@@ -58,7 +58,7 @@ def test_cash_module():
 
     for dataset in datasets:
         for run_id in range(rep_num):
-            task_format = dataset + '_a6_%d'
+            task_format = dataset + '_a7_%d'
             X, y, _ = load_data(dataset)
             dm = DataManager(X, y)
             seed = np.random.random_integers(MAX_INT)
