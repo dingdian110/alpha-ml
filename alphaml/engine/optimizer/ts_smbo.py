@@ -117,7 +117,7 @@ class TS_SMBO(BaseOptimizer):
                         for est in self.estimator_arms:
                             if est != best_arm:
                                 self.penalty_factor[est] *= self.gamma
-                        print('Penalty factor', self.penalty_factor)
+                        self.logger.info('='*10 + 'Penalty factor: %s' % str(self.penalty_factor))
 
                 self.ts_params[best_arm][1] = self.penalty_factor[best_arm] * 0.1667 / \
                                               (self.alphas[best_arm] * self.ts_cnts[best_arm] + 1)
