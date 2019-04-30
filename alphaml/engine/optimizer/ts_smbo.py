@@ -51,7 +51,7 @@ class TS_SMBO(BaseOptimizer):
             smac = SMAC(scenario=Scenario(scenario_dict),
                         rng=np.random.RandomState(self.seed), tae_runner=self.evaluator)
             self.smac_containers[estimator] = smac
-            self.ts_params[estimator] = [0.5, 0.1667]
+            self.ts_params[estimator] = [0.5, 1.]
             self.ts_cnts[estimator] = 0
             self.penalty_factor[estimator] = 1.
             self.ts_rewards[estimator] = list()
