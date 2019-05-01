@@ -40,7 +40,8 @@ class ExtraTreesClassifier(IterativeComponentWithSampleWeight, BaseClassificatio
                                               min_samples_leaf=self.min_samples_leaf,
                                               max_depth=None,
                                               bootstrap=self.bootstrap,
-                                              random_state=self.random_state)
+                                              random_state=self.random_state,
+                                              n_jobs=self.n_jobs)
         self.estimator.fit(X, y, sample_weight=sample_weight)
         return self
 
