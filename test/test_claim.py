@@ -105,7 +105,7 @@ def plot(dataset, rep_num):
     for item in perfs_list:
         item1, item2 = item
         print(len(item1), max(item1), len(item2), max(item2))
-        if max(item1) > max(item2):
+        if max(item1) >= max(item2):
             cnt += 1
 
     print('='*50, cnt)
@@ -113,4 +113,4 @@ def plot(dataset, rep_num):
 
 if __name__ == "__main__":
     # test_claim()
-    plot('svmguide2', 50)
+    plot('segment', 50)

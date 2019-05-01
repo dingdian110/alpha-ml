@@ -52,10 +52,10 @@ def test_no_free_lunch():
             seed = np.random.random_integers(MAX_INT)
             for algo in algo_list:
                 for optimizer in ['smbo']:
-                    task_format = dataset + algo + '_%d'
+                    task_format = dataset + algo + '_%d_%d'
                     cls = Classifier(
                         include_models=[algo], optimizer=optimizer, seed=seed).fit(
-                        dm, metric='accuracy', runcount=run_count, task_name=task_format % run_id)
+                        dm, metric='accuracy', runcount=run_count, task_name=task_format % (run_count, run_id))
                     print(cls.predict(X))
 
 
