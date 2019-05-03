@@ -54,11 +54,11 @@ def load_data(dataset_name):
         from alphaml.datasets.cls_dataset.shuttle import load_shuttle
         X, y = load_shuttle(data_dir_template % dataset_name)
         num_cls = 7
-    elif dataset_name == 'sensit_vehicle':
+    elif dataset_name == 'sensitvehicle':
         from alphaml.datasets.cls_dataset.sensit_vehicle import load_sensit_vehicle
         X, y = load_sensit_vehicle(data_dir_template % dataset_name)
         num_cls = 7
-    elif dataset_name == 'connect_4':
+    elif dataset_name == 'connect4':
         from alphaml.datasets.cls_dataset.connect_4 import load_connect_4
         X, y = load_connect_4(data_dir_template % dataset_name)
         num_cls = 3
@@ -98,6 +98,18 @@ def load_data(dataset_name):
         from alphaml.datasets.cls_dataset.svm_guide2 import load_svmguide2
         X, y = load_svmguide2(data_dir_template % dataset_name)
         num_cls = 3
+    elif dataset_name.startswith('synthetic'):
+        from alphaml.datasets.cls_dataset.synthetic import load_synthetic
+        id = int(dataset_name[-1])
+        X, y = load_synthetic(data_dir_template % 'synthetic', id)
+        if id == 0:
+            num_cls = 2
+        elif id == 1:
+            num_cls = 6
+        elif id == 2:
+            num_cls = 10
+        else:
+            raise ValueError('Invalid id: %d' % id)
     else:
         raise ValueError('Invalid dataset name: %s!' % dataset_name)
     print(X.shape, y.shape)

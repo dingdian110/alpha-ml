@@ -21,13 +21,13 @@ class XGBoostClassifier(BaseClassificationModel):
         self.scale_pos_weight = scale_pos_weight
         self.n_jobs = -1
         self.random_state = random_state
-
+        self.num_cls = -1
         self.estimator = None
 
     def fit(self, X, Y):
         self.n_estimators = int(self.n_estimators)
         dmtrain = xgb.DMatrix(X, label=Y)
-        num_cls = len(set(Y))
+        self.num_cls = len(set(Y))
 
         parameters = dict()
         parameters['eta'] = self.eta
@@ -40,11 +40,11 @@ class XGBoostClassifier(BaseClassificationModel):
         parameters['lambda'] = self.lambda_t
         parameters['scale_pos_weight'] = self.scale_pos_weight
 
-        if num_cls > 2:
-            parameters['num_class'] = num_cls
+        if self.num_cls > 2:
+            parameters['num_class'] = self.num_cls
             parameters['objective'] = 'multi:softmax'
             parameters['eval_metric'] = 'merror'
-        elif num_cls == 2:
+        elif self.num_cls == 2:
             parameters['objective'] = 'binary:logistic'
             parameters['eval_metric'] = 'error'
 
@@ -61,7 +61,10 @@ class XGBoostClassifier(BaseClassificationModel):
         if self.estimator is None:
             raise NotImplementedError
         dm = xgb.DMatrix(X, label=None)
-        return self.estimator.predict(dm)
+        pred = self.estimator.predict(dm)
+        if self.num_cls == 2:
+            pred = [int(i > 0.5) for i in pred]
+        return pred
 
     def predict_proba(self, X):
         if self.estimator is None:

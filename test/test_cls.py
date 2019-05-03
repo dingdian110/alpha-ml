@@ -58,14 +58,14 @@ def test_cash_module():
 
     for dataset in datasets:
         for run_id in range(rep_num):
-            task_format = dataset + '_a7_%d'
+            task_format = dataset + '_all_%d'
             X, y, _ = load_data(dataset)
+            print(y)
             dm = DataManager(X, y)
             seed = np.random.random_integers(MAX_INT)
             for optimizer in ['smbo', 'ts_smbo']:
                 cls = Classifier(
-                    include_models=['gaussian_nb', 'adaboost', 'random_forest',
-                                    'k_nearest_neighbors', 'gradient_boosting'],
+                    include_models=['logistic_regression', 'extra_trees', 'xgboost'],
                     optimizer=optimizer,
                     seed=seed
                 ).fit(

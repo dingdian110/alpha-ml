@@ -1,3 +1,6 @@
+import time
+import logging
+import multiprocessing
 from alphaml.engine.components.models.classification import _classifiers
 
 
@@ -23,6 +26,7 @@ class BaseEvaluator(object):
     def __init__(self):
         self.data_manager = None
         self.metric_func = None
+        self.logger = logging.getLogger(__name__)
 
     def __call__(self, config):
         params_num = len(config.get_dictionary().keys()) - 1
@@ -33,7 +37,9 @@ class BaseEvaluator(object):
 
         # TODO: how to parallize.
         if hasattr(estimator, 'n_jobs'):
-            setattr(estimator, 'n_jobs', 6)
+            setattr(estimator, 'n_jobs', multiprocessing.cpu_count() - 1)
+        start_time = time.time()
+        self.logger.info('<START TO FIT> %s' % classifier_type)
         # Fit the estimator on the training data.
         estimator.fit(self.data_manager.train_X, self.data_manager.train_y)
 
@@ -41,7 +47,7 @@ class BaseEvaluator(object):
         y_pred = estimator.predict(self.data_manager.val_X)
         metric = self.metric_func(self.data_manager.val_y, y_pred)
 
-        print('--....')
+        self.logger.info('<EVALUATE %s TAKES %.2f SECONDS>' % (classifier_type, time.time() - start_time))
         # Turn it to a minimization problem.
         return 1 - metric
 
