@@ -65,6 +65,7 @@ def test_cash_module():
             seed = np.random.random_integers(MAX_INT)
             for optimizer in ['smbo', 'ts_smbo']:
                 cls = Classifier(
+                    exclude_models=['gradient_boosting'],
                     optimizer=optimizer,
                     seed=seed
                 ).fit(
