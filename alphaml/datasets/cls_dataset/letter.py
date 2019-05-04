@@ -8,8 +8,7 @@ def load_letter(data_folder):
         for line in f.readlines():
             items = line.strip().split('\n')[0].split(' ')
             d = [0] * 17
-            label = int(items[0])
-            d[0] = label - 1 if label < 4 else label - 2
+            d[0] = int(items[0]) - 1
             for item in items[1:]:
                 key, value = item.split(':')
                 d[int(key)] = float(value)
