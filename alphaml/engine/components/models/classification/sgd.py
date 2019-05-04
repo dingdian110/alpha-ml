@@ -54,7 +54,7 @@ class SGD(
                 else 0.15
             self.epsilon = float(self.epsilon) if self.epsilon is not None \
                 else 0.1
-            self.eta0 = float(self.eta0)
+            self.eta0 = float(self.eta0) if self.eta0 is not None else 0.01
             self.power_t = float(self.power_t) if self.power_t is not None \
                 else 0.5
             self.average = check_for_bool(self.average)
