@@ -41,31 +41,31 @@ algo_list = ['adaboost', 'random_forest', 'k_nearest_neighbors', 'gradient_boost
 print(rep_num, run_count, datasets)
 
 
-def test_no_free_lunch():
+def test_hyperspace():
     from alphaml.engine.components.data_manager import DataManager
     from alphaml.estimators.classifier import Classifier
     from alphaml.datasets.cls_dataset.dataset_loader import load_data
     from alphaml.utils.constants import MAX_INT
 
-    for dataset in datasets:
-        for run_id in range(rep_num):
-            X, y, _ = load_data(dataset)
-            dm = DataManager(X, y)
-            seed = np.random.random_integers(MAX_INT)
-            for algo in algo_list:
-                for optimizer in ['smbo']:
-                    task_format = dataset + '_' + algo + '_%d_%d'
-                    cls = Classifier(
-                        include_models=[algo], optimizer=optimizer, seed=seed).fit(
-                        dm, metric='accuracy', runcount=run_count, task_name=task_format % (run_count, run_id))
-                    print(cls.predict(X))
+    for n_est in [1, 2, 4, 8]:
+        for dataset in datasets:
+            for run_id in range(rep_num):
+                X, y, _ = load_data(dataset)
+                dm = DataManager(X, y)
+                seed = np.random.random_integers(MAX_INT)
+                algos = algo_list[:n_est]
+                task_format = dataset + '_hp_%d_%d' % (n_est, run_id)
+                cls = Classifier(
+                    include_models=algos, optimizer='smbo', seed=seed).fit(
+                    dm, metric='accuracy', runcount=run_count, task_name=task_format)
+                print(cls.predict(X))
 
 
 def plot():
     dataset = datasets[0]
     color_list = ['purple', 'royalblue', 'green', 'red', 'brown', 'orange', 'yellowgreen']
     markers = ['s', '^', '2', 'o', 'v', 'p', '*']
-    mth_list = algo_list
+    mth_list = [1, 2, 4, 8]
     lw = 2
     ms = 4
     me = 10
@@ -82,7 +82,7 @@ def plot():
     for mth in mth_list:
         perfs = list()
         for id in range(rep_num):
-            file_id = 'data/%s_%d_%s.data' % (dataset+mth, id, 'smac')
+            file_id = 'data/%s/%s_hp_%d_%d_%s.data' % (dataset, dataset, mth, id, 'smac')
             with open(file_id, 'rb') as f:
                 data = pickle.load(f)
             perfs.append(data['perfs'])
@@ -103,5 +103,5 @@ def plot():
 
 
 if __name__ == "__main__":
-    test_no_free_lunch()
+    test_hyperspace()
     # plot()

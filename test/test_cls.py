@@ -65,7 +65,6 @@ def test_cash_module():
             seed = np.random.random_integers(MAX_INT)
             for optimizer in ['smbo', 'ts_smbo']:
                 cls = Classifier(
-                    include_models=['logistic_regression', 'extra_trees', 'xgboost'],
                     optimizer=optimizer,
                     seed=seed
                 ).fit(
