@@ -18,8 +18,7 @@ class TS_SMBO(BaseOptimizer):
         self.estimator_arms = self.config_space.get_hyperparameter('estimator').choices
         self.task_name = kwargs['task_name'] if 'task_name' in kwargs else 'default'
         self.result_file = self.task_name + '_ts_smac.data'
-
-        self.update_mode = 1
+        self.update_mode = kwargs['update_mode'] if 'update_mode' in kwargs else 1
         self.smac_containers = dict()
         self.ts_params = dict()
         self.ts_cnts = dict()
@@ -121,6 +120,14 @@ class TS_SMBO(BaseOptimizer):
 
                 self.ts_params[best_arm][1] = self.penalty_factor[best_arm] * 0.1667 / \
                                               (self.alphas[best_arm] * self.ts_cnts[best_arm] + 1)
+            elif self.update_mode == 2:
+                # The naive Gaussian MAB.
+                self.ts_params[best_arm][0] = np.mean(self.ts_rewards[best_arm])
+                self.ts_params[best_arm][1] = 0.1667 / (self.ts_cnts[best_arm] + 1)
+            elif self.update_mode == 3:
+                # The improved version without penalty term.
+                self.ts_params[best_arm][0] = best_reward
+                self.ts_params[best_arm][1] = 0.1667 / (self.alphas[best_arm] * self.ts_cnts[best_arm] + 1)
             else:
                 raise ValueError('Invalid update mode: %d' % self.update_mode)
             if iter_num >= self.iter_num:

@@ -38,11 +38,6 @@ run_count = args.run_count
 start_run = args.start_runid
 datasets = args.datasets.split(',')
 
-algo_list = ['adaboost', 'gradient_boosting', 'decision_tree', 'random_forest',
-             'sgd', 'extra_trees', 'lda', 'liblinear_svc',
-             'libsvm_svc', 'logistic_regression', 'xgboost', 'k_nearest_neighbors']
-
-assert len(algo_list) == len(set(algo_list))
 print(rep_num, run_count, datasets)
 
 
@@ -59,12 +54,11 @@ def test_hyperspace():
                 dm = DataManager(X, y)
                 seed = np.random.random_integers(MAX_INT)
 
-                for n_est in [1, 2, 4, 8, 12]:
-                    algos = algo_list[:n_est]
-                    task_format = dataset + '_hp_%d_%d' % (n_est, run_id)
-                    cls = Classifier(
-                        include_models=algos, optimizer='smbo', seed=seed).fit(
-                        dm, metric='accuracy', runcount=run_count, task_name=task_format)
+                for update_mode in [2, 3]:
+                    task_format = dataset + '_mode_%d_%d' % (update_mode, run_id)
+                    cls = Classifier(optimizer='ts_smbo', seed=seed).fit(
+                        dm, metric='accuracy', runcount=run_count,
+                        task_name=task_format, update_mode=update_mode)
                     print(cls.predict(X))
     except Exception as e:
         print(e)
@@ -75,7 +69,7 @@ def plot():
     dataset = datasets[0]
     color_list = ['purple', 'royalblue', 'green', 'red', 'brown', 'orange', 'yellowgreen']
     markers = ['s', '^', '2', 'o', 'v', 'p', '*']
-    mth_list = [1, 4, 8, 12]
+    mth_list = [1, 2, 3]
     lw = 2
     ms = 4
     me = 10
@@ -92,7 +86,7 @@ def plot():
     for mth in mth_list:
         perfs = list()
         for id in range(rep_num):
-            file_id = 'data/%s/%s_hp_%d_%d_%s.data' % (dataset, dataset, mth, id, 'smac')
+            file_id = 'data/%s/%s_mode_%d_%d_%s.data' % (dataset, dataset, mth, id, 'smac')
             with open(file_id, 'rb') as f:
                 data = pickle.load(f)
             perfs.append(data['perfs'])
@@ -102,7 +96,7 @@ def plot():
         ax.plot(list(range(x_num)), perfs, label=mth, lw=lw, color=color_dict[mth],
                 marker=marker_dict[mth], markersize=ms, markevery=me)
         line = mlines.Line2D([], [], color=color_dict[mth], marker=marker_dict[mth],
-                             markersize=ms, label=r'\textbf{m-%d}' % mth)
+                             markersize=ms, label=r'\textbf{mode-%d}' % mth)
         handles.append(line)
 
     ax.xaxis.set_major_locator(ticker.MultipleLocator(x_num // 10))
