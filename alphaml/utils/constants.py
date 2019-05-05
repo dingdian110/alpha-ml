@@ -25,3 +25,7 @@ INPUT = 8
 
 SIGNED_DATA = 9
 UNSIGNED_DATA = 10
+
+"""Constants used in Integer.
+"""
+MAX_INT = 999999999

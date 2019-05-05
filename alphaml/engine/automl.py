@@ -18,7 +18,7 @@ class AutoML(object):
             include_models,
             exclude_models,
             optimizer_type,
-            random_seed=42):
+            seed=42):
         self.time_budget = time_budget
         self.each_run_budget = each_run_budget
         self.ensemble_size = ensemble_size
@@ -27,7 +27,7 @@ class AutoML(object):
         self.exclude_models = exclude_models
         self.component_manager = ComponentsManager()
         self.optimizer_type = optimizer_type
-        self.seed = random_seed
+        self.seed = seed
         self.optimizer = None
         self.evaluator = None
         self.metric = None
@@ -86,9 +86,9 @@ class AutoMLClassifier(AutoML):
                  include_models,
                  exclude_models,
                  optimizer_type,
-                 random_seed=42):
+                 seed=None):
         super().__init__(time_budget, each_run_budget, memory_limit, ensemble_size, include_models,
-                         exclude_models, optimizer_type, random_seed)
+                         exclude_models, optimizer_type, seed)
         self.evaluator = BaseEvaluator()
 
     def fit(self, data, **kwargs):
@@ -104,9 +104,9 @@ class AutoIMGClassifier(AutoML):
                  include_models,
                  exclude_models,
                  optimizer_type,
-                 random_seed=42):
+                 seed=None):
         super().__init__(time_budget, each_run_budget, memory_limit, ensemble_size, include_models,
-                         exclude_models, optimizer_type, random_seed)
+                         exclude_models, optimizer_type, seed)
 
         # TODO: evaluator for IMG CLS.
         self.evaluator = None
