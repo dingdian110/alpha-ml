@@ -19,9 +19,9 @@ plt.rc('legend', **{'fontsize': 12})
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--mode', choices=['master', 'daim213'], default='master')
-parser.add_argument('--rep', type=int, default=5)
-parser.add_argument('--run_count', type=int, default=100)
-parser.add_argument('--datasets', type=str, default='iris')
+parser.add_argument('--rep', type=int, default=50)
+parser.add_argument('--run_count', type=int, default=200)
+parser.add_argument('--datasets', type=str, default='svmguide2')
 args = parser.parse_args()
 
 if args.mode == 'master':
@@ -63,7 +63,7 @@ def test_cash_module():
             print(y)
             dm = DataManager(X, y)
             seed = np.random.random_integers(MAX_INT)
-            for optimizer in ['smbo', 'ts_smbo']:
+            for optimizer in ['ts_non_smbo']:
                 cls = Classifier(
                     exclude_models=['gradient_boosting'],
                     optimizer=optimizer,

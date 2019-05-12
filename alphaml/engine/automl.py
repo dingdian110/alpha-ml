@@ -4,6 +4,7 @@ from alphaml.engine.components.data_manager import DataManager
 from alphaml.engine.evaluator.base import BaseEvaluator
 from alphaml.engine.optimizer.smac_smbo import SMAC_SMBO
 from alphaml.engine.optimizer.ts_smbo import TS_SMBO
+from alphaml.engine.optimizer.ts_nonstationary_smbo import TS_NON_SMBO
 from alphaml.utils.label_util import to_categorical, map_label, get_classnum
 import numpy as np
 
@@ -60,6 +61,10 @@ class AutoML(object):
         elif self.optimizer_type == 'ts_smbo':
             # Create optimizer.
             self.optimizer = TS_SMBO(self.evaluator, config_space, data, self.seed, **kwargs)
+            self.optimizer.run()
+        elif self.optimizer_type == 'ts_non_smbo':
+            # Create optimizer.
+            self.optimizer = TS_NON_SMBO(self.evaluator, config_space, data, self.seed, **kwargs)
             self.optimizer.run()
         else:
             raise ValueError('UNSUPPORTED optimizer: %s' % self.optimizer)
