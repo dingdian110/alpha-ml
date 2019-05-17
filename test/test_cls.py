@@ -21,7 +21,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--mode', choices=['master', 'daim213'], default='master')
 parser.add_argument('--rep', type=int, default=50)
 parser.add_argument('--run_count', type=int, default=200)
-parser.add_argument('--datasets', type=str, default='svmguide2')
+parser.add_argument('--datasets', type=str, default='glass')
 args = parser.parse_args()
 
 if args.mode == 'master':
@@ -63,13 +63,13 @@ def test_cash_module():
             print(y)
             dm = DataManager(X, y)
             seed = np.random.random_integers(MAX_INT)
-            for optimizer in ['ts_non_smbo']:
+            for optimizer in ['mono_smbo']:
                 cls = Classifier(
-                    exclude_models=['gradient_boosting'],
+                    exclude_models=['gaussian_nb'],
                     optimizer=optimizer,
                     seed=seed
                 ).fit(
-                    dm, metric='accuracy', runcount=run_count, task_name=task_format % run_id)
+                    dm, metric='accuracy', runcount=run_count, task_name=task_format % run_id, update_mode=2)
                 print(cls.predict(X))
 
 
