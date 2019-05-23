@@ -4,8 +4,10 @@ from alphaml.engine.components.data_manager import DataManager
 from alphaml.engine.evaluator.base import BaseEvaluator
 from alphaml.engine.optimizer.smac_smbo import SMAC_SMBO
 from alphaml.engine.optimizer.ts_smbo import TS_SMBO
-from alphaml.engine.optimizer.ts_nonstationary_smbo import TS_NON_SMBO
-from alphaml.engine.optimizer.monotone_mab import MONO_MAB_SMBO
+from alphaml.engine.optimizer.nonstationary_mab_optimizer import TS_NON_SMBO
+from alphaml.engine.optimizer.monotone_mab_optimizer import MONO_MAB_SMBO
+from alphaml.engine.optimizer.cmab_optimizer import CMAB_TS
+from alphaml.engine.optimizer.baseline_optimizer import BASELINE
 from alphaml.utils.label_util import to_categorical, map_label, get_classnum
 import numpy as np
 
@@ -70,6 +72,14 @@ class AutoML(object):
         elif self.optimizer_type == 'mono_smbo':
             # Create optimizer.
             self.optimizer = MONO_MAB_SMBO(self.evaluator, config_space, data, self.seed, **kwargs)
+            self.optimizer.run()
+        elif self.optimizer_type == 'cmab_ts':
+            # Create optimizer.
+            self.optimizer = CMAB_TS(self.evaluator, config_space, data, self.seed, **kwargs)
+            self.optimizer.run()
+        elif self.optimizer_type == 'baseline':
+            # Create optimizer.
+            self.optimizer = BASELINE(self.evaluator, config_space, data, self.seed, **kwargs)
             self.optimizer.run()
         else:
             raise ValueError('UNSUPPORTED optimizer: %s' % self.optimizer)

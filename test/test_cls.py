@@ -21,6 +21,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--mode', choices=['master', 'daim213'], default='master')
 parser.add_argument('--rep', type=int, default=50)
 parser.add_argument('--run_count', type=int, default=200)
+parser.add_argument('--start_runid', type=int, default=0)
 parser.add_argument('--datasets', type=str, default='glass')
 args = parser.parse_args()
 
@@ -53,11 +54,12 @@ def test_cash_module():
 
     rep_num = args.rep
     run_count = args.run_count
+    start_id = args.start_runid
     datasets = args.datasets.split(',')
     print(rep_num, run_count, datasets)
 
     for dataset in datasets:
-        for run_id in range(rep_num):
+        for run_id in range(start_id, rep_num):
             task_format = dataset + '_all_%d'
             X, y, _ = load_data(dataset)
             print(y)
