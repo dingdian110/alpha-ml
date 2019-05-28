@@ -34,10 +34,6 @@ def load_data(dataset_name):
         from alphaml.datasets.cls_dataset.a9a import load_a9a
         X, y = load_a9a(data_dir_template % dataset_name)
         num_cls = 2
-    elif dataset_name == 'usps':
-        from alphaml.datasets.cls_dataset.usps import load_usps
-        X, y = load_usps(data_dir_template % dataset_name)
-        num_cls = 10
     elif dataset_name == 'protein':
         from alphaml.datasets.cls_dataset.protein import load_protein
         X, y = load_protein(data_dir_template % dataset_name)
@@ -110,6 +106,24 @@ def load_data(dataset_name):
             num_cls = 10
         else:
             raise ValueError('Invalid id: %d' % id)
+
+    # Open ML datasets.
+    elif dataset_name == 'optdigits':
+        from alphaml.datasets.cls_dataset.optdigits import load_optdigits
+        X, y = load_optdigits(data_dir_template % dataset_name)
+        num_cls = 10
+    elif dataset_name == 'usps':
+        from alphaml.datasets.cls_dataset.usps import load_usps
+        X, y = load_usps(data_dir_template % dataset_name)
+        num_cls = 10
+    elif dataset_name == 'musk':
+        from alphaml.datasets.cls_dataset.musk import load_musk
+        X, y = load_musk(data_dir_template % dataset_name)
+        num_cls = 2
+    elif dataset_name == 'letter':
+        from alphaml.datasets.cls_dataset.letter import load_letter
+        X, y = load_letter(data_dir_template % dataset_name)
+        num_cls = 26
     else:
         raise ValueError('Invalid dataset name: %s!' % dataset_name)
     print(X.shape, y.shape)
