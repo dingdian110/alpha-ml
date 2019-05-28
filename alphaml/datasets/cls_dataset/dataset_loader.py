@@ -30,10 +30,6 @@ def load_data(dataset_name):
         from alphaml.datasets.cls_dataset.dermatology import load_dermatology
         X, y = load_dermatology(data_dir_template % dataset_name)
         num_cls = 4
-    elif dataset_name == 'a9a':
-        from alphaml.datasets.cls_dataset.a9a import load_a9a
-        X, y = load_a9a(data_dir_template % dataset_name)
-        num_cls = 2
     elif dataset_name == 'protein':
         from alphaml.datasets.cls_dataset.protein import load_protein
         X, y = load_protein(data_dir_template % dataset_name)
@@ -70,22 +66,10 @@ def load_data(dataset_name):
         from alphaml.datasets.cls_dataset.glass import load_glass
         X, y = load_glass(data_dir_template % dataset_name)
         num_cls = 6
-    elif dataset_name == 'dna':
-        from alphaml.datasets.cls_dataset.dna import load_dna
-        X, y = load_dna(data_dir_template % dataset_name)
-        num_cls = 3
-    elif dataset_name == 'pendigits':
-        from alphaml.datasets.cls_dataset.pendigits import load_pendigits
-        X, y = load_pendigits(data_dir_template % dataset_name)
-        num_cls = 10
     elif dataset_name == 'satimage':
         from alphaml.datasets.cls_dataset.satimage import load_satimage
         X, y = load_satimage(data_dir_template % dataset_name)
         num_cls = 6
-    elif dataset_name == 'segment':
-        from alphaml.datasets.cls_dataset.segment import load_segment
-        X, y = load_segment(data_dir_template % dataset_name)
-        num_cls = 7
     elif dataset_name == 'svmguide4':
         from alphaml.datasets.cls_dataset.svm_guide4 import load_svmguide4
         X, y = load_svmguide4(data_dir_template % dataset_name)
@@ -124,6 +108,30 @@ def load_data(dataset_name):
         from alphaml.datasets.cls_dataset.letter import load_letter
         X, y = load_letter(data_dir_template % dataset_name)
         num_cls = 26
+    elif dataset_name == 'a9a':
+        from alphaml.datasets.cls_dataset.a9a import load_a9a
+        X, y = load_a9a(data_dir_template % dataset_name)
+        num_cls = 2
+    elif dataset_name == 'pc4':
+        from alphaml.datasets.cls_dataset.pc4 import load_pc4
+        X, y = load_pc4(data_dir_template % dataset_name)
+        num_cls = 2
+    elif dataset_name == 'dna':
+        from alphaml.datasets.cls_dataset.dna import load_dna
+        X, y = load_dna(data_dir_template % dataset_name)
+        num_cls = 3
+    elif dataset_name == 'segment':
+        from alphaml.datasets.cls_dataset.segment import load_segment
+        X, y = load_segment(data_dir_template % dataset_name)
+        num_cls = 7
+    elif dataset_name == 'pendigits':
+        from alphaml.datasets.cls_dataset.pendigits import load_pendigits
+        X, y = load_pendigits(data_dir_template % dataset_name)
+        num_cls = 10
+    elif dataset_name == 'satimage':
+        from alphaml.datasets.cls_dataset.satimage import load_satimage
+        X, y = load_satimage(data_dir_template % dataset_name)
+        num_cls = 6
     else:
         raise ValueError('Invalid dataset name: %s!' % dataset_name)
     print(X.shape, y.shape)
