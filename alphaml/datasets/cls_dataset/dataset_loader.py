@@ -38,14 +38,6 @@ def load_data(dataset_name):
         from alphaml.datasets.cls_dataset.australian import load_australian
         X, y = load_australian(data_dir_template % dataset_name)
         num_cls = 2
-    elif dataset_name == 'poker':
-        from alphaml.datasets.cls_dataset.poker import load_poker
-        X, y = load_poker(data_dir_template % dataset_name)
-        num_cls = 10
-    elif dataset_name == 'shuttle':
-        from alphaml.datasets.cls_dataset.shuttle import load_shuttle
-        X, y = load_shuttle(data_dir_template % dataset_name)
-        num_cls = 7
     elif dataset_name == 'sensitvehicle':
         from alphaml.datasets.cls_dataset.sensit_vehicle import load_sensit_vehicle
         X, y = load_sensit_vehicle(data_dir_template % dataset_name)
@@ -132,6 +124,50 @@ def load_data(dataset_name):
         from alphaml.datasets.cls_dataset.satimage import load_satimage
         X, y = load_satimage(data_dir_template % dataset_name)
         num_cls = 6
+    elif dataset_name == 'quake':
+        from alphaml.datasets.cls_dataset.quake import load_quake
+        X, y = load_quake(data_dir_template % dataset_name)
+        num_cls = 2
+    elif dataset_name == 'splice':
+        from alphaml.datasets.cls_dataset.splice import load_splice
+        X, y = load_splice(data_dir_template % dataset_name)
+        num_cls = 3
+    elif dataset_name == 'kropt':
+        from alphaml.datasets.cls_dataset.kropt import load_kropt
+        X, y = load_kropt(data_dir_template % dataset_name)
+        num_cls = 18
+    elif dataset_name == 'mnist':
+        from alphaml.datasets.cls_dataset.mnist import load_mnist
+        X, y = load_mnist(data_dir_template % dataset_name)
+        num_cls = 10
+    elif dataset_name == 'fri_c1':
+        from alphaml.datasets.cls_dataset.fri_c1 import load_fri_c1
+        X, y = load_fri_c1(data_dir_template % dataset_name)
+        num_cls = 2
+    elif dataset_name == 'magic_telescope':
+        from alphaml.datasets.cls_dataset.magic_telescope import load_magic_telescope
+        X, y = load_magic_telescope(data_dir_template % dataset_name)
+        num_cls = 2
+    elif dataset_name == 'fbis_wc':
+        from alphaml.datasets.cls_dataset.fbis_wc import load_fbis_wc
+        X, y = load_fbis_wc(data_dir_template % dataset_name)
+        num_cls = 17
+    elif dataset_name == 'gisette':
+        from alphaml.datasets.cls_dataset.gisette import load_gisette
+        X, y = load_gisette(data_dir_template % dataset_name)
+        num_cls = 2
+    elif dataset_name == 'ova_breast':
+        from alphaml.datasets.cls_dataset.ova_breast import load_ova_breast
+        X, y = load_ova_breast(data_dir_template % dataset_name)
+        num_cls = 2
+    elif dataset_name == 'shuttle':
+        from alphaml.datasets.cls_dataset.shuttle import load_shuttle
+        X, y = load_shuttle(data_dir_template % dataset_name)
+        num_cls = 7
+    elif dataset_name == 'poker':
+        from alphaml.datasets.cls_dataset.poker import load_poker
+        X, y = load_poker(data_dir_template % dataset_name)
+        num_cls = 10
     else:
         raise ValueError('Invalid dataset name: %s!' % dataset_name)
     print(X.shape, y.shape)

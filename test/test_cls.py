@@ -60,14 +60,12 @@ def test_cash_module():
         for run_id in range(start_id, rep_num):
             task_format = dataset + '_all_%d'
             X, y, _ = load_data(dataset)
-            print(y)
             X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
 
             seed = seeds[run_id]
             dm = DataManager(X_train, y_train, random_state=seed)
             for optimizer in ['smbo']:
                 cls = Classifier(
-                    include_models=['lda', 'sgd', 'logistic_regression'],
                     optimizer=optimizer,
                     seed=seed
                 ).fit(
