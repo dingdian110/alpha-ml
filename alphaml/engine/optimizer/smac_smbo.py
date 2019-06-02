@@ -63,5 +63,6 @@ class SMAC_SMBO(BaseOptimizer):
             data['configs'] = configs_list
             data['perfs'] = config_values
             data['time_cost'] = time_list
-            with open('data/' + self.result_file, 'wb') as f:
+            dataset_id = self.result_file.split('_')[0]
+            with open('data/%s/' % dataset_id + self.result_file, 'wb') as f:
                 pickle.dump(data, f)
