@@ -8,6 +8,7 @@ from alphaml.engine.optimizer.nonstationary_mab_optimizer import TS_NON_SMBO
 from alphaml.engine.optimizer.monotone_mab_optimizer import MONO_MAB_SMBO
 from alphaml.engine.optimizer.cmab_optimizer import CMAB_TS
 from alphaml.engine.optimizer.baseline_optimizer import BASELINE
+from alphaml.engine.optimizer.sh_optimizer import SH_SMBO
 from alphaml.utils.label_util import to_categorical, map_label, get_classnum
 import numpy as np
 
@@ -80,6 +81,10 @@ class AutoML(object):
         elif self.optimizer_type == 'baseline':
             # Create optimizer.
             self.optimizer = BASELINE(self.evaluator, config_space, data, self.seed, **kwargs)
+            self.optimizer.run()
+        elif self.optimizer_type == 'sh':
+            # Create optimizer.
+            self.optimizer = SH_SMBO(self.evaluator, config_space, data, self.seed, **kwargs)
             self.optimizer.run()
         else:
             raise ValueError('UNSUPPORTED optimizer: %s' % self.optimizer)
