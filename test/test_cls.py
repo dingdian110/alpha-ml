@@ -64,8 +64,9 @@ def test_cash_module():
 
             seed = seeds[run_id]
             dm = DataManager(X_train, y_train, random_state=seed)
-            for optimizer in ['sh', 'mono_smbo', 'smbo']:
+            for optimizer in ['sh_smbo', 'mono_smbo', 'smbo']:
                 cls = Classifier(
+                    # include_models=['gradient_boosting'],
                     optimizer=optimizer,
                     seed=seed
                 ).fit(

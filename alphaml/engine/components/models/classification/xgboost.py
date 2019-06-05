@@ -88,10 +88,10 @@ class XGBoostClassifier(BaseClassificationModel):
     def get_hyperparameter_search_space(dataset_properties=None):
         cs = ConfigurationSpace()
 
-        n_estimators = UniformFloatHyperparameter("n_estimators", 100, 600, default_value=200, q=50)
+        n_estimators = UniformFloatHyperparameter("n_estimators", 50, 500, default_value=200, q=20)
         eta = UniformFloatHyperparameter("eta", 0.025, 0.3, default_value=0.3, q=0.025)
         min_child_weight = UniformIntegerHyperparameter("min_child_weight", 1, 10, default_value=1)
-        max_depth = UniformIntegerHyperparameter("max_depth", 1, 14, default_value=6)
+        max_depth = UniformIntegerHyperparameter("max_depth", 2, 10, default_value=6)
         subsample = UniformFloatHyperparameter("subsample", 0.5, 1, default_value=1, q=0.05)
         gamma = UniformFloatHyperparameter("gamma", 0, 1, default_value=0, q=0.1)
         colsample_bytree = UniformFloatHyperparameter("colsample_bytree", 0.5, 1, default_value=1., q=0.05)

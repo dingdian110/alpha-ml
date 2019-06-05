@@ -40,6 +40,7 @@ class BaseEvaluator(object):
             setattr(estimator, 'n_jobs', multiprocessing.cpu_count() - 1)
         start_time = time.time()
         self.logger.info('<START TO FIT> %s' % classifier_type)
+        self.logger.info('<CONFIG> %s' % config)
         # Fit the estimator on the training data.
         estimator.fit(self.data_manager.train_X, self.data_manager.train_y)
 
