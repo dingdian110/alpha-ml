@@ -147,7 +147,7 @@ class BaseImageClassificationModel(BaseClassificationModel):
                                      monitor=self.monitor,
                                      save_best_only=True,
                                      period=1)
-        earlystop = EarlyStopping(monitor=self.monitor, patience=8)
+        earlystop = EarlyStopping(monitor=self.monitor, patience=12)
         model.compile(optimizer=optimizer, loss=loss, metrics=[self.metricstr])
         model.fit_generator(generator=self.train_gen,
                             epochs=200,
