@@ -57,15 +57,16 @@ class ResNetClassifier(BaseImageClassificationModel):
             [res_kernel_size, res_stage2_block, res_stage3_block, res_stage4_block, res_stage5_block])
         return cs
 
-    def fit(self, x_train, y_train, x_valid=None, y_valid=None, **kwarg):
+    def fit(self, data, **kwarg):
         self.validate_inputshape()
+        self.load_data(data, **kwarg)
         self.base_model = ResNet(input_shape=self.inputshape,
                                  res_kernel_size=self.res_kernel_size,
                                  res_stage2_block=self.res_stage2_block,
                                  res_stage3_block=self.res_stage3_block,
                                  res_stage4_block=self.res_stage4_block,
                                  res_stage5_block=self.res_stage5_block)
-        super().fit(x_train, y_train, x_valid, y_valid, **kwarg)
+        return super().fit(data, **kwarg)
 
 
 def identity_block(input_tensor, kernel_size, filters, stage, block):

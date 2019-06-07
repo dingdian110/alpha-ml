@@ -19,14 +19,18 @@ def load_cifar10():
     train_x = np.array(train_x)
     train_y = np.array(train_y)
 
-    return train_x, train_y
+    # test data
+    file = open(os.path.join(packagepath, 'test_batch'), 'rb')
+    dict = pickle.load(file, encoding='bytes')
+    test_x = dict[b'data']
+    test_x = np.reshape(test_x, [10000, 3, 32, 32]).transpose([0, 2, 3, 1])
+    test_y = dict[b'labels']
+    test_y = np.array(test_y)
 
-    # # test data
-    # test_x = []
-    # test_y = []
-    # file = open(os.path.join(packagepath, 'test_batch'), 'rb')
-    # dict = pickle.load(file, encoding='bytes')
-    # test_x = dict[b'data']
-    # test_x = np.reshape(test_x, [10000, 3, 32, 32]).transpose([0, 2, 3, 1])
-    # test_y = dict[b'labels']
-    # test_y = np.array(test_y)
+    return train_x, train_y, test_x, test_y
+
+
+def load_cifar10_img():
+    traindir = os.path.join('data', 'img_cls_data', 'cifar10', 'train')
+    testdir = os.path.join('data', 'img_cls_data', 'cifar10', 'test')
+    return traindir, testdir
