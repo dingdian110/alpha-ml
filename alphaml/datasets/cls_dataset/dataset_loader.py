@@ -168,6 +168,26 @@ def load_data(dataset_name):
         from alphaml.datasets.cls_dataset.poker import load_poker
         X, y = load_poker(data_dir_template % dataset_name)
         num_cls = 10
+    elif dataset_name == 'waveform':
+        from alphaml.datasets.cls_dataset.waveform import load_waveform
+        X, y = load_waveform(data_dir_template % dataset_name)
+        num_cls = 3
+    elif dataset_name == 'madelon':
+        from alphaml.datasets.cls_dataset.madelon import load_madelon
+        X, y = load_madelon(data_dir_template % dataset_name)
+        num_cls = 2
+    elif dataset_name == 'semeion':
+        from alphaml.datasets.cls_dataset.semeion import load_semeion
+        X, y = load_semeion(data_dir_template % dataset_name)
+        num_cls = 10
+    elif dataset_name == 'wine_quality':
+        from alphaml.datasets.cls_dataset.wine_quality import load_wine_quality
+        X, y = load_wine_quality(data_dir_template % dataset_name)
+        num_cls = 6
+    elif dataset_name == 'cifar10s':
+        from alphaml.datasets.cls_dataset.cifar10small import load_cifar10s
+        X, y = load_cifar10s(data_dir_template % dataset_name)
+        num_cls = 10
     else:
         raise ValueError('Invalid dataset name: %s!' % dataset_name)
     print(X.shape, y.shape)
