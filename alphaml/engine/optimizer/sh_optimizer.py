@@ -20,6 +20,8 @@ class SH_SMBO(BaseOptimizer):
         self.smac_containers = dict()
         self.cnts = dict()
         self.rewards = dict()
+        self.eta = 2
+        self.init_r = 2
 
         for estimator in self.estimator_arms:
             # Scenario object
@@ -48,22 +50,20 @@ class SH_SMBO(BaseOptimizer):
         self.logger.info('Start task: %s' % self.task_name)
 
         arm_set = list(self.estimator_arms)
-        B = self.iter_num
-        n = len(self.estimator_arms)
-        K = int(np.ceil(np.log2(n))) - 1
-        S = n
         k = 0
+        r_k = -1
+
         while True:
-            r_k = np.floor(B/(S*np.ceil(np.log2(n))))
-            self.logger.info('Iteration %s: r_k = %d, S_k = %d' % (k, r_k, S))
-            smbo_cnt = int(r_k) // 2
-            if S == 1:
-                smbo_cnt = (B - iter_num)//2 + 1
+            r_k = self.init_r if k == 0 else r_k * self.eta
+            n_k = len(arm_set)
+            if n_k == 1:
+                r_k = (self.iter_num - iter_num)//2 + 1
+            self.logger.info('Iteration %s: r_k = %d, n_k = %d' % (k, r_k, n_k))
             perf = list()
             # Pull each arm with r_k units of resource.
             for arm in arm_set:
-                self.logger.info('Optimize arm %s with %d budget' % (arm, smbo_cnt))
-                for _ in range(smbo_cnt):
+                self.logger.info('Optimize arm %s with %d units of budget!' % (arm, r_k))
+                for _ in range(r_k):
                     self.smac_containers[arm].iterate()
                 runhistory = self.smac_containers[arm].solver.runhistory
 
@@ -87,13 +87,12 @@ class SH_SMBO(BaseOptimizer):
                 iter_num += (len(runkeys) - self.cnts[arm])
                 self.cnts[arm] = len(runhistory.data.keys())
                 perf.append(max(self.rewards[arm]))
+                self.logger.info('Iteration %d, the best reward found >>> %f!' % (iter_num, max(config_values)))
 
-            self.logger.info('Iteration %d, the best reward found is %f' % (iter_num, max(config_values)))
-            if S > 1:
-                indices = np.argsort(perf)[S//2:]
+            if n_k > 1:
+                indices = np.argsort(perf)[int(np.ceil(n_k/self.eta)):]
                 arm_set = [item for index, item in enumerate(arm_set) if index in indices]
-                self.logger.info('Left arms: %s' % arm_set)
-                S = len(arm_set)
+                self.logger.info('Arms left are: %s' % arm_set)
             k += 1
             if iter_num >= self.iter_num:
                 break

@@ -64,7 +64,7 @@ def test_cash_module():
 
             seed = seeds[run_id]
             dm = DataManager(X_train, y_train, random_state=seed)
-            for optimizer in ['sh', 'mono_smbo', 'smbo']:
+            for optimizer in ['sh', 'smbo']:
                 cls = Classifier(optimizer=optimizer, seed=seed).fit(
                     dm, metric='accuracy', runcount=run_count,
                     task_name=task_format % (run_count, run_id), update_mode=2)
