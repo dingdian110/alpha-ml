@@ -133,7 +133,6 @@ class AutoIMGClassifier(AutoML):
         super().__init__(time_budget, each_run_budget, memory_limit, ensemble_size, include_models,
                          exclude_models, optimizer_type, seed)
 
-        # TODO: evaluator for IMG CLS.
         self.evaluator = None
         self.map_dict = None
         self.rev_map_dict = None
@@ -141,22 +140,26 @@ class AutoIMGClassifier(AutoML):
     def fit(self, data: DataManager, **kwargs):
         from alphaml.engine.evaluator.dl_evaluator import BaseImgEvaluator
         task_type = kwargs['task_type']
-        inputshape = data.train_X.shape[1:]
-        classnum = None
-        if task_type == 'img_multiclass':
-            data.train_y, self.map_dict, self.rev_map_dict = map_label(data.train_y)
-            data.train_y = to_categorical(data.train_y)
-            data.val_y, _, _ = map_label(data.val_y, self.map_dict)
-            data.val_y = to_categorical(data.val_y)
-            classnum = len(self.rev_map_dict)
+        if data.train_X is None and data.train_y is None:
+            inputshape = data.target_shape
+            classnum = None
+        else:
+            inputshape = data.train_X.shape[1:]
+            classnum = None
+            if task_type == 'img_multiclass':
+                data.train_y, self.map_dict, self.rev_map_dict = map_label(data.train_y)
+                data.train_y = to_categorical(data.train_y)
+                data.val_y, _, _ = map_label(data.val_y, self.map_dict)
+                data.val_y = to_categorical(data.val_y)
+                classnum = len(self.rev_map_dict)
 
-        elif task_type == 'img_binary':
-            data.train_y, self.map_dict, self.rev_map_dict = map_label(data.train_y, if_binary=True)
-            data.val_y, _, _ = map_label(data.val_y, self.map_dict, if_binary=True)
-            classnum = 1
+            elif task_type == 'img_binary':
+                data.train_y, self.map_dict, self.rev_map_dict = map_label(data.train_y, if_binary=True)
+                data.val_y, _, _ = map_label(data.val_y, self.map_dict, if_binary=True)
+                classnum = 1
 
-        elif task_type == 'img_multilabel-indicator':
-            classnum = get_classnum(data.train_y)
+            elif task_type == 'img_multilabel-indicator':
+                classnum = get_classnum(data.train_y)
 
         self.evaluator = BaseImgEvaluator(inputshape, classnum)
 
@@ -169,3 +172,6 @@ class AutoIMGClassifier(AutoML):
             y_pred = [self.rev_map_dict[i] for i in y_pred]
             y_pred = np.array(y_pred)
         return y_pred
+
+    def score(self, X, y):
+        raise NotImplementedError()
