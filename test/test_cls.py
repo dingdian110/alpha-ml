@@ -20,7 +20,7 @@ plt.rc('legend', **{'fontsize': 12})
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--mode', choices=['master', 'daim213'], default='master')
-parser.add_argument('--rep', type=int, default=50)
+parser.add_argument('--rep', type=int, default=10)
 parser.add_argument('--run_count', type=int, default=200)
 parser.add_argument('--start_runid', type=int, default=0)
 parser.add_argument('--datasets', type=str, default='glass')
@@ -58,28 +58,25 @@ def test_cash_module():
     for dataset in datasets:
         seeds = get_seeds(dataset, rep_num)
         for run_id in range(start_id, rep_num):
-            task_format = dataset + '_all_%d'
+            task_format = dataset + '_all_%d_%d'
             X, y, _ = load_data(dataset)
             X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
 
             seed = seeds[run_id]
             dm = DataManager(X_train, y_train, random_state=seed)
             for optimizer in ['sh', 'mono_smbo', 'smbo']:
-                cls = Classifier(
-                    # include_models=['gradient_boosting'],
-                    optimizer=optimizer,
-                    seed=seed
-                ).fit(
-                    dm, metric='accuracy', runcount=run_count, task_name=task_format % run_id, update_mode=2)
+                cls = Classifier(optimizer=optimizer, seed=seed).fit(
+                    dm, metric='accuracy', runcount=run_count,
+                    task_name=task_format % (run_count, run_id), update_mode=2)
                 acc = cls.score(X_test, y_test)
-                key_id = '%s_%d_%s' % (dataset, run_id, optimizer)
+                key_id = '%s_%d_%d_%s' % (dataset, run_count, run_id, optimizer)
                 result[key_id] = acc
 
-    # Display and save the test result.
-    print(result)
-    time_flag = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-    with open('data/runtime_test_result_%s.pkl' % time_flag, 'wb') as f:
-        pickle.dump(result, f)
+            # Display and save the test result.
+            print(result)
+            dataset_id = dataset.split('_')[0]
+            with open('data/%s/%s_test_result.pkl' % (dataset_id, dataset_id), 'wb') as f:
+                pickle.dump(result, f)
 
 
 def plot(dataset, rep_num):
@@ -153,4 +150,3 @@ def debug(dataset, id):
 
 if __name__ == "__main__":
     test_cash_module()
-    # plot('svmguide4', 1)
