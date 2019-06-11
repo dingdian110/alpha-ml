@@ -1,6 +1,7 @@
 import sys
-import argparse
+import time
 import pickle
+import argparse
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -19,9 +20,10 @@ plt.rc('legend', **{'fontsize': 12})
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--mode', choices=['master', 'daim213'], default='master')
-parser.add_argument('--rep', type=int, default=5)
-parser.add_argument('--run_count', type=int, default=100)
-parser.add_argument('--datasets', type=str, default='iris')
+parser.add_argument('--rep', type=int, default=10)
+parser.add_argument('--run_count', type=int, default=200)
+parser.add_argument('--start_runid', type=int, default=0)
+parser.add_argument('--datasets', type=str, default='glass')
 args = parser.parse_args()
 
 if args.mode == 'master':
@@ -31,39 +33,50 @@ elif args.mode == 'daim213':
 else:
     raise ValueError('Invalid mode: %s' % args.mode)
 
+from alphaml.engine.components.data_manager import DataManager
+from alphaml.estimators.classifier import Classifier
+from alphaml.datasets.cls_dataset.dataset_loader import load_data
 
-def test_configspace():
-    from alphaml.engine.components.components_manager import ComponentsManager
-    from alphaml.engine.components.models.classification import _classifiers
+from sklearn.model_selection import train_test_split
 
-    # print(_classifiers)
-    # for item in _classifiers:
-    #     name, cls = item, _classifiers[item]
-    #     print(cls.get_hyperparameter_search_space())
-    cs = ComponentsManager().get_hyperparameter_search_space(3)
-    print(cs.sample_configuration(5))
-    # print(cs.get_default_configuration())
+
+def get_seeds(dataset, rep_num):
+    # Map the dataset to a fixed integer.
+    dataset_id = int(''.join([str(ord(c)) for c in dataset[:6] if c.isalpha()])) % 100000
+    np.random.seed(dataset_id)
+    return np.random.random_integers(10000, size=rep_num)
 
 
 def test_cash_module():
-    from alphaml.engine.components.data_manager import DataManager
-    from alphaml.estimators.classifier import Classifier
-    from alphaml.datasets.cls_dataset.dataset_loader import load_data
-
     rep_num = args.rep
     run_count = args.run_count
+    start_id = args.start_runid
     datasets = args.datasets.split(',')
     print(rep_num, run_count, datasets)
 
+    result = dict()
     for dataset in datasets:
-        for run_id in range(rep_num):
-            for optimizer in ['smbo']:
-                task_format = dataset + '_alpha_3_%d'
-                X, y, _ = load_data(dataset)
-                cls = Classifier(
-                    include_models=['gaussian_nb', 'adaboost', 'random_forest', 'k_nearest_neighbors', 'gradient_boosting'],
-                    optimizer=optimizer).fit(DataManager(X, y), metric='accuracy', runcount=run_count, task_name=task_format % run_id)
-                print(cls.predict(X))
+        seeds = get_seeds(dataset, rep_num)
+        for run_id in range(start_id, rep_num):
+            task_format = dataset + '_all_%d_%d'
+            X, y, _ = load_data(dataset)
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
+
+            seed = seeds[run_id]
+            dm = DataManager(X_train, y_train, random_state=seed)
+            for optimizer in ['sh', 'mono_smbo', 'smbo']:
+                cls = Classifier(optimizer=optimizer, seed=seed).fit(
+                    dm, metric='accuracy', runcount=run_count,
+                    task_name=task_format % (run_count, run_id), update_mode=2)
+                acc = cls.score(X_test, y_test)
+                key_id = '%s_%d_%d_%s' % (dataset, run_count, run_id, optimizer)
+                result[key_id] = acc
+
+            # Display and save the test result.
+            print(result)
+            dataset_id = dataset.split('_')[0]
+            with open('data/%s/%s_test_result.pkl' % (dataset_id, dataset_id), 'wb') as f:
+                pickle.dump(result, f)
 
 
 def plot(dataset, rep_num):
@@ -137,4 +150,3 @@ def debug(dataset, id):
 
 if __name__ == "__main__":
     test_cash_module()
-    # plot('svmguide4', 1)

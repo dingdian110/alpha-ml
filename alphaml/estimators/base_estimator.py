@@ -47,8 +47,8 @@ class BaseEstimator(object):
     def predict(self, X, batch_size=None, n_jobs=1):
         return self._ml_engine.predict(X, batch_size=batch_size, n_jobs=n_jobs)
 
-    def score(self):
-        return self._ml_engine.score()
+    def score(self, X, y):
+        return self._ml_engine.score(X, y)
 
     def predict_proba(self, X, batch_size=None, n_jobs=1):
         return self._ml_engine.predict_proba(X, batch_size=None, n_jobs=1)

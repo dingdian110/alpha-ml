@@ -19,9 +19,10 @@ plt.rc('legend', **{'fontsize': 12})
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--mode', choices=['master', 'daim213'], default='master')
-parser.add_argument('--rep', type=int, default=10)
+parser.add_argument('--rep', type=int, default=50)
 parser.add_argument('--run_count', type=int, default=200)
-parser.add_argument('--datasets', type=str, default='iris')
+parser.add_argument('--start_runid', type=int, default=0)
+parser.add_argument('--datasets', type=str, default='glass')
 args = parser.parse_args()
 
 if args.mode == 'master':
@@ -34,62 +35,47 @@ else:
 
 rep_num = args.rep
 run_count = args.run_count
+start_run = args.start_runid
 datasets = args.datasets.split(',')
-algo_list = ['adaboost', 'random_forest', 'k_nearest_neighbors', 'gradient_boosting']
+
+algo_list = ['adaboost', 'gradient_boosting', 'decision_tree', 'random_forest',
+             'sgd', 'extra_trees', 'lda', 'liblinear_svc',
+             'libsvm_svc', 'logistic_regression', 'xgboost', 'k_nearest_neighbors']
+
+assert len(algo_list) == len(set(algo_list))
 print(rep_num, run_count, datasets)
-algo = algo_list[0]
 
 
-def test_complexity():
+def test_hyperspace():
     from alphaml.engine.components.data_manager import DataManager
     from alphaml.estimators.classifier import Classifier
     from alphaml.datasets.cls_dataset.dataset_loader import load_data
+    from alphaml.utils.constants import MAX_INT
 
-    perfs_list = list()
-    for dataset in datasets:
-        for run_id in range(rep_num):
-                for optimizer in ['smbo']:
-                    task_format = dataset + '_complexity_%d'
-                    X, y, _ = load_data(dataset)
-                    cls = Classifier(include_models=algo_list, optimizer=optimizer).fit(
-                    DataManager(X, y), metric='accuracy', runcount=run_count, task_name=task_format % run_id)
+    try:
+        for dataset in datasets:
+            for run_id in range(start_run, rep_num):
+                X, y, _ = load_data(dataset)
+                dm = DataManager(X, y)
+                seed = np.random.random_integers(MAX_INT)
+
+                for n_est in [1, 2, 4, 8, 12]:
+                    algos = algo_list[:n_est]
+                    task_format = dataset + '_hp_%d_%d' % (n_est, run_id)
+                    cls = Classifier(
+                        include_models=algos, optimizer='smbo', seed=seed).fit(
+                        dm, metric='accuracy', runcount=run_count, task_name=task_format)
                     print(cls.predict(X))
-
-                    file_id = 'data/%s_complexity_%d_%s.data' % (dataset, run_id, 'smac')
-                    with open(file_id, 'rb') as f:
-                        data = pickle.load(f)
-
-                    perfs = list()
-                    for config, perf in zip(data['configs'], data['perfs']):
-                        if config['estimator'] == algo:
-                            perfs.append(perf)
-                    num_runs = len(perfs)
-                    print('='*20, max(perfs), num_runs)
-
-                    task_format = dataset + '_complexity_single_%d'
-                    cls = Classifier(include_models=[algo], optimizer=optimizer).fit(
-                        DataManager(X, y), metric='accuracy', runcount=num_runs, task_name=task_format % run_id)
-                    print(cls.predict(X))
-
-                    file_id = 'data/%s_complexity_single_%d_%s.data' % (dataset, run_id, 'smac')
-                    with open(file_id, 'rb') as f:
-                        data = pickle.load(f)
-                    perfs_single = data['perfs']
-                    print('='*20 + 'single', max(perfs_single), len(perfs_single))
-                    perfs_list.append((perfs, perfs_single))
-
-    for item in perfs_list:
-        item1, item2 = item
-        print(len(item1), max(item1), len(item2), max(item2))
-    print('='*50)
-    print(perfs_list)
+    except Exception as e:
+        print(e)
+        print('Exit!')
 
 
 def plot():
     dataset = datasets[0]
     color_list = ['purple', 'royalblue', 'green', 'red', 'brown', 'orange', 'yellowgreen']
     markers = ['s', '^', '2', 'o', 'v', 'p', '*']
-    mth_list = algo_list
+    mth_list = [1, 4, 8, 12]
     lw = 2
     ms = 4
     me = 10
@@ -106,7 +92,7 @@ def plot():
     for mth in mth_list:
         perfs = list()
         for id in range(rep_num):
-            file_id = 'data/%s_%d_%s.data' % (dataset+mth, id, 'smac')
+            file_id = 'data/%s/%s_hp_%d_%d_%s.data' % (dataset, dataset, mth, id, 'smac')
             with open(file_id, 'rb') as f:
                 data = pickle.load(f)
             perfs.append(data['perfs'])
@@ -116,7 +102,7 @@ def plot():
         ax.plot(list(range(x_num)), perfs, label=mth, lw=lw, color=color_dict[mth],
                 marker=marker_dict[mth], markersize=ms, markevery=me)
         line = mlines.Line2D([], [], color=color_dict[mth], marker=marker_dict[mth],
-                             markersize=ms, label=r'\textbf{%s}' % mth.replace("_", "\\_"))
+                             markersize=ms, label=r'\textbf{m-%d}' % mth)
         handles.append(line)
 
     ax.xaxis.set_major_locator(ticker.MultipleLocator(x_num // 10))
@@ -127,5 +113,5 @@ def plot():
 
 
 if __name__ == "__main__":
-    test_complexity()
+    test_hyperspace()
     # plot()

@@ -1,6 +1,3 @@
-import resource
-import sys
-
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.conditions import EqualsCondition, InCondition
 from ConfigSpace.hyperparameters import UniformFloatHyperparameter, \
@@ -29,34 +26,6 @@ class LibSVM_SVC(BaseClassificationModel):
 
     def fit(self, X, Y):
         import sklearn.svm
-
-        # Calculate the size of the kernel cache (in MB) for sklearn's LibSVM. The cache size is
-        # calculated as 2/3 of the available memory (which is calculated as the memory limit minus
-        # the used memory)
-        try:
-            # Retrieve memory limits imposed on the process
-            soft, hard = resource.getrlimit(resource.RLIMIT_AS)
-
-            if soft > 0:
-                # Convert limit to units of megabytes
-                soft /= 1024 * 1024
-
-                # Retrieve memory used by this process
-                maxrss = resource.getrusage(resource.RUSAGE_SELF)[2] / 1024
-
-                # In MacOS, the MaxRSS output of resource.getrusage in bytes; on other platforms,
-                # it's in kilobytes
-                if sys.platform == 'darwin':
-                    maxrss = maxrss / 1024
-
-                cache_size = (soft - maxrss) / 1.5
-
-                if cache_size < 0:
-                    cache_size = 200
-            else:
-                cache_size = 200
-        except Exception:
-            cache_size = 200
 
         self.C = float(self.C)
         if self.degree is None:
@@ -89,7 +58,6 @@ class LibSVM_SVC(BaseClassificationModel):
                                          class_weight=self.class_weight,
                                          max_iter=self.max_iter,
                                          random_state=self.random_state,
-                                         cache_size=cache_size,
                                          decision_function_shape='ovr')
         self.estimator.fit(X, Y)
         return self
@@ -137,7 +105,7 @@ class LibSVM_SVC(BaseClassificationModel):
         tol = UniformFloatHyperparameter("tol", 1e-5, 1e-1, default_value=1e-3,
                                          log=True)
         # cache size is not a hyperparameter, but an argument to the program!
-        max_iter = UnParametrizedHyperparameter("max_iter", -1)
+        max_iter = UnParametrizedHyperparameter("max_iter", 2000)
 
         cs = ConfigurationSpace()
         cs.add_hyperparameters([C, kernel, degree, gamma, coef0, shrinking,

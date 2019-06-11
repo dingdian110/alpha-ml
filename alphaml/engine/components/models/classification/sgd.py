@@ -54,7 +54,7 @@ class SGD(
                 else 0.15
             self.epsilon = float(self.epsilon) if self.epsilon is not None \
                 else 0.1
-            self.eta0 = float(self.eta0)
+            self.eta0 = float(self.eta0) if self.eta0 is not None else 0.01
             self.power_t = float(self.power_t) if self.power_t is not None \
                 else 0.5
             self.average = check_for_bool(self.average)
@@ -94,7 +94,7 @@ class SGD(
                 intercept_init=None
             )
 
-        if self.estimator._max_iter >= 512 or n_iter > self.estimator.n_iter_:
+        if self.estimator.max_iter >= 512 or n_iter > self.estimator.n_iter_:
             self.fully_fit_ = True
 
         return self

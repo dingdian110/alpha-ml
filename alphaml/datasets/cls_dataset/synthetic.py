@@ -1,15 +1,14 @@
 import numpy as np
 
 
-def load_glass(data_folder):
+def load_synthetic(data_folder, id=0):
     L = []
-    file_path = data_folder + 'glass.scale'
+    file_path = data_folder + 'synthetic%d' % id
     with open(file_path, 'r') as f:
         for line in f.readlines():
             items = line.strip().split('\n')[0].split(' ')
-            d = [0] * 10
-            label = int(items[0])
-            d[0] = label - 1 if label < 4 else label - 2
+            d = [0] * 201
+            d[0] = int(items[0]) - 1
             for item in items[1:]:
                 key, value = item.split(':')
                 d[int(key)] = float(value)
