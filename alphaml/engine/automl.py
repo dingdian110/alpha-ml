@@ -32,6 +32,7 @@ class AutoML(object):
         self.exclude_models = exclude_models
         self.component_manager = ComponentsManager()
         self.optimizer_type = optimizer_type
+        self.ensemble = None
         self.seed = seed
         self.optimizer = None
         self.evaluator = None
@@ -58,6 +59,8 @@ class AutoML(object):
             task_type, self.include_models, self.exclude_models)
 
         self.logger.debug('The optimizer type is: %s' % self.optimizer_type)
+
+        # Conduct algorithm selection and hyperparameter optimization.
         if self.optimizer_type == 'smbo':
             # Create optimizer.
             self.optimizer = SMAC_SMBO(self.evaluator, config_space, data, self.seed, **kwargs)
@@ -88,6 +91,10 @@ class AutoML(object):
             self.optimizer.run()
         else:
             raise ValueError('UNSUPPORTED optimizer: %s' % self.optimizer)
+
+        # Conduct automatic ensembling learning.
+        if self.ensemble is not None:
+            pass
         return self
 
     def predict(self, X, **kwargs):
