@@ -18,7 +18,7 @@ class BASELINE(BaseOptimizer):
         # update_mode = 1: the random search of an algorithm.
         # update_mode = 2: assign each algorthm with T/N budgets.
         self.update_mode = kwargs['update_mode'] if 'update_mode' in kwargs else 1
-        self.result_file = self.task_name + '_%s_smac.data' % 'rand' if self.update_mode == 1 else 'avg'
+        self.result_file = self.task_name + '_%s_smac.data' % ('rand' if self.update_mode == 1 else 'avg')
         self.smac_containers = dict()
         self.rewards, self.cnts = dict(), dict()
         self.configs_list = list()
@@ -46,7 +46,7 @@ class BASELINE(BaseOptimizer):
     def run_block(self, B, arm):
         best_arm = arm
         self.logger.info('Choosing to optimize %s arm' % best_arm)
-        iter_num = 0
+        iter_num, run_cnt = 0, 0
 
         while True:
             start_time = time.time()
@@ -73,8 +73,9 @@ class BASELINE(BaseOptimizer):
             self.logger.info('Iteration %d, the best reward found is %f' % (iter_num, max(self.config_values)))
             iter_num += (len(runkeys) - self.cnts[best_arm])
             self.cnts[best_arm] = len(runhistory.data.keys())
+            run_cnt = run_cnt + (2 if run_cnt != 0 else 3)
 
-            if iter_num >= B:
+            if iter_num >= B or run_cnt >= B or (iter_num == 1 and run_cnt > 1):
                 break
 
     def run(self):
@@ -101,12 +102,12 @@ class BASELINE(BaseOptimizer):
             raise ValueError('Invalid update mode: %d' % self.update_mode)
 
         # Print the tuning result.
-        self.logger.info('TS smbo ==> the size of evaluations: %d' % len(self.configs_list))
+        self.logger.info('==> the size of evaluations: %d' % len(self.configs_list))
         if len(self.configs_list) > 0:
             id = np.argmax(self.config_values)
-            self.logger.info('TS smbo ==> The time points: %s' % self.time_list)
-            self.logger.info('TS smbo ==> The best performance found: %f' % self.config_values[id])
-            self.logger.info('TS smbo ==> The best HP found: %s' % self.configs_list[id])
+            self.logger.info('==> The time points: %s' % self.time_list)
+            self.logger.info('==> The best performance found: %f' % self.config_values[id])
+            self.logger.info('==> The best HP found: %s' % self.configs_list[id])
             self.incumbent = self.configs_list[id]
 
             # Save the experimental results.

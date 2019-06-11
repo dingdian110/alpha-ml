@@ -24,6 +24,8 @@ parser.add_argument('--rep', type=int, default=10)
 parser.add_argument('--run_count', type=int, default=200)
 parser.add_argument('--start_runid', type=int, default=0)
 parser.add_argument('--datasets', type=str, default='glass')
+parser.add_argument('--task_id', type=str, default='all')
+parser.add_argument('--opt_algo', type=str, default='baseline_avg')
 args = parser.parse_args()
 
 if args.mode == 'master':
@@ -52,22 +54,35 @@ def test_cash_module():
     run_count = args.run_count
     start_id = args.start_runid
     datasets = args.datasets.split(',')
-    print(rep_num, run_count, datasets)
+    optimizer_algos = args.opt_algo.split(',')
+    task_id = args.task_id
+    print(rep_num, run_count, datasets, optimizer_algos, task_id)
 
     result = dict()
     for dataset in datasets:
         seeds = get_seeds(dataset, rep_num)
         for run_id in range(start_id, rep_num):
-            task_format = dataset + '_all_%d_%d'
+            task_name = dataset + '_%s_%d_%d' % (task_id, run_count, run_id)
+            seed = seeds[run_id]
+
+            # Dataset partition.
             X, y, _ = load_data(dataset)
             X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
-
-            seed = seeds[run_id]
             dm = DataManager(X_train, y_train, random_state=seed)
-            for optimizer in ['sh', 'smbo']:
-                cls = Classifier(optimizer=optimizer, seed=seed).fit(
+
+            # Test each optimizer algorithm:
+            for optimizer in optimizer_algos:
+                # Parse the optimizer.
+                mode = 2
+                if optimizer.startswith('baseline'):
+                    optimizer, mode = optimizer.split('_')
+                    mode = 1 if mode == 'rand' else 2
+                print('Test %s optimizer => %s' % (optimizer, task_name))
+
+                # Construct the AutoML classifier.
+                cls = Classifier(optimizer=optimizer, seed=seed, exclude_models=['xgboost']).fit(
                     dm, metric='accuracy', runcount=run_count,
-                    task_name=task_format % (run_count, run_id), update_mode=2)
+                    task_name=task_name, update_mode=mode)
                 acc = cls.score(X_test, y_test)
                 key_id = '%s_%d_%d_%s' % (dataset, run_count, run_id, optimizer)
                 result[key_id] = acc
