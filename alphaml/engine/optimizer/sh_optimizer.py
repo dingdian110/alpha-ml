@@ -15,13 +15,13 @@ class SH_SMBO(BaseOptimizer):
         self.iter_num = int(1e10) if ('runcount' not in kwargs or kwargs['runcount'] is None) else kwargs['runcount']
         self.estimator_arms = self.config_space.get_hyperparameter('estimator').choices
         self.task_name = kwargs['task_name'] if 'task_name' in kwargs else 'default'
-        self.result_file = self.task_name + '_sh_smac.data'
+        self.eta = kwargs['eta'] if 'eta' in kwargs else 2
+        self.init_r = kwargs['init_r'] if 'init_r' in kwargs else 2
+        self.result_file = self.task_name + '_sh_smac_%d_%d.data' % (self.eta, self.init_r)
 
         self.smac_containers = dict()
         self.cnts = dict()
         self.rewards = dict()
-        self.eta = 2
-        self.init_r = 2
 
         for estimator in self.estimator_arms:
             # Scenario object
@@ -98,16 +98,16 @@ class SH_SMBO(BaseOptimizer):
                 break
 
         # Print the parameters in Thompson sampling.
-        self.logger.info('ts counts: %s' % self.cnts)
-        self.logger.info('ts rewards: %s' % self.rewards)
+        self.logger.info('SH counts: %s' % self.cnts)
+        self.logger.info('SH rewards: %s' % self.rewards)
 
         # Print the tuning result.
-        self.logger.info('TS smbo ==> the size of evaluations: %d' % len(configs_list))
+        self.logger.info('SH smbo ==> the size of evaluations: %d' % len(configs_list))
         if len(configs_list) > 0:
             id = np.argmax(config_values)
-            self.logger.info('TS smbo ==> The time points: %s' % time_list)
-            self.logger.info('TS smbo ==> The best performance found: %f' % config_values[id])
-            self.logger.info('TS smbo ==> The best HP found: %s' % configs_list[id])
+            self.logger.info('SH smbo ==> The time points: %s' % time_list)
+            self.logger.info('SH smbo ==> The best performance found: %f' % config_values[id])
+            self.logger.info('SH smbo ==> The best HP found: %s' % configs_list[id])
             self.incumbent = configs_list[id]
 
             # Save the experimental results.
