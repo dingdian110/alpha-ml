@@ -16,7 +16,7 @@ class SH_SMBO(BaseOptimizer):
         self.estimator_arms = self.config_space.get_hyperparameter('estimator').choices
         self.task_name = kwargs['task_name'] if 'task_name' in kwargs else 'default'
         self.eta = kwargs['eta'] if 'eta' in kwargs else 2
-        self.init_r = kwargs['init_r'] if 'init_r' in kwargs else 2
+        self.init_r = kwargs['r'] if 'r' in kwargs else 2
         self.result_file = self.task_name + '_sh_smac_%d_%d.data' % (self.eta, self.init_r)
 
         self.smac_containers = dict()
