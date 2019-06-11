@@ -72,17 +72,23 @@ def test_cash_module():
 
             # Test each optimizer algorithm:
             for optimizer in optimizer_algos:
-                # Parse the optimizer.
+                # Parse the parameters for each optimizer.
                 mode = 2
+                eta, r = 2, 2
                 if optimizer.startswith('baseline'):
                     optimizer, mode = optimizer.split('_')
                     mode = 1 if mode == 'rand' else 2
                 print('Test %s optimizer => %s' % (optimizer, task_name))
+                if optimizer.startswith('sh'):
+                    if len(optimizer.split('_')) == 3:
+                        optimizer, eta, r = optimizer.split('_')
+                    else:
+                        raise ValueError('Wrong SH params!')
 
                 # Construct the AutoML classifier.
                 cls = Classifier(optimizer=optimizer, seed=seed, exclude_models=['xgboost']).fit(
                     dm, metric='accuracy', runcount=run_count,
-                    task_name=task_name, update_mode=mode)
+                    task_name=task_name, update_mode=mode, eta=eta, r=r)
                 acc = cls.score(X_test, y_test)
                 key_id = '%s_%d_%d_%s' % (dataset, run_count, run_id, optimizer)
                 result[key_id] = acc
