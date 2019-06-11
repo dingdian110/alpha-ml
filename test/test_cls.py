@@ -86,7 +86,7 @@ def test_cash_module():
                         raise ValueError('Wrong SH params!')
 
                 # Construct the AutoML classifier.
-                cls = Classifier(optimizer=optimizer, seed=seed, exclude_models=['xgboost']).fit(
+                cls = Classifier(optimizer=optimizer, seed=seed).fit(
                     dm, metric='accuracy', runcount=run_count,
                     task_name=task_name, update_mode=mode, eta=eta, r=r)
                 acc = cls.score(X_test, y_test)
