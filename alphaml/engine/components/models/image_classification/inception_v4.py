@@ -50,13 +50,14 @@ class Inceptionv4Classifier(BaseImageClassificationModel):
         cs.add_hyperparameters([inceptionv4_block_a, inceptionv4_block_b, inceptionv4_block_c])
         return cs
 
-    def fit(self, x_train, y_train, x_valid=None, y_valid=None, **kwarg):
+    def fit(self, data, **kwarg):
         self.validate_inputshape()
-        self.base_model = Inception_v4(self.inputshape,
+        self.load_data(data, **kwarg)
+        self.base_model = Inception_v4(input_shape=self.inputshape,
                                        inceptionv4_block_a=self.inceptionv4_block_a,
                                        inceptionv4_block_b=self.inceptionv4_block_b,
                                        inceptionv4_block_c=self.inceptionv4_block_c)
-        super().fit(x_train, y_train, x_valid, y_valid, **kwarg)
+        return super().fit(data, **kwarg)
 
 
 def conv2d_bn(x,
@@ -168,11 +169,11 @@ def inception_B(x, blockid):
                                        name=nameprefix + "_branch1_avgpool")(x)
     branch_a = conv2d_bn(branch_a, 128, 1, 1, name=nameprefix + "_branch1_conv1")
 
-    branch_b = conv2d_bn(x, 384, 1, 1, name="_branch2_conv1")
+    branch_b = conv2d_bn(x, 384, 1, 1, name=nameprefix + "_branch2_conv1")
 
-    branch_c = conv2d_bn(x, 192, 1, 1, name="_branch3_conv1")
-    branch_c = conv2d_bn(branch_c, 224, 1, 7, name="_branch3_conv2")
-    branch_c = conv2d_bn(branch_c, 256, 1, 7, name="_branch3_conv3")
+    branch_c = conv2d_bn(x, 192, 1, 1, name=nameprefix + "_branch3_conv1")
+    branch_c = conv2d_bn(branch_c, 224, 1, 7, name=nameprefix + "_branch3_conv2")
+    branch_c = conv2d_bn(branch_c, 256, 1, 7, name=nameprefix + "_branch3_conv3")
 
     branch_d = conv2d_bn(x, 192, 1, 1, name=nameprefix + "_branch4_con1")
     branch_d = conv2d_bn(branch_d, 192, 1, 7, name=nameprefix + "_branch4_conv2")
@@ -189,7 +190,7 @@ def inception_C(x, blockid):
         channel_axis = 1
     else:
         channel_axis = -1
-    nameprefix = 'inception_b' + str(blockid)
+    nameprefix = 'inception_c' + str(blockid)
     branch_a = layers.AveragePooling2D(pool_size=(3, 3), strides=(1, 1), padding='same',
                                        name=nameprefix + "_branch1_avgpool")(x)
     branch_a = conv2d_bn(branch_a, 256, 1, 1, name=nameprefix + "_branch1_conv1")
@@ -274,5 +275,4 @@ def Inception_v4(input_shape, **kwargs):
     x = layers.GlobalAveragePooling2D()(x)
     # create model
     model = Model(inputs=img_input, outputs=x, name='InceptionV4')
-    model.summary()
     return model

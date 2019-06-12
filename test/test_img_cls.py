@@ -14,13 +14,16 @@ def test_configspace():
 def test_auto():
     from alphaml.engine.components.data_manager import DataManager
     from alphaml.estimators.imgclassifier import ImageClassifier
-    from alphaml.datasets.img_cls_dataset import load_data
+    from alphaml.datasets.img_cls_dataset import load_data_img, load_data
     import pickle
     import os
     import numpy as np
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-    train_x, train_y, _ = load_data("cifar10")
-    ImageClassifier(include_models=['resnet'], optimizer='smbo').fit(DataManager(train_x, train_y))
+    traindir, validdir = load_data_img("cifar10")
+    train_x, train_y, _, _, _ = load_data('cifar10')
+    # ImageClassifier(include_models=['resnet'], optimizer='smbo').fit_from_directory([traindir, validdir])
+    # ImageClassifier(include_models=['resnet'], optimizer='smbo').fit(DataManager(train_x, train_y), metric='acc')
+    ImageClassifier(include_models=['resnet'], optimizer='smbo').fit_from_directory(traindir, metric='acc')
 
 
 if __name__ == "__main__":
