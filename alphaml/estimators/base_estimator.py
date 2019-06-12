@@ -6,6 +6,7 @@ class BaseEstimator(object):
             optimizer='ts_smbo',
             time_budget=3600,
             each_run_budget=360,
+            ensemble_method='none',
             ensemble_size=10,
             memory_limit=1024,
             seed=None,
@@ -16,6 +17,7 @@ class BaseEstimator(object):
         self.optimizer_type = optimizer
         self.time_budget = time_budget
         self.each_run_budget = each_run_budget
+        self.ensemble_method = ensemble_method
         self.ensemble_size = ensemble_size
         self.memory_limit = memory_limit
         self.include_models = include_models
@@ -30,6 +32,7 @@ class BaseEstimator(object):
         engine = self.get_automl()(
             time_budget=self.time_budget,
             each_run_budget=self.each_run_budget,
+            ensemble_method=self.ensemble_method,
             ensemble_size=self.ensemble_size,
             memory_limit=self.memory_limit,
             include_models=self.include_models,

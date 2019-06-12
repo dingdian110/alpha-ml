@@ -9,6 +9,7 @@ from alphaml.engine.optimizer.monotone_mab_optimizer import MONO_MAB_SMBO
 from alphaml.engine.optimizer.cmab_optimizer import CMAB_TS
 from alphaml.engine.optimizer.baseline_optimizer import BASELINE
 from alphaml.engine.optimizer.sh_optimizer import SH_SMBO
+from alphaml.engine.components.ensemble.bagging import Bagging
 from alphaml.utils.label_util import to_categorical, map_label, get_classnum
 import numpy as np
 
@@ -19,6 +20,7 @@ class AutoML(object):
             time_budget,
             each_run_budget,
             memory_limit,
+            ensemble_method,
             ensemble_size,
             include_models,
             exclude_models,
@@ -26,18 +28,20 @@ class AutoML(object):
             seed=42):
         self.time_budget = time_budget
         self.each_run_budget = each_run_budget
+        self.ensemble_method = ensemble_method
         self.ensemble_size = ensemble_size
         self.memory_limit = memory_limit
         self.include_models = include_models
         self.exclude_models = exclude_models
         self.component_manager = ComponentsManager()
         self.optimizer_type = optimizer_type
-        self.ensemble = None
+
         self.seed = seed
         self.optimizer = None
         self.evaluator = None
         self.metric = None
         self.logger = logging.getLogger(__name__)
+        self.ensemble_model = None
 
     def fit(self, data: DataManager, **kwargs):
         """
@@ -92,15 +96,27 @@ class AutoML(object):
         else:
             raise ValueError('UNSUPPORTED optimizer: %s' % self.optimizer)
 
-        # Conduct automatic ensembling learning.
-        if self.ensemble is not None:
+        # Construct the ensemble model according to the ensemble method.
+        model_infos = (self.optimizer.configs_list, self.optimizer.config_values)
+        if self.ensemble_method == 'none':
+            self.ensemble_model = None
+        elif self.ensemble_method == 'bagging':
+            self.ensemble_model = Bagging(model_infos, self.ensemble_size)
+
+        if self.ensemble_model is not None:
+            # Train the ensemble model.
+            # self.ensemble_model.fit(data)
             pass
         return self
 
     def predict(self, X, **kwargs):
-        # For traditional ML task:
-        #   fit the optimized model on the whole training data and predict the input data's labels.
-        pred = self.evaluator.fit_predict(self.optimizer.incumbent, X)
+        if self.ensemble_model is None:
+            # For traditional ML task:
+            #   fit the optimized model on the whole training data and predict the input data's labels.
+            pred = self.evaluator.fit_predict(self.optimizer.incumbent, X)
+        else:
+            # Predict the result.
+            pred = self.ensemble_model.predict(X)
         return pred
 
     def score(self, X, y):
@@ -114,12 +130,13 @@ class AutoMLClassifier(AutoML):
                  time_budget,
                  each_run_budget,
                  memory_limit,
+                 ensemble_method,
                  ensemble_size,
                  include_models,
                  exclude_models,
                  optimizer_type,
                  seed=None):
-        super().__init__(time_budget, each_run_budget, memory_limit, ensemble_size, include_models,
+        super().__init__(time_budget, each_run_budget, memory_limit, ensemble_method, ensemble_size, include_models,
                          exclude_models, optimizer_type, seed)
         self.evaluator = BaseEvaluator()
 
