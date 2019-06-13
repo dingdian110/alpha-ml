@@ -68,7 +68,7 @@ def test_cash_module():
             # Dataset partition.
             X, y, _ = load_data(dataset)
             X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
-            dm = DataManager(X_train, y_train, random_state=seed)
+            dm = DataManager(X_train, y_train)
 
             # Test each optimizer algorithm:
             for optimizer in optimizer_algos:

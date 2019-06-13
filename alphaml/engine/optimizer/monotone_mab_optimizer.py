@@ -24,6 +24,8 @@ class MONO_MAB_SMBO(BaseOptimizer):
         self.ts_cnts = dict()
         self.ts_rewards = dict()
         self.updated_rewards = dict()
+        self.configs_list = list()
+        self.config_values = list()
 
         for estimator in self.estimator_arms:
             # Scenario object
@@ -45,8 +47,6 @@ class MONO_MAB_SMBO(BaseOptimizer):
             self.updated_rewards[estimator] = list()
 
     def run(self):
-        configs_list = list()
-        config_values = list()
         time_list = list()
         iter_num = 0
         start_time = time.time()
@@ -73,8 +73,8 @@ class MONO_MAB_SMBO(BaseOptimizer):
                     reward = 1 - runhistory.data[key][0]
                     self.ts_rewards[arm].append(reward)
                     self.updated_rewards[arm].append(max(self.ts_rewards[arm]))
-                    configs_list.append(runhistory.ids_config[key[0]])
-                    config_values.append(reward)
+                    self.configs_list.append(runhistory.ids_config[key[0]])
+                    self.config_values.append(reward)
 
                 # Record the time cost.
                 time_point = time.time() - start_time
@@ -112,7 +112,7 @@ class MONO_MAB_SMBO(BaseOptimizer):
                     p.append(acc_reward[-1])
                     q.append(acc_reward[-1])
 
-            self.logger.info('Iteration %d, the best reward found is %f' % (iter_num, max(config_values)))
+            self.logger.info('Iteration %d, the best reward found is %f' % (iter_num, max(self.config_values)))
 
             # Remove some arm.
             N = len(arm_set)
@@ -135,20 +135,20 @@ class MONO_MAB_SMBO(BaseOptimizer):
         self.logger.info('ts rewards: %s' % self.ts_rewards)
 
         # Print the tuning result.
-        self.logger.info('TS smbo ==> the size of evaluations: %d' % len(configs_list))
-        if len(configs_list) > 0:
-            id = np.argmax(config_values)
+        self.logger.info('TS smbo ==> the size of evaluations: %d' % len(self.configs_list))
+        if len(self.configs_list) > 0:
+            id = np.argmax(self.config_values)
             self.logger.info('TS smbo ==> The time points: %s' % time_list)
-            self.logger.info('TS smbo ==> The best performance found: %f' % config_values[id])
-            self.logger.info('TS smbo ==> The best HP found: %s' % configs_list[id])
-            self.incumbent = configs_list[id]
+            self.logger.info('TS smbo ==> The best performance found: %f' % self.config_values[id])
+            self.logger.info('TS smbo ==> The best HP found: %s' % self.configs_list[id])
+            self.incumbent = self.configs_list[id]
 
             # Save the experimental results.
             data = dict()
             data['ts_cnts'] = self.ts_cnts
             data['ts_rewards'] = self.ts_rewards
-            data['configs'] = configs_list
-            data['perfs'] = config_values
+            data['configs'] = self.configs_list
+            data['perfs'] = self.config_values
             data['time_cost'] = time_list
             dataset_id = self.result_file.split('_')[0]
             with open('data/%s/' % dataset_id + self.result_file, 'wb') as f:
