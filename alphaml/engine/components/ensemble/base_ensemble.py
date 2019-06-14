@@ -1,8 +1,12 @@
 class BaseEnsembleModel(object):
-    def __init__(self, model_infos, ensemble_size):
-        self.model_infos = model_infos
-        self.ensemble_size = ensemble_size
-        self.basic_models = list()
+    def __init__(self, model_info, ensemble_size, model_type='ml'):
+        self.model_info = model_info
+        self.model_type = model_type
+        self.ensemble_models = list()
+        if len(model_info) < ensemble_size:
+            self.ensemble_size = len(model_info)
+        else:
+            self.ensemble_size = ensemble_size
 
     def fit(self, dm):
         raise NotImplementedError

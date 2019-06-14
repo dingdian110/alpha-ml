@@ -12,6 +12,7 @@ from alphaml.engine.optimizer.sh_optimizer import SH_SMBO
 from alphaml.engine.components.ensemble.bagging import Bagging
 from alphaml.utils.label_util import to_categorical, map_label, get_classnum
 import numpy as np
+import copy
 
 
 class AutoML(object):
@@ -100,13 +101,16 @@ class AutoML(object):
         model_infos = (self.optimizer.configs_list, self.optimizer.config_values)
         if self.ensemble_method == 'none':
             self.ensemble_model = None
-        elif self.ensemble_method == 'bagging':
-            self.ensemble_model = Bagging(model_infos, self.ensemble_size)
+        else:
+            if self.ensemble_method == 'bagging':
+                self.ensemble_model = Bagging(model_infos, self.ensemble_size)
+            else:
+                raise ValueError('UNSUPPORTED ensemble method: %s' % self.ensemble_method)
 
         if self.ensemble_model is not None:
             # Train the ensemble model.
-            # self.ensemble_model.fit(data)
-            pass
+            self.ensemble_model.fit(data)
+
         return self
 
     def predict(self, X, **kwargs):

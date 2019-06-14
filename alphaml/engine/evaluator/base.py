@@ -29,11 +29,8 @@ class BaseEvaluator(object):
         self.logger = logging.getLogger(__name__)
 
     def __call__(self, config):
-        params_num = len(config.get_dictionary().keys()) - 1
-        classifier_type = config['estimator']
-        estimator = _classifiers[classifier_type](*[None]*params_num)
-        config = update_config(config)
-        estimator.set_hyperparameters(config)
+        # Build the corresponding estimator.
+        classifier_type, estimator = self.set_config(config)
 
         # TODO: how to parallize.
         if hasattr(estimator, 'n_jobs'):
@@ -52,7 +49,7 @@ class BaseEvaluator(object):
         # Turn it to a minimization problem.
         return 1 - metric
 
-    def fit_predict(self, config, test_X=None):
+    def set_config(self, config):
         if not hasattr(self, 'estimator'):
             # Build the corresponding estimator.
             params_num = len(config.get_dictionary().keys()) - 1
@@ -62,6 +59,11 @@ class BaseEvaluator(object):
             estimator = self.estimator
         config = update_config(config)
         estimator.set_hyperparameters(config)
+        return classifier_type, estimator
+
+    def fit_predict(self, config, test_X=None):
+        # Build the corresponding estimator.
+        _, estimator = self.set_config(config)
 
         # Fit the estimator on the training data.
         estimator.fit(self.data_manager.train_X, self.data_manager.train_y)
