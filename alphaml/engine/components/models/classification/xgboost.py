@@ -56,6 +56,7 @@ class XGBoostClassifier(BaseClassificationModel):
         watchlist = [(dmtrain, 'train')]
 
         self.estimator = xgb.train(parameters, dmtrain, self.n_estimators, watchlist, verbose_eval=0)
+        self.objective = parameters['objective']
         return self
 
     def predict(self, X):
@@ -67,13 +68,20 @@ class XGBoostClassifier(BaseClassificationModel):
             pred = [int(i > 0.5) for i in pred]
         else:
             pred = np.argmax(pred, axis=-1)
-        return pred
+        return np.array(pred)
 
     def predict_proba(self, X):
         if self.estimator is None:
             raise NotImplementedError()
         dm = xgb.DMatrix(X, label=None)
-        return self.estimator.predict(dm)
+        pred = self.estimator.predict(dm)
+        if self.objective == 'binary:logistic':
+            final_pred = np.zeros((pred.shape[0], 2))
+            for i, proba in enumerate(pred):
+                final_pred[i, :] = np.array([1 - proba, proba])
+            return final_pred
+        else:
+            return self.estimator.predict(dm)
 
     @staticmethod
     def get_properties(dataset_properties=None):
