@@ -125,7 +125,7 @@ class RL_SMBO(BaseOptimizer):
             iter_num += (len(runkeys) - self.ts_cnts[best_arm])
             self.ts_cnts[best_arm] = len(runhistory.data.keys())
 
-            if best_arm == 'gaussian_nb':
+            if best_arm == 'gaussian_nb' and self.mode == 3:
                 self.ts_cnts[best_arm] = 1e10
             # Update the weight w vector.
             if self.avg:
