@@ -84,11 +84,18 @@ def test_cash_module():
                         optimizer, eta, r = optimizer.split('_')
                     else:
                         raise ValueError('Wrong SH params!')
+                if optimizer.startswith('rl'):
+                    if len(optimizer.split('_')) == 3:
+                        _, mode, eta = optimizer.split('_')
+                        mode = int(mode)
+                        optimizer = 'rl_smbo'
+                    else:
+                        raise ValueError('Wrong SH params!')
 
                 # Construct the AutoML classifier.
                 cls = Classifier(optimizer=optimizer, seed=seed).fit(
                     dm, metric='accuracy', runcount=run_count,
-                    task_name=task_name, update_mode=mode, eta=eta, r=r)
+                    task_name=task_name, update_mode=mode, eta=eta, r=r, param=eta)
                 acc = cls.score(X_test, y_test)
                 key_id = '%s_%d_%d_%s' % (dataset, run_count, run_id, optimizer)
                 result[key_id] = acc
