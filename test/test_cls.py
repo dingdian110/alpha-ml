@@ -78,7 +78,6 @@ def test_cash_module():
                 if optimizer.startswith('baseline'):
                     optimizer, mode = optimizer.split('_')
                     mode = 1 if mode == 'rand' else 2
-                print('Test %s optimizer => %s' % (optimizer, task_name))
                 if optimizer.startswith('sh'):
                     if len(optimizer.split('_')) == 3:
                         optimizer, eta, r = optimizer.split('_')
@@ -91,6 +90,14 @@ def test_cash_module():
                         optimizer = 'rl_smbo'
                     else:
                         raise ValueError('Wrong SH params!')
+                if optimizer.startswith('ts_smbo'):
+                    mode = 1
+                    if len(optimizer.split('_')) == 3:
+                        _, _, mode = optimizer.split('_')
+                        mode = int(mode)
+                        optimizer = 'ts_smbo'
+
+                print('Test %s optimizer => %s' % (optimizer, task_name))
 
                 # Construct the AutoML classifier.
                 cls = Classifier(optimizer=optimizer, seed=seed).fit(
