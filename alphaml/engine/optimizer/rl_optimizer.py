@@ -8,14 +8,32 @@ from alphaml.engine.optimizer.base_optimizer import BaseOptimizer
 from alphaml.engine.components.models.classification import _classifiers
 
 
-class TS_NON_SMBO(BaseOptimizer):
+class RL_SMBO(BaseOptimizer):
     def __init__(self, evaluator, config_space, data, seed, **kwargs):
         super().__init__(evaluator, config_space, data, kwargs['metric'], seed)
 
         self.iter_num = int(1e10) if ('runcount' not in kwargs or kwargs['runcount'] is None) else kwargs['runcount']
         self.estimator_arms = self.config_space.get_hyperparameter('estimator').choices
         self.task_name = kwargs['task_name'] if 'task_name' in kwargs else 'default'
-        self.result_file = self.task_name + '_non_mab_smac.data'
+
+        self.mode = kwargs['update_mode'] if 'update_mode' in kwargs else 1
+        self.param = float(kwargs['param']) if 'param' in kwargs else None
+        self.avg = False
+        if self.mode > 3:
+            self.update_mth = True
+            self.mode -= 3
+
+        if self.mode == 1:
+            algo_name = 'epsilon_greedy'
+        elif self.mode == 2:
+            algo_name = 'softmax'
+        elif self.mode == 3:
+            algo_name = 'ucb'
+        else:
+            raise ValueError('Invalid mode: %d' % self.mode)
+        self.result_file = self.task_name + '_%s_mab_%d_%.4f_smac.data' % \
+                                            (algo_name, int(self.avg), -1. if self.param is None else self.param)
+        self.logger.info('Result file: %s' % self.result_file)
         self.smac_containers = dict()
         self.ts_cnts = dict()
         self.ts_rewards = dict()
@@ -48,20 +66,39 @@ class TS_NON_SMBO(BaseOptimizer):
         self.logger.info('Start task: %s' % self.task_name)
 
         K = len(self.estimator_arms)
-        delta_t = 1000
-        gamma = min(1., np.sqrt(K*np.log(K)/((np.e - 1)*delta_t)))
-        print('='*40, gamma)
         iter_id = 0
+        self.weight = np.zeros(K)
 
         while True:
-            if iter_id % delta_t == 0:
-                self.weight = np.ones(K)
             iter_id += 1
-            # Obtain the p vector.
-            p = (1 - gamma) * self.weight/np.sum(self.weight) + gamma/K
-            # Draw an arm.
-            best_index = np.random.choice(K, 1, p=p)[0]
-            best_arm = self.estimator_arms[best_index]
+            if iter_id <= K:
+                # First iterate each algorithm.
+                best_index = iter_id - 1
+                best_arm = self.estimator_arms[best_index]
+            else:
+                if self.mode == 1:
+                    epsilon = self.param if self.param is not None else 0.3
+                    if np.random.rand() < epsilon:
+                        best_index = np.random.choice(K, 1)[0]
+                        best_arm = self.estimator_arms[best_index]
+                    else:
+                        best_index = np.argmax(self.weight)
+                        best_arm = self.estimator_arms[best_index]
+                elif self.mode == 2:
+                    # Softmax operation.
+                    lbd = self.param if self.param is not None else 1.
+                    exp_sum = np.sum(np.exp(self.weight/lbd))
+                    p = np.exp(self.weight/lbd) / exp_sum
+                    self.logger.info('P vector: %s' % p)
+                    # Draw an arm.
+                    best_index = np.random.choice(K, 1, p=p)[0]
+                    best_arm = self.estimator_arms[best_index]
+                else:
+                    confidence_value = np.array([np.sqrt(2*np.log(iter_num + 1)/self.ts_cnts[est]) for est in self.estimator_arms])
+                    q_value = self.weight + confidence_value
+                    self.logger.info('Q vector: %s' % q_value)
+                    best_index = np.argmax(q_value)
+                    best_arm = self.estimator_arms[best_index]
             self.logger.info('Choosing to optimize %s arm' % best_arm)
 
             self.smac_containers[best_arm].iterate()
@@ -88,15 +125,19 @@ class TS_NON_SMBO(BaseOptimizer):
             iter_num += (len(runkeys) - self.ts_cnts[best_arm])
             self.ts_cnts[best_arm] = len(runhistory.data.keys())
 
+            if best_arm == 'gaussian_nb' and self.mode == 3:
+                self.ts_cnts[best_arm] = 1e10
             # Update the weight w vector.
-            x_bar = max(self.ts_rewards[best_arm]) / p[best_index]
-            self.weight[best_index] *= np.exp(gamma*x_bar/K)
+            if self.avg:
+                self.weight[best_index] = np.mean(self.ts_rewards[best_arm])
+            else:
+                self.weight[best_index] = max(self.ts_rewards[best_arm])
 
             if iter_num >= self.iter_num:
                 break
 
             # Print the parameters in Thompson sampling.
-            self.logger.info('Vector p: %s' % dict(zip(self.estimator_arms, p)))
+            self.logger.info('Vector Weight: %s' % dict(zip(self.estimator_arms, self.weight)))
 
         # Print the parameters in Thompson sampling.
         self.logger.info('ts params: %s' % self.weight)
