@@ -8,23 +8,23 @@ from sklearn.model_selection import train_test_split, StratifiedKFold
 
 
 class Stacking(BaseEnsembleModel):
-    def __init__(self, model_info, ensemble_size, model_type='ml', stacking_model='xgboost', kfold=5):
+    def __init__(self, model_info, ensemble_size, model_type='ml', meta_learner='xgboost', kfold=5):
         '''
         :param bagging_mode: string, mode for bagging, 'majority' and 'average'
         '''
         super().__init__(model_info, ensemble_size, model_type)
         self.kfold = kfold
         # We use LogisticRegressor as default blending model
-        if stacking_model == 'logistic':
+        if meta_learner == 'logistic':
             from sklearn.linear_model.logistic import LogisticRegression
-            self.stacking_model = LogisticRegression(max_iter=1000)
-        elif stacking_model == 'gb':
+            self.meta_learner = LogisticRegression(max_iter=1000)
+        elif meta_learner == 'gb':
             from sklearn.ensemble.gradient_boosting import GradientBoostingClassifier
-            self.stacking_model = GradientBoostingClassifier(learning_rate=0.05, subsample=0.7, max_depth=4,
-                                                             n_estimators=200)
-        elif stacking_model == 'xgboost':
+            self.meta_learner = GradientBoostingClassifier(learning_rate=0.05, subsample=0.7, max_depth=4,
+                                                           n_estimators=200)
+        elif meta_learner == 'xgboost':
             from xgboost import XGBClassifier
-            self.stacking_model = XGBClassifier(max_depth=4, learning_rate=0.05, n_estimators=200)
+            self.meta_learner = XGBClassifier(max_depth=4, learning_rate=0.05, n_estimators=200)
 
     def fit(self, dm: DataManager):
         # Split training data for phase 1 and phase 2
@@ -54,10 +54,10 @@ class Stacking(BaseEnsembleModel):
                     else:
                         feature_p2[test, i * n_dim:(i + 1) * n_dim] = pred
             # Train model for stacking using the other part training data
-            self.stacking_model.fit(feature_p2, dm.train_y)
+            self.meta_learner.fit(feature_p2, dm.train_y)
 
             from sklearn.metrics import accuracy_score
-            pred = self.stacking_model.predict(feature_p2)
+            pred = self.meta_learner.predict(feature_p2)
             print(accuracy_score(dm.train_y, pred))
 
         elif self.model_type == 'dl':
@@ -84,6 +84,6 @@ class Stacking(BaseEnsembleModel):
             else:
                 feature_p2[:, index * n_dim:(index + 1) * n_dim] = feature_p2[:, index * n_dim:(index + 1) * n_dim] + \
                                                                    pred / self.kfold
-        # Get predictions from blending model
-        final_pred = self.stacking_model.predict(feature_p2)
+        # Get predictions from meta-learner
+        final_pred = self.meta_learner.predict(feature_p2)
         return final_pred

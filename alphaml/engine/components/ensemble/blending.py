@@ -10,21 +10,21 @@ from sklearn.ensemble.gradient_boosting import GradientBoostingClassifier
 
 
 class Blending(BaseEnsembleModel):
-    def __init__(self, model_info, ensemble_size, model_type='ml', blending_model='xgboost'):
+    def __init__(self, model_info, ensemble_size, model_type='ml', meta_learner='xgboost'):
         '''
         :param bagging_mode: string, mode for bagging, 'majority' and 'average'
         '''
         super().__init__(model_info, ensemble_size, model_type)
 
         # We use LogisticRegressor as default blending model
-        if blending_model == 'logistic':
-            self.blending_model = LogisticRegression(max_iter=1000)
-        elif blending_model == 'gb':
-            self.blending_model = GradientBoostingClassifier(learning_rate=0.05, subsample=0.7, max_depth=4,
-                                                             n_estimators=250)
-        elif blending_model == 'xgboost':
+        if meta_learner == 'logistic':
+            self.meta_learner = LogisticRegression(max_iter=1000)
+        elif meta_learner == 'gb':
+            self.meta_learner = GradientBoostingClassifier(learning_rate=0.05, subsample=0.7, max_depth=4,
+                                                           n_estimators=250)
+        elif meta_learner == 'xgboost':
             from xgboost import XGBClassifier
-            self.blending_model = XGBClassifier(max_depth=4, learning_rate=0.05, n_estimators=200)
+            self.meta_learner = XGBClassifier(max_depth=4, learning_rate=0.05, n_estimators=200)
 
     def fit(self, dm: DataManager):
         # Split training data for phase 1 and phase 2
@@ -51,7 +51,7 @@ class Blending(BaseEnsembleModel):
                 else:
                     feature_p2[:, i * n_dim:(i + 1) * n_dim] = pred
             # Train model for blending using the other part of training data
-            self.blending_model.fit(feature_p2, y_p2)
+            self.meta_learner.fit(feature_p2, y_p2)
 
 
         elif self.model_type == 'dl':
@@ -73,6 +73,6 @@ class Blending(BaseEnsembleModel):
                 feature_p2[:, i * n_dim:(i + 1) * n_dim] = pred[:, 1:2]
             else:
                 feature_p2[:, i * n_dim:(i + 1) * n_dim] = pred
-        # Get predictions from blending model
-        final_pred = self.blending_model.predict(feature_p2)
+        # Get predictions from meta-learner
+        final_pred = self.meta_learner.predict(feature_p2)
         return final_pred
