@@ -11,6 +11,7 @@ from alphaml.engine.optimizer.baseline_optimizer import BASELINE
 from alphaml.engine.optimizer.sh_optimizer import SH_SMBO
 from alphaml.engine.components.ensemble.bagging import Bagging
 from alphaml.engine.components.ensemble.blending import Blending
+from alphaml.engine.components.ensemble.stacking import Stacking
 from alphaml.utils.label_util import to_categorical, map_label, get_classnum
 import numpy as np
 import copy
@@ -107,6 +108,8 @@ class AutoML(object):
                 self.ensemble_model = Bagging(model_infos, self.ensemble_size)
             elif self.ensemble_method == 'blending':
                 self.ensemble_model = Blending(model_infos, self.ensemble_size)
+            elif self.ensemble_method == 'stacking':
+                self.ensemble_model = Stacking(model_infos, self.ensemble_size)
             else:
                 raise ValueError('UNSUPPORTED ensemble method: %s' % self.ensemble_method)
 
@@ -123,9 +126,8 @@ class AutoML(object):
             pred = self.evaluator.fit_predict(self.optimizer.incumbent, X)
         else:
             # Predict the result.
-            pred1 = self.evaluator.fit_predict(self.optimizer.incumbent, X)
-            pred2 = self.ensemble_model.predict(X)
-        return pred1,pred2
+            pred = self.ensemble_model.predict(X)
+        return pred
 
     def score(self, X, y):
         pred_y = self.predict(X)
