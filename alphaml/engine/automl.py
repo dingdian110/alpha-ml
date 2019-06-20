@@ -10,6 +10,8 @@ from alphaml.engine.optimizer.cmab_optimizer import CMAB_TS
 from alphaml.engine.optimizer.baseline_optimizer import BASELINE
 from alphaml.engine.optimizer.sh_optimizer import SH_SMBO
 from alphaml.engine.optimizer.rl_optimizer import RL_SMBO
+from alphaml.engine.optimizer.mcmc_ts_optimizer import MCMC_TS_Optimizer
+from alphaml.engine.optimizer.ucb_mab_optimizer import UCB_SMBO
 from alphaml.engine.components.ensemble.bagging import Bagging
 from alphaml.utils.label_util import to_categorical, map_label, get_classnum
 import numpy as np
@@ -97,6 +99,14 @@ class AutoML(object):
         elif self.optimizer_type == 'rl_smbo':
             # Create optimizer.
             self.optimizer = RL_SMBO(self.evaluator, config_space, data, self.seed, **kwargs)
+            self.optimizer.run()
+        elif self.optimizer_type == 'mcmc_ts_smbo':
+            # Create optimizer.
+            self.optimizer = MCMC_TS_Optimizer(self.evaluator, config_space, data, self.seed, **kwargs)
+            self.optimizer.run()
+        elif self.optimizer_type == 'ucb_smbo':
+            # Create optimizer.
+            self.optimizer = UCB_SMBO(self.evaluator, config_space, data, self.seed, **kwargs)
             self.optimizer.run()
         else:
             raise ValueError('UNSUPPORTED optimizer: %s' % self.optimizer)

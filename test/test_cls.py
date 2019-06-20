@@ -96,6 +96,16 @@ def test_cash_module():
                         _, _, mode = optimizer.split('_')
                         mode = int(mode)
                         optimizer = 'ts_smbo'
+                if optimizer.startswith('mcmc_ts'):
+                    mode = 1
+                    optimizer = 'mcmc_ts_smbo'
+
+                if optimizer.startswith('ucb_smbo'):
+                    mode = 1
+                    if len(optimizer.split('_')) == 3:
+                        _, _, mode = optimizer.split('_')
+                        mode = int(mode)
+                        optimizer = 'ucb_smbo'
 
                 print('Test %s optimizer => %s' % (optimizer, task_name))
 
