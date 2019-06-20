@@ -20,7 +20,7 @@ def weibull(x, alpha, beta, kappa, delta):
 class CurveModel(object):
     def __init__(self):
         self.function = weibull
-        self.default_params = np.array([.7, .1, .01, 1, 0.1])
+        self.default_params = np.array([.7, .1, .01, 1, 0.01])
 
         self.ml_params = self.default_params
         self.lower_bound = np.array([0, 0., 0., 1.])
@@ -58,10 +58,15 @@ class CurveModel(object):
         return norm.pdf(y-self.function(x, *params), loc=0, scale=sigma)
 
 
+def model_ln_prob(theta, model, x, y):
+    return model.ln_prob(theta, x, y)
+
+
 class MCMCModel(object):
     def __init__(self):
         self.curve_model = CurveModel()
         self.nwalkers = 100
+        self.nthread = 1
         self.nsamples = 800
         self.ndim = 5
         self.burn_in = 300
@@ -107,7 +112,15 @@ class MCMCModel(object):
     def fit_mcmc(self, x, y):
         self.xlim = x[-1]
         pos = [self.curve_model.ml_params + 1e-6 * np.random.randn(self.ndim) for _ in range(self.nwalkers)]
-        sampler = emcee.EnsembleSampler(self.nwalkers, self.ndim, self.ln_prob, args=(x, y))
+        if self.nthread == 1:
+            sampler = emcee.EnsembleSampler(self.nwalkers, self.ndim, self.ln_prob, args=(x, y))
+        else:
+            sampler = emcee.EnsembleSampler(
+                self.nwalkers,
+                self.ndim,
+                model_ln_prob,
+                args=(self, x, y),
+                threads=self.nthread)
         sampler.run_mcmc(pos, self.nsamples)
         self.mcmc_chain = sampler.chain
 
@@ -136,10 +149,54 @@ class MCMCModel(object):
     # how to estimate the sigma.
 
 
+"""
+    Improvement: 1) multiple threads, 2) the variance sigma.
+"""
 if __name__ == "__main__":
-    y = np.array([0.74, 0.74, 0.74, 0.74, 0.74, 0.74, 0.81, 0.81, 0.81, 0.83, 0.85, 0.89, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9])
+    # y = np.array([0.74, 0.74, 0.74, 0.74, 0.74, 0.74, 0.81, 0.81, 0.81, 0.83, 0.85,
+    #               0.89, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9])
+    # y = np.array([0.7, 0.73, 0.83, 0.88, 0.91, 0.92])
+    # y = np.array([0.7, 0.73, 0.83, 0.88, 0.91, 0.92, 0.926, 0.928, 0.929, 0.93, 0.93, 0.93, 0.93])
+    # y = np.array([0.74, 0.742, 0.743, 0.743, 0.743, 0.743, 0.743, 0.743, 0.743, 0.743, 0.743, 0.743])
+    # y = np.array([0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7])
+    # pc4, libsvm_svc.
+    # y = np.array([0.11538461538461542, 0.11538461538461542, 0.11538461538461542, 0.11965811965811968,
+    #               0.11965811965811968, 0.11965811965811968, 0.11965811965811968, 0.11965811965811968,
+    #               0.11965811965811968, 0.11965811965811968, 0.11965811965811968, 0.11965811965811968,
+    #               0.11965811965811968, 0.11965811965811968, 0.11965811965811968, 0.7435897435897436,
+    #               0.7478632478632479, 0.7521367521367521, 0.8333333333333334, 0.8717948717948718, 0.8717948717948718,
+    #               0.8717948717948718, 0.8717948717948718, 0.8717948717948718, 0.8717948717948718, 0.8760683760683761,
+    #               0.8803418803418803, 0.8803418803418803, 0.8803418803418803, 0.8803418803418803, 0.8803418803418803,
+    #               0.8803418803418803, 0.8803418803418803, 0.8803418803418803, 0.8803418803418803, 0.8803418803418803,
+    #               0.8803418803418803, 0.8803418803418803, 0.8803418803418803, 0.8803418803418803, 0.8803418803418803,
+    #               0.8803418803418803, 0.8803418803418803, 0.8803418803418803, 0.8803418803418803, 0.8803418803418803,
+    #               0.8803418803418803, 0.8803418803418803, 0.8803418803418803, 0.8803418803418803, 0.8803418803418803,
+    #               0.8803418803418803, 0.8803418803418803, 0.8803418803418803, 0.8803418803418803, 0.8803418803418803,
+    #               0.8803418803418803, 0.8803418803418803, 0.8803418803418803, 0.8803418803418803, 0.8803418803418803,
+    #               0.8803418803418803, 0.8803418803418803, 0.8803418803418803, 0.8803418803418803, 0.8803418803418803,
+    #               0.8803418803418803, 0.8803418803418803, 0.8803418803418803, 0.8803418803418803, 0.8803418803418803,
+    #               0.8803418803418803, 0.8803418803418803, 0.8803418803418803, 0.8803418803418803, 0.8803418803418803,
+    #               0.8803418803418803, 0.8803418803418803, 0.8803418803418803, 0.8803418803418803, 0.8803418803418803,
+    #               0.8803418803418803, 0.8803418803418803, 0.8803418803418803, 0.8846153846153846])
+    # pc4, random_forest.
+    y = np.array([0.8846153846153846, 0.8846153846153846, 0.8888888888888888, 0.8931623931623932, 0.8931623931623932,
+                  0.8931623931623932, 0.9145299145299145])
     x = np.array(list(range(1, len(y) + 1)))
     model = MCMCModel()
     model.fit_mcmc(x, y)
-    for t in range(len(y), len(y) + 20):
-        print(t, model.predict(t))
+    x_pred = list(range(1, 201))
+    y_pred = list()
+    y_sigma = list()
+    for t in x_pred:
+        mu, sigma = model.predict(t)
+        y_pred.append(mu)
+        y_sigma.append(sigma)
+
+    from matplotlib import pyplot as plt
+    plt.plot(x, y, color='blue')
+    y_pred = np.array(y_pred)
+    y_sigma = np.array(y_sigma)
+    # plt.plot(x_pred, y_pred, color='red')
+    plt.fill_between(x_pred, y_pred - y_sigma, y_pred + y_sigma, facecolor='green', alpha=0.3)
+    plt.ylim(0, 1)
+    plt.show()
