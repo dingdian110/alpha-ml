@@ -29,7 +29,7 @@ class DataManager(object):
 
         # Split input into train and val subsets.
         self.train_X,  self.val_X, self.train_y, self.val_y = train_test_split(
-            self.train_X, self.train_y, test_size=val_size, random_state=random_state)
+            self.train_X, self.train_y, test_size=val_size, random_state=random_state, stratify=self.train_y)
 
     def set_col_type(self, df):
         self.feature_types = []

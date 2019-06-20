@@ -21,7 +21,7 @@ else:
 rep_num = args.rep
 run_count = args.run_count
 datasets = args.datasets.split(',')
-algo_list = ['adaboost', 'random_forest', 'k_nearest_neighbors', 'gradient_boosting']
+algo_list = ['adaboost', 'random_forest', 'k_nearest_neighbors', 'xgboost']
 print(rep_num, run_count, datasets)
 
 
@@ -40,11 +40,11 @@ def test_claim():
             task_format = dataset + '_claim_%d'
 
             for optimizer in ['smbo']:
-                cls = Classifier(include_models=algo_list, optimizer=optimizer, seed=seed).fit(
+                cls = Classifier(optimizer=optimizer, seed=seed).fit(
                     dm, metric='accuracy', runcount=run_count, task_name=task_format % run_id)
                 print(cls.predict(X))
 
-                file_id = 'data/%s_claim_%d_%s.data' % (dataset, run_id, 'smac')
+                file_id = 'data/%s/%s_claim_%d_%s.data' % (dataset, dataset, run_id, 'smac')
                 with open(file_id, 'rb') as f:
                     data = pickle.load(f)
 
@@ -72,7 +72,7 @@ def test_claim():
                     dm, metric='accuracy', runcount=run_cnts, task_name=task_format % run_id)
                 print(cls.predict(X))
 
-                file_id = 'data/%s_claim_single_%d_%s.data' % (dataset, run_id, 'smac')
+                file_id = 'data/%s/%s_claim_single_%d_%s.data' % (dataset, dataset, run_id, 'smac')
                 with open(file_id, 'rb') as f:
                     data_s = pickle.load(f)
                 print('='*20 + 'single', max(data_s['perfs']))
@@ -113,4 +113,4 @@ def plot(dataset, rep_num):
 
 if __name__ == "__main__":
     # test_claim()
-    plot('svmguide2', 50)
+    plot('svmguide2', 200)

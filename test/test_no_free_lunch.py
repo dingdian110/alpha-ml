@@ -35,7 +35,9 @@ else:
 rep_num = args.rep
 run_count = args.run_count
 datasets = args.datasets.split(',')
-algo_list = ['adaboost', 'random_forest', 'k_nearest_neighbors', 'gradient_boosting']
+algo_list = ['adaboost', 'random_forest', 'k_nearest_neighbors', 'gradient_boosting',
+             'decision_tree', 'extra_trees', 'lda', 'liblinear_svc',
+             'libsvm_svc', 'logistic_regression', 'sgd', 'xgboost']
 print(rep_num, run_count, datasets)
 
 
@@ -52,10 +54,10 @@ def test_no_free_lunch():
             seed = np.random.random_integers(MAX_INT)
             for algo in algo_list:
                 for optimizer in ['smbo']:
-                    task_format = dataset + algo + '_%d'
+                    task_format = dataset + '_' + algo + '_%d_%d'
                     cls = Classifier(
                         include_models=[algo], optimizer=optimizer, seed=seed).fit(
-                        dm, metric='accuracy', runcount=run_count, task_name=task_format % run_id)
+                        dm, metric='accuracy', runcount=run_count, task_name=task_format % (run_count, run_id))
                     print(cls.predict(X))
 
 

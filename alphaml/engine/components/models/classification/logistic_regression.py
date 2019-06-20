@@ -1,9 +1,7 @@
 from ConfigSpace.configuration_space import ConfigurationSpace
-from ConfigSpace.conditions import EqualsCondition, InCondition, NotEqualsCondition
 from ConfigSpace.hyperparameters import UniformFloatHyperparameter, \
     UniformIntegerHyperparameter, CategoricalHyperparameter
 from alphaml.utils.constants import *
-from alphaml.utils.model_util import softmax
 from alphaml.engine.components.models.base_model import BaseClassificationModel
 
 
@@ -11,10 +9,10 @@ class Logistic_Regression(BaseClassificationModel):
     def __init__(self, C, penalty, solver, tol, max_iter, random_state=None):
         self.C = C
         self.tol = tol
-        self.max_iter = max_iter
         self.random_state = random_state
         self.penalty = penalty
         self.solver = solver
+        self.max_iter = max_iter
         self.estimator = None
 
     def fit(self, X, Y):
@@ -25,7 +23,11 @@ class Logistic_Regression(BaseClassificationModel):
         self.estimator = LogisticRegression(random_state=self.random_state,
                                             solver=self.solver,
                                             penalty=self.penalty,
-                                            multi_class='multinomial')
+                                            multi_class='ovr',
+                                            C=self.C,
+                                            tol=self.tol,
+                                            max_iter=self.max_iter,
+                                            n_jobs=-1)
         self.estimator.fit(X, Y)
         return self
 
@@ -37,9 +39,7 @@ class Logistic_Regression(BaseClassificationModel):
     def predict_proba(self, X):
         if self.estimator is None:
             raise NotImplementedError()
-        decision = self.estimator.decision_function(X)
-        return softmax(decision)
-
+        return self.estimator.predict_proba(X)
 
     @staticmethod
     def get_properties(dataset_properties=None):
@@ -55,18 +55,17 @@ class Logistic_Regression(BaseClassificationModel):
 
     @staticmethod
     def get_hyperparameter_search_space(dataset_properties=None):
-        C = UniformFloatHyperparameter("C", 0.03125, 32768, log=True,
+        C = UniformFloatHyperparameter("C", 0.03125, 10, log=True,
                                        default_value=1.0)
-        tol = UniformFloatHyperparameter("tol", 1e-5, 1e-1, default_value=1e-3,
+        tol = UniformFloatHyperparameter("tol", 1e-6, 1e-2, default_value=1e-4,
                                          log=True)
 
-        max_iter = UniformIntegerHyperparameter("max_iter", 50, 1000, default_value=100)
+        max_iter = UniformFloatHyperparameter("max_iter", 100, 1000, q=100, default_value=100)
+
         penalty = CategoricalHyperparameter(name="penalty",
                                            choices=["l1", "l2"],
                                            default_value="l2")
-        solver = CategoricalHyperparameter(name="solver",
-                                            choices=["newton-cg", "lbfgs", "liblinear", "sag", "saga"],
-                                            default_value="liblinear")
+        solver = CategoricalHyperparameter(name="solver", choices=["liblinear", "saga"], default_value="liblinear")
 
         cs = ConfigurationSpace()
         cs.add_hyperparameters([C, penalty, solver, tol, max_iter])
