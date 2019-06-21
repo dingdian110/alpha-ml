@@ -9,9 +9,6 @@ from sklearn.model_selection import train_test_split, StratifiedKFold
 
 class Stacking(BaseEnsembleModel):
     def __init__(self, model_info, ensemble_size, model_type='ml', meta_learner='xgboost', kfold=5):
-        '''
-        :param bagging_mode: string, mode for bagging, 'majority' and 'average'
-        '''
         super().__init__(model_info, ensemble_size, model_type)
         self.kfold = kfold
         # We use LogisticRegressor as default blending model

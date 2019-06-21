@@ -12,6 +12,7 @@ from alphaml.engine.optimizer.sh_optimizer import SH_SMBO
 from alphaml.engine.components.ensemble.bagging import Bagging
 from alphaml.engine.components.ensemble.blending import Blending
 from alphaml.engine.components.ensemble.stacking import Stacking
+from alphaml.engine.components.ensemble.ensemble_selection import EnsembleSelection
 from alphaml.utils.label_util import to_categorical, map_label, get_classnum
 import numpy as np
 import copy
@@ -110,6 +111,8 @@ class AutoML(object):
                 self.ensemble_model = Blending(model_infos, self.ensemble_size)
             elif self.ensemble_method == 'stacking':
                 self.ensemble_model = Stacking(model_infos, self.ensemble_size)
+            elif self.ensemble_method == 'ensemble_selection':
+                self.ensemble_model = EnsembleSelection(model_infos, self.ensemble_size, self.metric)
             else:
                 raise ValueError('UNSUPPORTED ensemble method: %s' % self.ensemble_method)
 
