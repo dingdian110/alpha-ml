@@ -132,18 +132,27 @@ class MCMCModel(object):
         assert isinstance(x, float) or isinstance(x, int)
         samples = self.get_burned_in_samples()
         predictions = []
+        sigmas = []
         for theta in samples[::thin]:
             params, sigma = self.curve_model.split_theta(theta)
             predictions.append(self.curve_model.function(x, *params))
-        return np.asarray(predictions)
+            sigmas.append(sigma)
+        return np.asarray(predictions), np.asarray(sigmas)
 
     def predict(self, x):
         """
             E[f(x)]
         """
-        predictions = self.predictive_distribution(x)
+        predictions, sigmas = self.predictive_distribution(x)
         pred = np.ma.masked_invalid(predictions)
-        return pred.mean(), pred.std()
+        mode = 0
+        if mode == 0:
+            return pred.mean(), pred.std()
+        else:
+            print(sigmas.shape)
+            n = len(sigmas)
+            pred_sigma = np.sqrt(1./(n*n) * sum(sigmas * sigmas))
+            return pred.mean(), pred_sigma
 
     # Problem:
     # how to estimate the sigma.
@@ -158,8 +167,9 @@ def test_case0():
     # y = np.array([0.74, 0.74, 0.74, 0.74, 0.74, 0.74, 0.81, 0.81, 0.81, 0.83, 0.85,
     #               0.89, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9])
     # y = np.array([0.7, 0.73, 0.83, 0.88, 0.91, 0.92])
-    y = np.array([0.7, 0.73, 0.83, 0.88, 0.91, 0.92, 0.926, 0.928, 0.929, 0.93, 0.93, 0.93, 0.93])
+    # y = np.array([0.7, 0.73, 0.83, 0.88, 0.91, 0.92, 0.926, 0.928, 0.929, 0.93, 0.93, 0.93, 0.93])
     # y = np.array([0.74, 0.742, 0.743, 0.743, 0.743, 0.743, 0.743, 0.743, 0.743, 0.743, 0.743, 0.743])
+    y = np.array([0.71, 0.722, 0.743, 0.743, 0.743, 0.743])
     # y = np.array([0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7])
     # pc4, libsvm_svc.
     # y = np.array([0.11538461538461542, 0.11538461538461542, 0.11538461538461542, 0.11965811965811968,
@@ -181,13 +191,13 @@ def test_case0():
     #               0.8803418803418803, 0.8803418803418803, 0.8803418803418803, 0.8803418803418803, 0.8803418803418803,
     #               0.8803418803418803, 0.8803418803418803, 0.8803418803418803, 0.8846153846153846])
     # pc4, random_forest.
-    # y = np.array([0.8846153846153846, 0.8846153846153846, 0.8888888888888888, 0.8931623931623932, 0.8931623931623932,
-    #               0.8931623931623932, 0.9145299145299145])
+    y = np.array([0.8846153846153846, 0.8846153846153846, 0.8888888888888888, 0.8931623931623932, 0.8931623931623932,
+                  0.8931623931623932, 0.9145299145299145, 0.9145299145299145, 0.9145299145299145])
 
     x = np.array(list(range(1, len(y) + 1)))
     model = MCMCModel()
     model.fit_mcmc(x, y)
-    x_pred = list(range(1, 201))
+    x_pred = list(range(1, 50))
     y_pred = list()
     y_sigma = list()
     for t in x_pred:
@@ -202,7 +212,7 @@ def test_case0():
     plt.plot(x_pred, y_pred, color='red')
     plt.fill_between(x_pred, y_pred - y_sigma, y_pred + y_sigma, facecolor='green', alpha=0.1)
     print(y_sigma[len(x)+1:])
-    plt.ylim(0, 1)
+    plt.ylim(0.8, 1)
     plt.show()
 
 
