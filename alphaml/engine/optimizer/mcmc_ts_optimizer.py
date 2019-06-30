@@ -11,6 +11,16 @@ from alphaml.engine.components.models.classification import _classifiers
 from alphaml.engine.optimizer.reward_models.mcmc_model import MCMCModel
 
 
+def sample_curve(model, xlim):
+    model_samples = model.get_burned_in_samples()
+    theta_idx = np.random.randint(0, model_samples.shape[0], 1)[0]
+    theta = model_samples[theta_idx, :]
+
+    params, _ = model.curve_model.split_theta(theta)
+    predictive_mu = model.curve_model.function(xlim+1, *params)
+    return predictive_mu
+
+
 class MCMC_TS_Optimizer(BaseOptimizer):
     def __init__(self, evaluator, config_space, data, seed, **kwargs):
         super().__init__(evaluator, config_space, data, kwargs['metric'], seed)
@@ -27,6 +37,8 @@ class MCMC_TS_Optimizer(BaseOptimizer):
         self.gamma = 0.97
         self.ts_rewards = dict()
         self.alphas = dict()
+        # Variables for implementation 1.
+        self.mean_pred_cache = dict()
         self.configs_list = list()
         self.config_values = list()
 
@@ -57,6 +69,7 @@ class MCMC_TS_Optimizer(BaseOptimizer):
             self.ts_cnts[estimator] = 0
             self.penalty_factor[estimator] = 1.
             self.ts_rewards[estimator] = list()
+            self.mean_pred_cache[estimator] = [0.5, 1.]
             if num_dim == 0:
                 self.alphas[estimator] = 1e10
             else:
@@ -71,9 +84,20 @@ class MCMC_TS_Optimizer(BaseOptimizer):
 
         while True:
             samples = list()
-            for estimator in self.estimator_arms:
-                sample = norm.rvs(loc=self.ts_params[estimator][0], scale=self.ts_params[estimator][1])
-                samples.append(sample)
+            if self.update_mode == 1:
+                for estimator in self.estimator_arms:
+                    sample = norm.rvs(loc=self.ts_params[estimator][0], scale=self.ts_params[estimator][1])
+                    samples.append(sample)
+            elif self.update_mode == 2:
+                for estimator in self.estimator_arms:
+                    sample = norm.rvs(loc=self.mean_pred_cache[estimator][0], scale=self.mean_pred_cache[estimator][1])
+                    samples.append(sample)
+                expected_values = [self.mean_pred_cache[est][0] for est in self.estimator_arms]
+                for i in range(len(samples)):
+                    samples[i] = max(samples[i], expected_values[i])
+            else:
+                raise ValueError('Invalid Mode!')
+
             best_arm = self.estimator_arms[np.argmax(samples)]
             self.logger.info('Choosing to optimize %s arm' % best_arm)
             self.smac_containers[best_arm].iterate()
@@ -131,7 +155,18 @@ class MCMC_TS_Optimizer(BaseOptimizer):
                 # if best_arm == 'gaussian_nb':
                 #     self.ts_params[best_arm][1] = sigma / self.alphas[best_arm]
                 self.ts_params[best_arm][1] = self.penalty_factor[best_arm] * sigma / self.alphas[best_arm]
-
+            elif self.update_mode == 2:
+                y = np.array(sorted(self.ts_rewards[best_arm]))
+                x = np.array(list(range(1, 1 + self.ts_cnts[best_arm])))
+                assert len(x) == len(y)
+                model = MCMCModel()
+                self.logger.info('Start to fit MCMC model.')
+                start_time = time.time()
+                model.fit_mcmc(x, y)
+                self.logger.info('Fitting MCMC takes %.2f seconds' % (time.time()-start_time))
+                # Update the expected rewards in next time step.
+                next_mu, next_sigma = model.predict(self.ts_cnts[best_arm] + 1)
+                self.mean_pred_cache[best_arm] = [next_mu, next_sigma]
             else:
                 raise ValueError('Invalid update mode: %d' % self.update_mode)
 
