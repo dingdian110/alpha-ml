@@ -29,7 +29,11 @@ class MCMC_TS_Optimizer(BaseOptimizer):
         self.estimator_arms = self.config_space.get_hyperparameter('estimator').choices
         self.task_name = kwargs['task_name'] if 'task_name' in kwargs else 'default'
         self.update_mode = kwargs['update_mode'] if 'update_mode' in kwargs else 1
-        self.result_file = self.task_name + '_mcmc_ts_%d_smac.data' % self.update_mode
+        self.param_id = kwargs['param'] if 'param' in kwargs else 1
+        if self.param_id <= 2:
+            self.result_file = self.task_name + '_mcmc_ts_%d_smac.data' % self.update_mode
+        else:
+            self.result_file = self.task_name + '_mcmc_ts_%d_%d_smac.data' % (self.update_mode, self.param_id)
         self.smac_containers = dict()
         self.ts_params = dict()
         self.ts_cnts = dict()
@@ -130,17 +134,17 @@ class MCMC_TS_Optimizer(BaseOptimizer):
             iter_num += (len(runkeys) - self.ts_cnts[best_arm])
             self.ts_cnts[best_arm] = len(runhistory.data.keys())
 
+            if update_flag:
+                # if the update is the best, penalty gives to other arms.
+                check_flag = [True for est in self.estimator_arms if self.ts_cnts[est] >= 3]
+                if np.all(check_flag):
+                    for est in self.estimator_arms:
+                        if est != best_arm:
+                            self.penalty_factor[est] *= self.gamma
+                    self.logger.info('=' * 10 + 'Penalty factor: %s' % str(self.penalty_factor))
+
             # Update the posterior estimation.
             if self.update_mode == 1:
-                if update_flag:
-                    # if the update is the best, penalty gives to other arms.
-                    check_flag = [True for est in self.estimator_arms if self.ts_cnts[est] >= 3]
-                    if np.all(check_flag):
-                        for est in self.estimator_arms:
-                            if est != best_arm:
-                                self.penalty_factor[est] *= self.gamma
-                        self.logger.info('='*10 + 'Penalty factor: %s' % str(self.penalty_factor))
-
                 # The naive Gaussian MAB.
                 y = np.array(sorted(self.ts_rewards[best_arm]))
                 x = np.array(list(range(1, 1+self.ts_cnts[best_arm])))
@@ -166,6 +170,14 @@ class MCMC_TS_Optimizer(BaseOptimizer):
                 self.logger.info('Fitting MCMC takes %.2f seconds' % (time.time()-start_time))
                 # Update the expected rewards in next time step.
                 next_mu, next_sigma = model.predict(self.ts_cnts[best_arm] + 1)
+                if self.param_id == 3:
+                    next_sigma *= self.penalty_factor[best_arm]
+                elif self.param_id == 4:
+                    next_sigma /= self.alphas[best_arm]
+                elif self.param_id == 5:
+                    next_sigma = next_sigma * self.penalty_factor[best_arm] / self.alphas[best_arm]
+                else:
+                    raise ValueError('Invalid Mode!')
                 self.mean_pred_cache[best_arm] = [next_mu, next_sigma]
             else:
                 raise ValueError('Invalid update mode: %d' % self.update_mode)

@@ -97,8 +97,9 @@ def test_cash_module():
                         mode = int(mode)
                         optimizer = 'ts_smbo'
                 if optimizer.startswith('mcmc_ts'):
-                    _, _, mode = optimizer.split('_')
+                    _, _, mode, eta = optimizer.split('_')
                     mode = int(mode)
+                    eta = int(eta)
                     optimizer = 'mcmc_ts_smbo'
 
                 if optimizer.startswith('ucb_smbo'):
