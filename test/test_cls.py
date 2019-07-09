@@ -24,7 +24,7 @@ parser.add_argument('--rep', type=int, default=10)
 parser.add_argument('--run_count', type=int, default=200)
 parser.add_argument('--start_runid', type=int, default=0)
 parser.add_argument('--datasets', type=str, default='glass')
-parser.add_argument('--task_id', type=str, default='all')
+parser.add_argument('--task_id', type=str, default='test')
 parser.add_argument('--opt_algo', type=str, default='baseline_avg')
 args = parser.parse_args()
 
@@ -122,7 +122,8 @@ def test_cash_module():
             # Display and save the test result.
             print(result)
             dataset_id = dataset.split('_')[0]
-            with open('data/%s/%s_test_result.pkl' % (dataset_id, dataset_id), 'wb') as f:
+            with open('data/%s/%s_test_result_%s_%d_%d_%d.pkl' %
+                              (dataset_id, dataset_id, task_id, run_count, rep_num, start_id), 'wb') as f:
                 pickle.dump(result, f)
 
 
