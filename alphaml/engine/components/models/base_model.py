@@ -71,6 +71,35 @@ class BaseClassificationModel(BaseModel):
         """
         return self.estimator
 
+class BaseRegressionModel(BaseModel):
+    def __init__(self):
+        self.estimator = None
+        self.properties = None
+
+    def predict(self, X):
+        """
+        The predict function calls the predict function of the
+        underlying scikit-learn model and returns an array with the predictions.
+        :param X: array-like, shape = (n_samples, n_features).
+        :return: the predicted values, array, shape = (n_samples,) or shape = (n_samples, n_labels).
+        """
+        raise NotImplementedError()
+
+    def predict_proba(self, X):
+        """
+        Predict probabilities.
+        :param X: array-like, shape = (n_samples, n_features).
+        :return: array, shape=(n_samples,) if n_classes == 2 else (n_samples, n_classes).
+        """
+        raise NotImplementedError()
+
+    def get_estimator(self):
+        """
+        Return the underlying estimator object.
+        :return: the estimator object.
+        """
+        return self.estimator
+
 
 class IterativeComponentWithSampleWeight(BaseModel):
     def fit(self, X, y, sample_weight=None):

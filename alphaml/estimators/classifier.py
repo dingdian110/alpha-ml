@@ -1,9 +1,9 @@
 import numpy as np
 from sklearn.utils.multiclass import type_of_target
+from sklearn.metrics import accuracy_score
 from alphaml.estimators.base_estimator import BaseEstimator
 from alphaml.engine.automl import AutoMLClassifier
 from alphaml.engine.components.data_manager import DataManager
-
 
 class Classifier(BaseEstimator):
     """This class implements the classification task. """
@@ -36,7 +36,7 @@ class Classifier(BaseEstimator):
 
         """
 
-        # metric = None if 'metric' not in kwargs else kwargs['metric']
+        metric = accuracy_score if 'metric' not in kwargs else kwargs['metric']
         # feat_type = None if 'feat_type' not in kwargs else kwargs['feat_type']
         # dataset_name = None if 'dataset_name' not in kwargs else kwargs['dataset_name']
         # # The number of evaluations.
@@ -55,9 +55,8 @@ class Classifier(BaseEstimator):
 
         # Options for multicalss averaging.
         average = 'weighted'
-        metric = kwargs['metric']
         if isinstance(metric, str):
-            from sklearn.metrics import accuracy_score, f1_score, auc, precision_score, recall_score
+            from sklearn.metrics import f1_score, auc, precision_score, recall_score
             if metric == 'accuracy':
                 metric = accuracy_score
             elif metric == 'f1':

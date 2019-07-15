@@ -156,6 +156,23 @@ class AutoMLClassifier(AutoML):
     def fit(self, data, **kwargs):
         return super().fit(data, **kwargs)
 
+class AutoMLRegressor(AutoML):
+    def __init__(self,
+                 time_budget,
+                 each_run_budget,
+                 memory_limit,
+                 ensemble_method,
+                 ensemble_size,
+                 include_models,
+                 exclude_models,
+                 optimizer_type,
+                 seed=None):
+        super().__init__(time_budget, each_run_budget, memory_limit, ensemble_method, ensemble_size, include_models,
+                         exclude_models, optimizer_type, seed)
+        self.evaluator = BaseEvaluator()
+
+    def fit(self, data, **kwargs):
+        return super().fit(data, **kwargs)
 
 class AutoIMGClassifier(AutoML):
     def __init__(self,
