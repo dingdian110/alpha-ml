@@ -62,15 +62,27 @@ def model_ln_prob(theta, model, x, y):
     return model.ln_prob(theta, x, y)
 
 
+def recency_weights(num):
+    if num == 1:
+        return np.ones(1)
+    else:
+        base = 10
+        recency_weights = [base**(1./num)] * num
+        recency_weights = recency_weights**(np.arange(0, num))
+        return recency_weights
+
+
 class MCMCModel(object):
-    def __init__(self):
+    def __init__(self, recency_weight=True):
+        # old params: 100, 500, 400.
         self.curve_model = CurveModel()
-        self.nwalkers = 100
+        self.nwalkers = 30
         self.nthread = 1
-        self.nsamples = 500
+        self.nsamples = 400
         self.ndim = 5
-        self.burn_in = 400
+        self.burn_in = 300
         self.xlim = -1
+        self.recency = recency_weight
 
     # priors
     def ln_prior(self, theta):
@@ -94,7 +106,11 @@ class MCMCModel(object):
         """
         params, sigma = self.curve_model.split_theta(theta)
         y_model = self.curve_model.function(x, *params)
-        ln_likelihood = norm.logpdf(y - y_model, loc=0, scale=sigma).sum()
+        if self.recency:
+            weight = recency_weights(len(y))
+            ln_likelihood = (weight*norm.logpdf(y-y_model, loc=0, scale=sigma)).sum()
+        else:
+            ln_likelihood = norm.logpdf(y-y_model, loc=0, scale=sigma).sum()
         if np.isnan(ln_likelihood):
             return -np.inf
         else:
@@ -191,12 +207,15 @@ def test_case0():
     #               0.8803418803418803, 0.8803418803418803, 0.8803418803418803, 0.8803418803418803, 0.8803418803418803,
     #               0.8803418803418803, 0.8803418803418803, 0.8803418803418803, 0.8846153846153846])
     # pc4, random_forest.
-    y = np.array([0.8846153846153846, 0.8846153846153846, 0.8888888888888888, 0.8931623931623932, 0.8931623931623932,
-                  0.8931623931623932, 0.9145299145299145, 0.9145299145299145, 0.9145299145299145])
+    # y = np.array([0.8846153846153846, 0.8846153846153846, 0.8888888888888888, 0.8931623931623932, 0.8931623931623932,
+    #               0.8931623931623932, 0.9145299145299145, 0.9145299145299145, 0.9145299145299145])
 
     x = np.array(list(range(1, len(y) + 1)))
+    import time
+    start_time = time.time()
     model = MCMCModel()
     model.fit_mcmc(x, y)
+    print(time.time() - start_time)
     x_pred = list(range(1, 50))
     y_pred = list()
     y_sigma = list()
@@ -210,9 +229,9 @@ def test_case0():
     y_pred = np.array(y_pred)
     y_sigma = np.array(y_sigma)
     plt.plot(x_pred, y_pred, color='red')
-    plt.fill_between(x_pred, y_pred - y_sigma, y_pred + y_sigma, facecolor='green', alpha=0.1)
+    plt.fill_between(x_pred, y_pred - y_sigma, y_pred + y_sigma, facecolor='green', alpha=0.5)
     print(y_sigma[len(x)+1:])
-    plt.ylim(0.8, 1)
+    plt.ylim(0.7, 1)
     plt.show()
 
 
@@ -241,7 +260,7 @@ def test_case1():
                   0.8285714285714286, 0.8285714285714286, 0.8285714285714286])
     x = np.array(list(range(1, len(y) + 1)))
 
-    train_num = int(len(x) * 0.5)
+    train_num = int(len(x) * 0.8)
     model = MCMCModel()
     model.fit_mcmc(x[:train_num], y[:train_num])
     x_pred = list(range(1, len(x) + 1))

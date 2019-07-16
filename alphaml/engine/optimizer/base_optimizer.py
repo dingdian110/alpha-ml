@@ -1,3 +1,4 @@
+import time
 import logging
 import numpy as np
 from alphaml.engine.evaluator.base import BaseEvaluator
@@ -15,6 +16,8 @@ class BaseOptimizer(object):
         if seed is None:
             seed = np.random.random_integers(MAX_INT)
         self.seed = seed
+        self.start_time = time.time()
+        self.timing_list = list()
         self.incumbent = None
         self.logger = logging.getLogger(__name__)
         self.logger.info('The random seed is: %d' % self.seed)
