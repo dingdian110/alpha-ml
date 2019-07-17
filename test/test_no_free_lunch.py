@@ -6,6 +6,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import matplotlib.lines as mlines
+from sklearn.model_selection import train_test_split
 sns.set_style(style='whitegrid')
 
 plt.rc('text', usetex=True)
@@ -41,17 +42,27 @@ algo_list = ['adaboost', 'random_forest', 'k_nearest_neighbors', 'gradient_boost
 print(rep_num, run_count, datasets)
 
 
+def get_seeds(dataset, rep_num):
+    # Map the dataset to a fixed integer.
+    dataset_id = int(''.join([str(ord(c)) for c in dataset[:6] if c.isalpha()])) % 100000
+    np.random.seed(dataset_id)
+    return np.random.random_integers(10000, size=rep_num)
+
+
 def test_no_free_lunch():
     from alphaml.engine.components.data_manager import DataManager
     from alphaml.estimators.classifier import Classifier
     from alphaml.datasets.cls_dataset.dataset_loader import load_data
-    from alphaml.utils.constants import MAX_INT
 
     for dataset in datasets:
+        seeds = get_seeds(dataset, rep_num)
         for run_id in range(rep_num):
+            seed = seeds[run_id]
+
+            # Dataset partition.
             X, y, _ = load_data(dataset)
-            dm = DataManager(X, y)
-            seed = np.random.random_integers(MAX_INT)
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
+            dm = DataManager(X_train, y_train)
             for algo in algo_list:
                 for optimizer in ['smbo']:
                     task_format = dataset + '_' + algo + '_%d_%d'
