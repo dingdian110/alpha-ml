@@ -85,6 +85,8 @@ class MCMC_TS_Optimizer(BaseOptimizer):
                 samples[i] = max(samples[i], expected_values[i])
 
             best_arm = self.estimator_arms[np.argmax(samples)]
+            if best_arm == 'gaussian_nb' and self.ts_cnts[best_arm] >= 1:
+                continue
             self.logger.info('Choosing to optimize %s arm' % best_arm)
             iter_start_time = time.time()
             self.smac_containers[best_arm].iterate()
@@ -158,6 +160,8 @@ class MCMC_TS_Optimizer(BaseOptimizer):
                     raise ValueError('Invalid Mode!')
 
                 best_arm = self.estimator_arms[np.argmax(samples)]
+                if best_arm == 'gaussian_nb' and self.ts_cnts[best_arm] >= 1:
+                    continue
                 self.logger.info('Choosing to optimize %s arm' % best_arm)
                 self.smac_containers[best_arm].iterate()
                 runhistory = self.smac_containers[best_arm].solver.runhistory
