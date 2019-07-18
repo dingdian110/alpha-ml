@@ -2,6 +2,7 @@ import time
 import logging
 import multiprocessing
 from alphaml.engine.components.models.classification import _classifiers
+from alphaml.engine.components.models.regression import _regressors
 
 
 def update_config(config):
@@ -18,7 +19,7 @@ def update_config(config):
     return config_dict
 
 
-class BaseEvaluator(object):
+class BaseClassificationEvaluator(object):
     """
     This Base Evaluator class must have: 1) data_manager and metric_func, 2) __call__ and fit_predict.
     """
@@ -60,6 +61,62 @@ class BaseEvaluator(object):
         config = update_config(config)
         estimator.set_hyperparameters(config)
         return classifier_type, estimator
+
+    def fit_predict(self, config, test_X=None):
+        # Build the corresponding estimator.
+        _, estimator = self.set_config(config)
+
+        # Fit the estimator on the training data.
+        estimator.fit(self.data_manager.train_X, self.data_manager.train_y)
+
+        # Inference.
+        if test_X is None:
+            test_X = self.data_manager.test_X
+        y_pred = estimator.predict(test_X)
+        return y_pred
+
+class BaseRegressionEvaluator(object):
+    """
+    This Base Evaluator class must have: 1) data_manager and metric_func, 2) __call__ and fit_predict.
+    """
+
+    def __init__(self):
+        self.data_manager = None
+        self.metric_func = None
+        self.logger = logging.getLogger(__name__)
+
+    def __call__(self, config):
+        # Build the corresponding estimator.
+        regressor_type, estimator = self.set_config(config)
+
+        # TODO: how to parallize.
+        if hasattr(estimator, 'n_jobs'):
+            setattr(estimator, 'n_jobs', multiprocessing.cpu_count() - 1)
+        start_time = time.time()
+        self.logger.info('<START TO FIT> %s' % regressor_type)
+        self.logger.info('<CONFIG> %s' % config)
+        # Fit the estimator on the training data.
+        estimator.fit(self.data_manager.train_X, self.data_manager.train_y)
+
+        # Validate it on val data.
+        y_pred = estimator.predict(self.data_manager.val_X)
+        metric = self.metric_func(self.data_manager.val_y, y_pred)
+
+        self.logger.info('<EVALUATE %s TAKES %.2f SECONDS>' % (regressor_type, time.time() - start_time))
+        # Turn it to a minimization problem.
+        return metric
+
+    def set_config(self, config):
+        if not hasattr(self, 'estimator'):
+            # Build the corresponding estimator.
+            params_num = len(config.get_dictionary().keys()) - 1
+            regressor_type = config['estimator']
+            estimator = _regressors[regressor_type](*[None] * params_num)
+        else:
+            estimator = self.estimator
+        config = update_config(config)
+        estimator.set_hyperparameters(config)
+        return regressor_type, estimator
 
     def fit_predict(self, config, test_X=None):
         # Build the corresponding estimator.

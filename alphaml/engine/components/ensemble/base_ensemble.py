@@ -1,10 +1,22 @@
 from alphaml.utils.common import get_max_index
+from alphaml.engine.evaluator.base import BaseClassificationEvaluator, BaseRegressionEvaluator
+
+CLASSIFICATION = 1
+REGRESSION = 2
+
 
 class BaseEnsembleModel(object):
-    def __init__(self, model_info, ensemble_size, model_type='ml'):
+    def __init__(self, model_info, ensemble_size, task_type, model_type='ml'):
         self.model_info = model_info
         self.model_type = model_type
         self.ensemble_models = list()
+        if task_type in ['binary', 'multiclass', 'img_binary', 'img_multiclass', 'img_multilabel-indicator']:
+            self.task_type = CLASSIFICATION
+        elif task_type in ['continuous']:
+            self.task_type = REGRESSION
+        else:
+            raise ValueError('Undefined Task Type: %s' % task_type)
+
         if len(model_info[0]) < ensemble_size:
             self.ensemble_size = len(model_info[0])
         else:
@@ -14,10 +26,28 @@ class BaseEnsembleModel(object):
         index_list = get_max_index(self.model_info[1], self.ensemble_size)
         self.config_list = [self.model_info[0][i] for i in index_list]
         for i in index_list:
-            print(self.model_info[0][i],self.model_info[1][i])
+            print(self.model_info[0][i], self.model_info[1][i])
 
     def fit(self, dm):
         raise NotImplementedError
 
     def predict(self, X):
         raise NotImplementedError
+
+    def get_estimator(self, config):
+        if self.task_type == CLASSIFICATION:
+            evaluator = BaseClassificationEvaluator()
+        elif self.task_type == REGRESSION:
+            evaluator = BaseRegressionEvaluator()
+        _, estimator = evaluator.set_config(config)
+        return estimator
+
+    def get_predictions(self, estimator, X):
+        if self.task_type == CLASSIFICATION:
+            return estimator.predict_proba(X)
+        elif self.task_type == REGRESSION:
+            pred=estimator.predict(X)
+            shape=pred.shape
+            if len(shape)==1:
+                pred=pred.reshape((shape[0],1))
+            return pred

@@ -1,13 +1,13 @@
 import logging
 import numpy as np
-from alphaml.engine.evaluator.base import BaseEvaluator
+from alphaml.engine.evaluator.base import BaseClassificationEvaluator, BaseRegressionEvaluator
 from alphaml.utils.constants import MAX_INT
 
 
 class BaseOptimizer(object):
     def __init__(self, evaluator, config_space, data, metric, seed):
         # Prepare the basics for evaluator.
-        assert isinstance(evaluator, BaseEvaluator)
+        assert isinstance(evaluator, (BaseClassificationEvaluator, BaseRegressionEvaluator))
         self.evaluator = evaluator
         self.evaluator.data_manager = data
         self.evaluator.metric_func = metric

@@ -1,22 +1,20 @@
-from alphaml.engine.components.ensemble.base_ensemble import BaseEnsembleModel
+from alphaml.engine.components.ensemble.base_ensemble import *
 from alphaml.engine.components.data_manager import DataManager
-from alphaml.engine.evaluator.base import BaseEvaluator
-from alphaml.engine.evaluator.dl_evaluator import BaseImgEvaluator
-from alphaml.engine.components.models.image_classification import _img_classifiers
 from alphaml.utils.common import get_max_index
 import numpy as np
 from collections import Counter
-from sklearn.linear_model.logistic import LogisticRegression
-from sklearn.ensemble.gradient_boosting import GradientBoostingClassifier
 
 
 class EnsembleSelection(BaseEnsembleModel):
-    def __init__(self, model_info, ensemble_size, metric, model_type='ml', mode='fast',
-                 sorted_initialization=False, n_best=20):
-        super().__init__(model_info, ensemble_size, model_type)
+    def __init__(self, model_info, ensemble_size, task_type, metric, model_type='ml', mode='fast',
+                 sorted_initialization=False, n_best=15):
+        super().__init__(model_info, ensemble_size, task_type, model_type)
         self.sorted_initialization = sorted_initialization
         self.config_list = self.model_info[0]
-        self.n_best = n_best
+        if n_best < self.ensemble_size:
+            self.n_best = n_best
+        else:
+            self.n_best = self.ensemble_size
         self.metric = metric
         self.mode = mode
         self.random_state = np.random.RandomState(42)
@@ -26,18 +24,12 @@ class EnsembleSelection(BaseEnsembleModel):
         if self.model_type == 'ml':
             predictions = []
             for config in self.config_list:
-                evaluator = BaseEvaluator()
-                _, estimator = evaluator.set_config(config)
+                estimator = self.get_estimator(config)
                 estimator.fit(dm.train_X, dm.train_y)
                 self.ensemble_models.append(estimator)
-                pred = estimator.predict_proba(dm.val_X)
+                pred = self.get_predictions(estimator, dm.val_X)
                 predictions.append(pred)
                 self._fit(predictions, dm.val_y)
-
-            if self.mode == 'fast':
-                self._fast(predictions, dm.val_y)
-            else:
-                self._slow(predictions, dm.val_y)
 
         elif self.model_type == 'dl':
             pass
@@ -68,8 +60,7 @@ class EnsembleSelection(BaseEnsembleModel):
         ensemble_size = self.ensemble_size
 
         if self.sorted_initialization:
-            n_best = 20
-            indices = self._sorted_initialization(predictions, labels, n_best)
+            indices = self._sorted_initialization(predictions, labels, self.n_best)
             for idx in indices:
                 ensemble.append(predictions[idx])
                 order.append(idx)
@@ -78,7 +69,7 @@ class EnsembleSelection(BaseEnsembleModel):
                     pred=ensemble_,
                     y_true=labels)
                 trajectory.append(ensemble_performance)
-            ensemble_size -= n_best
+            ensemble_size -= self.n_best
 
         for i in range(ensemble_size):
             scores = np.zeros((len(predictions)))
@@ -127,8 +118,7 @@ class EnsembleSelection(BaseEnsembleModel):
         ensemble_size = self.ensemble_size
 
         if self.sorted_initialization:
-            n_best = 20
-            indices = self._sorted_initialization(predictions, labels, n_best)
+            indices = self._sorted_initialization(predictions, labels, self.n_best)
             for idx in indices:
                 ensemble.append(predictions[idx])
                 order.append(idx)
@@ -137,7 +127,7 @@ class EnsembleSelection(BaseEnsembleModel):
                     pred=ensemble_,
                     y_true=labels)
                 trajectory.append(ensemble_performance)
-            ensemble_size -= n_best
+            ensemble_size -= self.n_best
 
         for i in range(ensemble_size):
             scores = np.zeros([len(predictions)])
@@ -185,7 +175,7 @@ class EnsembleSelection(BaseEnsembleModel):
     def predict(self, X):
         predictions = []
         for estimator in self.ensemble_models:
-            pred = estimator.predict_proba(X)
+            pred = self.get_predictions(estimator, X)
             predictions.append(pred)
         predictions = np.asarray(predictions)
 
@@ -193,24 +183,30 @@ class EnsembleSelection(BaseEnsembleModel):
         # predictions include those of zero-weight models.
         if predictions.shape[0] == len(self.weights_):
             pred = np.average(predictions, axis=0, weights=self.weights_)
-            return np.argmax(pred, axis=-1)
 
         # if prediction model.shape[0] == len(non_null_weights),
         # predictions do not include those of zero-weight models.
         elif predictions.shape[0] == np.count_nonzero(self.weights_):
             non_null_weights = [w for w in self.weights_ if w > 0]
             pred = np.average(predictions, axis=0, weights=non_null_weights)
-            return np.argmax(pred, axis=-1)
 
         # If none of the above applies, then something must have gone wrong.
         else:
             raise ValueError("The dimensions of ensemble predictions"
                              " and ensemble weights do not match!")
+        if self.task_type == CLASSIFICATION:
+            return np.argmax(pred, axis=-1)
+        elif self.task_type == REGRESSION:
+            return pred
 
     def calculate_score(self, pred, y_true):
-        if len(pred) == 1 or pred.shape[1] == 1:
-            pred = [int(i > 0.5) for i in pred]
-        else:
-            pred = np.argmax(pred, axis=1)
-        score = self.metric(pred, y_true)
+        if self.task_type == CLASSIFICATION:
+            if len(pred) == 1 or pred.shape[1] == 1:
+                pred = [int(i > 0.5) for i in pred]
+            else:
+                pred = np.argmax(pred, axis=1)
+            score = self.metric(pred, y_true)
+        elif self.task_type == REGRESSION:
+            score = -self.metric(pred, y_true)
+        # We want to maximize score
         return score

@@ -2,7 +2,7 @@ import numpy as np
 from sklearn.utils.multiclass import type_of_target
 from sklearn.metrics import mean_squared_error
 from alphaml.estimators.base_estimator import BaseEstimator
-from alphaml.engine.automl import AutoMLClassifier
+from alphaml.engine.automl import AutoMLRegressor
 from alphaml.engine.components.data_manager import DataManager
 
 
@@ -114,4 +114,4 @@ class Regressor(BaseEstimator):
         return pred_proba
 
     def get_automl(self):
-        return AutoMLClassifier
+        return AutoMLRegressor

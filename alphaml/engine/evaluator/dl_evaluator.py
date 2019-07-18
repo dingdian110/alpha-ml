@@ -2,10 +2,10 @@ import os
 import json
 
 from alphaml.engine.components.models.image_classification import _img_classifiers
-from alphaml.engine.evaluator.base import BaseEvaluator, update_config
+from alphaml.engine.evaluator.base import BaseClassificationEvaluator, update_config
 
 
-class BaseImgEvaluator(BaseEvaluator):
+class BaseImgEvaluator(BaseClassificationEvaluator):
     def __init__(self, inputshape, classnum):
         super().__init__()
         self.inputshape = inputshape
