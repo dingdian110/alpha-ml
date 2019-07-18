@@ -32,7 +32,7 @@ class Ridge_Regression(BaseRegressionModel):
     @staticmethod
     def get_properties(dataset_properties=None):
         return {'shortname': 'Ridge-Regression',
-                'name': 'Ridge Regression Classification',
+                'name': 'Ridge Regression',
                 'handles_regression': True,
                 'handles_classification': False,
                 'handles_multiclass': False,

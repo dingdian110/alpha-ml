@@ -23,7 +23,7 @@ class Linear_Regression(BaseRegressionModel):
     @staticmethod
     def get_properties(dataset_properties=None):
         return {'shortname': 'Linear-Regression',
-                'name': 'Linear Regression Classification',
+                'name': 'Linear Regression',
                 'handles_regression': True,
                 'handles_classification': False,
                 'handles_multiclass': False,

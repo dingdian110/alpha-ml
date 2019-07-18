@@ -19,14 +19,14 @@ class Stacking(BaseEnsembleModel):
                                                                n_estimators=250)
             elif meta_learner == 'xgboost':
                 from xgboost import XGBClassifier
-                self.meta_learner = XGBClassifier(max_depth=4, learning_rate=0.05, n_estimators=150)
+                self.meta_learner = XGBClassifier(max_depth=4, learning_rate=0.05, n_estimators=80)
         elif self.task_type == REGRESSION:
             if meta_learner == 'linear':
                 from sklearn.linear_model import LinearRegression
                 self.meta_learner = LinearRegression()
             elif meta_learner == 'xgboost':
                 from xgboost import XGBRegressor
-                self.meta_learner = XGBRegressor(max_depth=4, learning_rate=0.05, n_estimators=150)
+                self.meta_learner = XGBRegressor(max_depth=4, learning_rate=0.05, n_estimators=70)
 
     def fit(self, dm: DataManager):
         # Split training data for phase 1 and phase 2
@@ -66,12 +66,12 @@ class Stacking(BaseEnsembleModel):
                             num_samples = len(train) + len(test)
                             feature_p2 = np.zeros((num_samples, self.ensemble_size * n_dim))
                         feature_p2[test, i * n_dim:(i + 1) * n_dim] = pred
-            # Train model for stacking using the other part training data
+            # Train model for stacking using the other part of training data
             self.meta_learner.fit(feature_p2, dm.train_y)
 
-            # from sklearn.metrics import accuracy_score
-            # pred = self.meta_learner.predict(feature_p2)
-            # print(accuracy_score(dm.train_y, pred))
+            from sklearn.metrics import accuracy_score, mean_absolute_error
+            pred = self.meta_learner.predict(feature_p2)
+            print(mean_absolute_error(dm.train_y, pred))
 
         elif self.model_type == 'dl':
             pass

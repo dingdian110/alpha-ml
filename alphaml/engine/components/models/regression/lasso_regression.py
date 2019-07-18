@@ -30,7 +30,7 @@ class Lasso_Regression(BaseRegressionModel):
     @staticmethod
     def get_properties(dataset_properties=None):
         return {'shortname': 'Lasso-Regression',
-                'name': 'Lasso Regression Classification',
+                'name': 'Lasso Regression',
                 'handles_regression': True,
                 'handles_classification': False,
                 'handles_multiclass': False,

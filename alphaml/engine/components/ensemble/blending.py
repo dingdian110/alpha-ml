@@ -19,14 +19,14 @@ class Blending(BaseEnsembleModel):
                                                                n_estimators=250)
             elif meta_learner == 'xgboost':
                 from xgboost import XGBClassifier
-                self.meta_learner = XGBClassifier(max_depth=4, learning_rate=0.05, n_estimators=150)
+                self.meta_learner = XGBClassifier(max_depth=4, learning_rate=0.05, n_estimators=80)
         elif self.task_type == REGRESSION:
             if meta_learner == 'linear':
                 from sklearn.linear_model import LinearRegression
                 self.meta_learner = LinearRegression()
             elif meta_learner == 'xgboost':
                 from xgboost import XGBRegressor
-                self.meta_learner = XGBRegressor(max_depth=4, learning_rate=0.05, n_estimators=150)
+                self.meta_learner = XGBRegressor(max_depth=4, learning_rate=0.05, n_estimators=70)
 
     def fit(self, dm: DataManager):
         # Split training data for phase 1 and phase 2
