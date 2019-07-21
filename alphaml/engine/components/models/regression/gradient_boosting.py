@@ -5,12 +5,12 @@ from ConfigSpace.hyperparameters import UniformFloatHyperparameter, \
     UniformIntegerHyperparameter, UnParametrizedHyperparameter, Constant, \
     CategoricalHyperparameter
 
-from alphaml.engine.components.models.base_model import BaseClassificationModel, IterativeComponentWithSampleWeight
+from alphaml.engine.components.models.base_model import BaseRegressionModel, IterativeComponentWithSampleWeight
 from alphaml.utils.common import check_none
 from alphaml.utils.constants import *
 
 
-class GradientBoostingClassifier(IterativeComponentWithSampleWeight, BaseClassificationModel):
+class GradientBoostingRegressor(IterativeComponentWithSampleWeight, BaseRegressionModel):
     def __init__(self, loss, learning_rate, n_estimators, subsample,
                  min_samples_split, min_samples_leaf,
                  min_weight_fraction_leaf, max_depth, criterion, max_features,
@@ -24,7 +24,7 @@ class GradientBoostingClassifier(IterativeComponentWithSampleWeight, BaseClassif
         self.min_samples_leaf = min_samples_leaf
         self.min_weight_fraction_leaf = min_weight_fraction_leaf
         self.max_depth = max_depth
-        self.criterion=criterion
+        self.criterion = criterion
         self.max_features = max_features
         self.max_leaf_nodes = max_leaf_nodes
         self.min_impurity_decrease = min_impurity_decrease
@@ -35,6 +35,7 @@ class GradientBoostingClassifier(IterativeComponentWithSampleWeight, BaseClassif
 
     def iterative_fit(self, X, y, sample_weight=None, n_iter=1, refit=False):
 
+        from sklearn.ensemble.gradient_boosting import GradientBoostingRegressor as GBR
         # Special fix for gradient boosting!
         if isinstance(X, np.ndarray):
             X = np.ascontiguousarray(X, dtype=X.dtype)
@@ -60,7 +61,7 @@ class GradientBoostingClassifier(IterativeComponentWithSampleWeight, BaseClassif
             self.min_impurity_decrease = float(self.min_impurity_decrease)
             self.verbose = int(self.verbose)
 
-            self.estimator = sklearn.ensemble.GradientBoostingClassifier(
+            self.estimator = GBR(
                 loss=self.loss,
                 learning_rate=self.learning_rate,
                 n_estimators=n_iter,
@@ -100,18 +101,13 @@ class GradientBoostingClassifier(IterativeComponentWithSampleWeight, BaseClassif
             raise NotImplementedError
         return self.estimator.predict(X)
 
-    def predict_proba(self, X):
-        if self.estimator is None:
-            raise NotImplementedError()
-        return self.estimator.predict_proba(X)
-
     @staticmethod
     def get_properties(dataset_properties=None):
         return {'shortname': 'GB',
-                'name': 'Gradient Boosting Classifier',
-                'handles_regression': False,
-                'handles_classification': True,
-                'handles_multiclass': True,
+                'name': 'Gradient Boosting Regressor',
+                'handles_regression': True,
+                'handles_classification': False,
+                'handles_multiclass': False,
                 'handles_multilabel': False,
                 'is_deterministic': True,
                 'input': (DENSE, UNSIGNED_DATA),
@@ -120,7 +116,7 @@ class GradientBoostingClassifier(IterativeComponentWithSampleWeight, BaseClassif
     @staticmethod
     def get_hyperparameter_search_space(dataset_properties=None):
         cs = ConfigurationSpace()
-        loss = Constant("loss", "deviance")
+        loss = CategoricalHyperparameter("loss", ['ls', 'lad'], default_value='ls')
         learning_rate = UniformFloatHyperparameter(
             name="learning_rate", lower=0.01, upper=1, default_value=0.1, log=True)
         n_estimators = UniformIntegerHyperparameter(
@@ -136,9 +132,9 @@ class GradientBoostingClassifier(IterativeComponentWithSampleWeight, BaseClassif
             name="min_samples_leaf", lower=1, upper=20, default_value=1)
         min_weight_fraction_leaf = UnParametrizedHyperparameter("min_weight_fraction_leaf", 0.)
         subsample = UniformFloatHyperparameter(
-                name="subsample", lower=0.1, upper=1.0, default_value=1.0)
+            name="subsample", lower=0.1, upper=1.0, default_value=1.0)
         max_features = UniformFloatHyperparameter(
-            "max_features", 0.1, 1.0 , default_value=1)
+            "max_features", 0.1, 1.0, default_value=1)
         max_leaf_nodes = UnParametrizedHyperparameter(
             name="max_leaf_nodes", value="None")
         min_impurity_decrease = UnParametrizedHyperparameter(

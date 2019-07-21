@@ -6,7 +6,7 @@ from alphaml.engine.components.models.base_model import BaseRegressionModel
 from alphaml.utils.constants import *
 
 
-class AdaboostClassifier(BaseRegressionModel):
+class AdaboostRegressor(BaseRegressionModel):
 
     def __init__(self, n_estimators, learning_rate, max_depth,
                  random_state=None):
@@ -17,14 +17,14 @@ class AdaboostClassifier(BaseRegressionModel):
         self.estimator = None
 
     def fit(self, X, Y, sample_weight=None):
-        from sklearn.ensemble import AdaBoostRegressor
+        from sklearn.ensemble import AdaBoostRegressor as ABR
         from sklearn.tree import DecisionTreeRegressor
         self.n_estimators = int(self.n_estimators)
         self.learning_rate = float(self.learning_rate)
         self.max_depth = int(self.max_depth)
         base_estimator = DecisionTreeRegressor(max_depth=self.max_depth)
 
-        estimator = AdaBoostRegressor(
+        estimator = ABR(
             base_estimator=base_estimator,
             n_estimators=self.n_estimators,
             learning_rate=self.learning_rate,
@@ -40,11 +40,6 @@ class AdaboostClassifier(BaseRegressionModel):
         if self.estimator is None:
             raise NotImplementedError
         return self.estimator.predict(X)
-
-    def predict_proba(self, X):
-        if self.estimator is None:
-            raise NotImplementedError()
-        return self.estimator.predict_proba(X)
 
     @staticmethod
     def get_properties(dataset_properties=None):

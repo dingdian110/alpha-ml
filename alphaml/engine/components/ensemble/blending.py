@@ -19,7 +19,7 @@ class Blending(BaseEnsembleModel):
                                                                n_estimators=250)
             elif meta_learner == 'xgboost':
                 from xgboost import XGBClassifier
-                self.meta_learner = XGBClassifier(max_depth=4, learning_rate=0.05, n_estimators=80)
+                self.meta_learner = XGBClassifier(max_depth=4, learning_rate=0.05, n_estimators=150)
         elif self.task_type == REGRESSION:
             if meta_learner == 'linear':
                 from sklearn.linear_model import LinearRegression

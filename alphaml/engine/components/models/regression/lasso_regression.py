@@ -5,7 +5,7 @@ from alphaml.utils.constants import *
 from alphaml.engine.components.models.base_model import BaseRegressionModel
 
 
-class Lasso_Regression(BaseRegressionModel):
+class LassoRegressor(BaseRegressionModel):
     def __init__(self, alpha, tol, max_iter, random_state=None):
         self.alpha = alpha
         self.tol = tol

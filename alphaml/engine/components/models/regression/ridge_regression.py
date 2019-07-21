@@ -5,7 +5,7 @@ from alphaml.utils.constants import *
 from alphaml.engine.components.models.base_model import BaseRegressionModel
 
 
-class Ridge_Regression(BaseRegressionModel):
+class RidgeRegressor(BaseRegressionModel):
     def __init__(self, alpha, solver, tol, max_iter, random_state=None):
         self.alpha = alpha
         self.solver = solver

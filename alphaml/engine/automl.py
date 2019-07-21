@@ -127,11 +127,12 @@ class AutoML(object):
             # For traditional ML task:
             #   fit the optimized model on the whole training data and predict the input data's labels.
             pred = self.evaluator.fit_predict(self.optimizer.incumbent, X)
+            return pred
         else:
             # Predict the result.
             pred1 = self.ensemble_model.predict(X)
             pred2=self.evaluator.fit_predict(self.optimizer.incumbent, X)
-        return pred1,pred2
+            return pred1,pred2
 
     def score(self, X, y):
         pred_y = self.predict(X)

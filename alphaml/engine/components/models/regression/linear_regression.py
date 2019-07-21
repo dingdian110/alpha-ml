@@ -3,7 +3,7 @@ from alphaml.utils.constants import *
 from alphaml.engine.components.models.base_model import BaseRegressionModel
 
 
-class Linear_Regression(BaseRegressionModel):
+class LinearRegressor(BaseRegressionModel):
     def __init__(self, random_state=None):
         self.random_state = random_state
         self.estimator = None
