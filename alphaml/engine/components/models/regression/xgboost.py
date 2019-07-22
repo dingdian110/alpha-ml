@@ -40,13 +40,8 @@ class XGBoostRegressor(BaseRegressionModel):
         parameters['lambda'] = self.lambda_t
         parameters['scale_pos_weight'] = self.scale_pos_weight
 
-        if self.num_cls > 2:
-            parameters['num_class'] = self.num_cls
-            parameters['objective'] = 'multi:softprob'
-            parameters['eval_metric'] = 'merror'
-        elif self.num_cls == 2:
-            parameters['objective'] = 'binary:logistic'
-            parameters['eval_metric'] = 'error'
+        parameters['objective'] = 'reg:linear'
+        #parameters['eval_metric'] = 'rmse'
 
         parameters['tree_method'] = 'hist'
         parameters['booster'] = 'gbtree'
@@ -63,10 +58,6 @@ class XGBoostRegressor(BaseRegressionModel):
             raise NotImplementedError
         dm = xgb.DMatrix(X, label=None)
         pred = self.estimator.predict(dm)
-        if self.num_cls == 2:
-            pred = [int(i > 0.5) for i in pred]
-        else:
-            pred = np.argmax(pred, axis=-1)
         return np.array(pred)
 
     @staticmethod
