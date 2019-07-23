@@ -9,13 +9,15 @@ COL_TYPE = ["NUMERICAL", "DISCRETE", "CATEGORICAL", "TEXT"]
 
 class DataManager(object):
 
-    def __init__(self, train_X=None, train_y=None, val_X=None, val_y=None, val_size=0.2, random_state=42):
+    def __init__(self, train_X=None, train_y=None, val_X=None, val_y=None, val_size=0.2, stratify=True,
+                 random_state=42):
         self.train_X = train_X
         self.train_y = train_y
         self.val_X = val_X
         self.val_y = val_y
         self.split_size = val_size
         self.random_seed = random_state
+        self.stratify = stratify
         self.col_type = []
 
         if train_X is not None and train_y is not None and (self.val_X is None or self.val_y is None):
@@ -28,8 +30,12 @@ class DataManager(object):
         assert self.train_X is not None and self.train_y is not None
 
         # Split input into train and val subsets.
-        self.train_X,  self.val_X, self.train_y, self.val_y = train_test_split(
-            self.train_X, self.train_y, test_size=val_size, random_state=random_state, stratify=self.train_y)
+        if self.stratify:
+            self.train_X, self.val_X, self.train_y, self.val_y = train_test_split(
+                self.train_X, self.train_y, test_size=val_size, random_state=random_state, stratify=self.train_y)
+        else:
+            self.train_X, self.val_X, self.train_y, self.val_y = train_test_split(
+                self.train_X, self.train_y, test_size=val_size, random_state=random_state)
 
     def set_col_type(self):
         pass

@@ -7,12 +7,12 @@ from ConfigSpace.hyperparameters import UniformFloatHyperparameter, \
 from alphaml.utils.constants import *
 from alphaml.utils.model_util import softmax
 from alphaml.utils.common import check_none, check_for_bool
-from alphaml.engine.components.models.base_model import BaseClassificationModel, IterativeComponentWithSampleWeight
+from alphaml.engine.components.models.base_model import BaseRegressionModel, IterativeComponentWithSampleWeight
 
 
 class PassiveAggressive(
     IterativeComponentWithSampleWeight,
-    BaseClassificationModel,
+    BaseRegressionModel,
 ):
     def __init__(self, C, fit_intercept, tol, loss, average, random_state=None):
         self.C = C
@@ -25,7 +25,7 @@ class PassiveAggressive(
 
     def iterative_fit(self, X, y, n_iter=2, refit=False, sample_weight=None):
         from sklearn.linear_model.passive_aggressive import \
-            PassiveAggressiveClassifier
+            PassiveAggressiveRegressor
 
         # Need to fit at least two iterations, otherwise early stopping will not
         # work because we cannot determine whether the algorithm actually
@@ -46,7 +46,7 @@ class PassiveAggressive(
             self.C = float(self.C)
 
             call_fit = True
-            self.estimator = PassiveAggressiveClassifier(
+            self.estimator = PassiveAggressiveRegressor(
                 C=self.C,
                 fit_intercept=self.fit_intercept,
                 max_iter=n_iter,
@@ -57,44 +57,30 @@ class PassiveAggressive(
                 warm_start=True,
                 average=self.average,
             )
-            self.classes_ = np.unique(y.astype(int))
         else:
             call_fit = False
 
-        # Fallback for multilabel classification
-        if len(y.shape) > 1 and y.shape[1] > 1:
-            import sklearn.multiclass
-            self.estimator.max_iter = 50
-            self.estimator = sklearn.multiclass.OneVsRestClassifier(
-                self.estimator, n_jobs=1)
+        if call_fit:
             self.estimator.fit(X, y)
-            self.fully_fit_ = True
         else:
-            if call_fit:
-                self.estimator.fit(X, y)
-            else:
-                self.estimator.max_iter += n_iter
-                self.estimator.max_iter = min(self.estimator.max_iter,
-                                              1000)
-                self.estimator._validate_params()
-                lr = "pa1" if self.estimator.loss == "hinge" else "pa2"
-                self.estimator._partial_fit(
-                    X, y,
-                    alpha=1.0,
-                    C=self.estimator.C,
-                    loss=self.estimator.loss,
-                    learning_rate=lr,
-                    max_iter=n_iter,
-                    classes=None,
-                    sample_weight=sample_weight,
-                    coef_init=None,
-                    intercept_init=None
-                )
-                if (
-                    self.estimator.max_iter >= 1000
-                    or n_iter > self.estimator.n_iter_
-                ):
-                    self.fully_fit_ = True
+            self.estimator.max_iter += n_iter
+            self.estimator.max_iter = min(self.estimator.max_iter,
+                                          1000)
+            self.estimator._validate_params()
+            lr = "pa1" if self.estimator.loss == "epsilon_insensitive" else "pa2"
+            self.estimator._partial_fit(
+                X, y,
+                alpha=1.0,
+                C=self.estimator.C,
+                loss=self.estimator.loss,
+                learning_rate=lr,
+                max_iter=n_iter,
+                sample_weight=sample_weight,
+                coef_init=None,
+                intercept_init=None
+            )
+            if self.estimator.max_iter >= 1000 or n_iter > self.estimator.n_iter_:
+                self.fully_fit_ = True
 
         return self
 
@@ -111,21 +97,14 @@ class PassiveAggressive(
             raise NotImplementedError()
         return self.estimator.predict(X)
 
-    def predict_proba(self, X):
-        if self.estimator is None:
-            raise NotImplementedError()
-
-        df = self.estimator.decision_function(X)
-        return softmax(df)
-
     @staticmethod
     def get_properties(dataset_properties=None):
-        return {'shortname': 'PassiveAggressive Classifier',
-                'name': 'Passive Aggressive Classifier',
-                'handles_regression': False,
-                'handles_classification': True,
-                'handles_multiclass': True,
-                'handles_multilabel': True,
+        return {'shortname': 'PassiveAggressive Regressor',
+                'name': 'Passive Aggressive Regressor',
+                'handles_regression': True,
+                'handles_classification': False,
+                'handles_multiclass': False,
+                'handles_multilabel': False,
                 'is_deterministic': True,
                 'input': (DENSE, SPARSE, UNSIGNED_DATA),
                 'output': (PREDICTIONS,)}
@@ -135,7 +114,7 @@ class PassiveAggressive(
         C = UniformFloatHyperparameter("C", 1e-5, 10, 1.0, log=True)
         fit_intercept = UnParametrizedHyperparameter("fit_intercept", "True")
         loss = CategoricalHyperparameter(
-            "loss", ["hinge", "squared_hinge"], default_value="hinge"
+            "loss", ["epsilon_insensitive", "squared_epsilon_insensitive"], default_value="epsilon_insensitive"
         )
 
         tol = UniformFloatHyperparameter("tol", 1e-5, 1e-1, default_value=1e-4,

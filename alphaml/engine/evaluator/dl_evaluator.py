@@ -2,21 +2,18 @@ import os
 import json
 
 from alphaml.engine.components.models.image_classification import _img_classifiers
-from alphaml.engine.evaluator.base import BaseEvaluator, update_config
+from alphaml.engine.evaluator.base import BaseClassificationEvaluator, update_config
 
 
-class BaseImgEvaluator(BaseEvaluator):
+class BaseImgEvaluator(BaseClassificationEvaluator):
     def __init__(self, inputshape, classnum):
         super().__init__()
         self.inputshape = inputshape
         self.classnum = classnum
 
     def __call__(self, config):
-        classifier_type = config['estimator']
-        estimator = _img_classifiers[classifier_type]()
-        config = update_config(config)
-        estimator.set_hyperparameters(config)
-        estimator.set_model_config(self.inputshape, self.classnum)
+        _, estimator = self.set_config(config)
+
         # Fit the estimator on the training data.
         kwargs = {}
         kwargs['metric'] = self.metric_func
@@ -32,19 +29,24 @@ class BaseImgEvaluator(BaseEvaluator):
         # Turn it to a minimization problem.
         return 1 - metric
 
-    def predict(self, config, test_X=None, **kwargs):
+    def set_config(self, config):
         if not hasattr(self, 'estimator'):
             # Build the corresponding estimator.
-            params_num = len(config.get_dictionary().keys()) - 1
             classifier_type = config['estimator']
-            estimator = _img_classifiers[classifier_type](*[None] * params_num)
+            estimator = _img_classifiers[classifier_type]()
         else:
             estimator = self.estimator
         config = update_config(config)
         estimator.set_hyperparameters(config)
+        estimator.set_model_config(self.inputshape, self.classnum)
+        return classifier_type, estimator
+
+    def fit_predict(self, config, test_X=None, **kwargs):
+        _, estimator = self.set_config(config)
 
         # Fit the estimator on the training data.
-        estimator.fit(self.data_manager.train_X, self.data_manager.train_y)
+        # TODO: final fit (more epoches, lr strategies)
+        estimator.fit(self.data_manager, **kwargs)
 
         # Inference.
         if test_X is None:

@@ -94,7 +94,7 @@ class LibLinear_SVC(BaseClassificationModel):
             "penalty", ["l1", "l2"], default_value="l2")
         loss = CategoricalHyperparameter(
             "loss", ["hinge", "squared_hinge"], default_value="squared_hinge")
-        dual = Constant("dual", "False")
+        dual = CategoricalHyperparameter("dual", ['True', 'False'], default_value='True')
         # This is set ad-hoc
         tol = UniformFloatHyperparameter(
             "tol", 1e-5, 1e-1, default_value=1e-4, log=True)

@@ -6,12 +6,12 @@ from ConfigSpace.hyperparameters import UniformFloatHyperparameter, \
 from alphaml.utils.constants import *
 from alphaml.utils.model_util import softmax
 from alphaml.utils.common import check_none, check_for_bool
-from alphaml.engine.components.models.base_model import BaseClassificationModel
+from alphaml.engine.components.models.base_model import BaseRegressionModel
 
 
-class LibSVM_SVC(BaseClassificationModel):
+class LibSVM_SVR(BaseRegressionModel):
     def __init__(self, C, kernel, gamma, shrinking, tol, max_iter,
-                 class_weight=None, degree=3, coef0=0, random_state=None):
+                 degree=3, coef0=0, random_state=None):
         self.C = C
         self.kernel = kernel
         self.degree = degree
@@ -19,13 +19,12 @@ class LibSVM_SVC(BaseClassificationModel):
         self.coef0 = coef0
         self.shrinking = shrinking
         self.tol = tol
-        self.class_weight = class_weight
         self.max_iter = max_iter
         self.random_state = random_state
         self.estimator = None
 
     def fit(self, X, Y):
-        import sklearn.svm
+        from sklearn.svm import SVR
 
         self.C = float(self.C)
         if self.degree is None:
@@ -45,20 +44,14 @@ class LibSVM_SVC(BaseClassificationModel):
 
         self.shrinking = check_for_bool(self.shrinking)
 
-        if check_none(self.class_weight):
-            self.class_weight = None
-
-        self.estimator = sklearn.svm.SVC(C=self.C,
-                                         kernel=self.kernel,
-                                         degree=self.degree,
-                                         gamma=self.gamma,
-                                         coef0=self.coef0,
-                                         shrinking=self.shrinking,
-                                         tol=self.tol,
-                                         class_weight=self.class_weight,
-                                         max_iter=self.max_iter,
-                                         random_state=self.random_state,
-                                         decision_function_shape='ovr')
+        self.estimator = SVR(C=self.C,
+                             kernel=self.kernel,
+                             degree=self.degree,
+                             gamma=self.gamma,
+                             coef0=self.coef0,
+                             shrinking=self.shrinking,
+                             tol=self.tol,
+                             max_iter=self.max_iter)
         self.estimator.fit(X, Y)
         return self
 
@@ -67,24 +60,17 @@ class LibSVM_SVC(BaseClassificationModel):
             raise NotImplementedError
         return self.estimator.predict(X)
 
-    def predict_proba(self, X):
-        if self.estimator is None:
-            raise NotImplementedError()
-        decision = self.estimator.decision_function(X)
-        return softmax(decision)
-
-
     @staticmethod
     def get_properties(dataset_properties=None):
-        return {'shortname': 'LibSVM-SVC',
-            'name': 'LibSVM Support Vector Classification',
-            'handles_regression': False,
-            'handles_classification': True,
-            'handles_multiclass': True,
-            'handles_multilabel': False,
-            'is_deterministic': True,
-            'input': (DENSE, SPARSE, UNSIGNED_DATA),
-            'output': (PREDICTIONS,)}
+        return {'shortname': 'LibSVM-SVR',
+                'name': 'LibSVM Support Vector Regression',
+                'handles_regression': True,
+                'handles_classification': False,
+                'handles_multiclass': False,
+                'handles_multilabel': False,
+                'is_deterministic': True,
+                'input': (DENSE, SPARSE, UNSIGNED_DATA),
+                'output': (PREDICTIONS,)}
 
     @staticmethod
     def get_hyperparameter_search_space(dataset_properties=None):
@@ -99,6 +85,7 @@ class LibSVM_SVC(BaseClassificationModel):
                                            log=True, default_value=0.1)
         # TODO this is totally ad-hoc
         coef0 = UniformFloatHyperparameter("coef0", -1, 1, default_value=0)
+        # probability is no hyperparameter, but an argument to the SVM algo
         shrinking = CategoricalHyperparameter("shrinking", ["True", "False"],
                                               default_value="True")
         tol = UniformFloatHyperparameter("tol", 1e-5, 1e-1, default_value=1e-3,

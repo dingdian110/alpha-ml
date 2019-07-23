@@ -23,10 +23,21 @@ class SMAC_SMBO(BaseOptimizer):
             scenario_dict['runcount-limit'] = kwargs['runcount']
         self.scenario = Scenario(scenario_dict)
         self.smac = SMAC(scenario=self.scenario, rng=np.random.RandomState(self.seed), tae_runner=self.evaluator)
+<<<<<<< HEAD
         self.configs_list = list()
         self.config_values = list()
 
     def run(self):
+=======
+        self.configs_list=list()
+        self.config_values=list()
+
+    def run(self):
+        # configs_list = list()
+        # config_values = list()
+        time_list = list()
+        start_time = time.time()
+>>>>>>> 8f371cf61c8fb225ebfc75059dc361026e8d96e7
         self.logger.info('Start task: %s' % self.task_name)
 
         self.smac.optimize()
@@ -52,7 +63,11 @@ class SMAC_SMBO(BaseOptimizer):
 
         self.logger.info('SMAC smbo ==> the size of evaluations: %d' % len(self.configs_list))
         if len(self.configs_list) > 0:
+<<<<<<< HEAD
             self.logger.info('SMAC smbo ==> The time points: %s' % self.timing_list)
+=======
+            self.logger.info('SMAC smbo ==> The time points: %s' % time_list)
+>>>>>>> 8f371cf61c8fb225ebfc75059dc361026e8d96e7
             self.logger.info('SMAC smbo ==> The best performance found: %f' % max(self.config_values))
             self.logger.info('SMAC smbo ==> The best HP found: %s' % self.incumbent)
 
@@ -60,7 +75,11 @@ class SMAC_SMBO(BaseOptimizer):
             data = dict()
             data['configs'] = self.configs_list
             data['perfs'] = self.config_values
+<<<<<<< HEAD
             data['time_cost'] = self.timing_list
+=======
+            data['time_cost'] = time_list
+>>>>>>> 8f371cf61c8fb225ebfc75059dc361026e8d96e7
             dataset_id = self.result_file.split('_')[0]
             with open('data/%s/' % dataset_id + self.result_file, 'wb') as f:
                 pickle.dump(data, f)
