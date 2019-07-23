@@ -44,9 +44,11 @@ class Regressor(BaseEstimator):
         assert data is not None and isinstance(data, DataManager)
 
         if isinstance(metric, str):
-            from sklearn.metrics import mean_absolute_error,explained_variance_score,r2_score
+            from sklearn.metrics import mean_absolute_error, explained_variance_score, r2_score, mean_squared_log_error
             if metric == 'mse':
                 metric = mean_squared_error
+            elif metric == 'msle':
+                metric = mean_squared_log_error
             elif metric == 'mae':
                 metric = mean_absolute_error
             elif metric == 'evs':
@@ -77,41 +79,6 @@ class Regressor(BaseEstimator):
 
         """
         return super().predict(X, batch_size=batch_size, n_jobs=n_jobs)
-
-    def predict_proba(self, X, batch_size=None, n_jobs=1):
-
-        """Predict probabilities of classes for all samples X.
-
-        Parameters
-        ----------
-        X : array-like or sparse matrix of shape = [n_samples, n_features]
-
-        batch_size : int (optional)
-            Number of data points to predict for (predicts all points at once
-            if ``None``.
-        n_jobs : int
-
-        Returns
-        -------
-        y : array of shape = [n_samples, n_classes]
-            The predicted class probabilities.
-
-        """
-        pred_proba = super().predict_proba(X, batch_size=batch_size, n_jobs=n_jobs)
-
-        if self.task_type not in ['multilabel-indicator']:
-            assert (
-                np.allclose(
-                    np.sum(pred_proba, axis=1),
-                    np.ones_like(pred_proba[:, 0]))
-            ), "prediction probability does not sum up to 1!"
-
-        # Check that all probability values lie between 0 and 1.
-        assert (
-                (pred_proba >= 0).all() and (pred_proba <= 1).all()
-        ), "found prediction probability value outside of [0, 1]!"
-
-        return pred_proba
 
     def get_automl(self):
         return AutoMLRegressor
