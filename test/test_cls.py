@@ -24,7 +24,7 @@ parser.add_argument('--rep', type=int, default=10)
 parser.add_argument('--run_count', type=int, default=200)
 parser.add_argument('--start_runid', type=int, default=0)
 parser.add_argument('--datasets', type=str, default='glass')
-parser.add_argument('--task_id', type=str, default='all')
+parser.add_argument('--task_id', type=str, default='test')
 parser.add_argument('--opt_algo', type=str, default='baseline_avg')
 args = parser.parse_args()
 
@@ -68,7 +68,7 @@ def test_cash_module():
             # Dataset partition.
             X, y, _ = load_data(dataset)
             X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
-            dm = DataManager(X_train, y_train, random_state=seed)
+            dm = DataManager(X_train, y_train)
 
             # Test each optimizer algorithm:
             for optimizer in optimizer_algos:
@@ -78,17 +78,44 @@ def test_cash_module():
                 if optimizer.startswith('baseline'):
                     optimizer, mode = optimizer.split('_')
                     mode = 1 if mode == 'rand' else 2
-                print('Test %s optimizer => %s' % (optimizer, task_name))
                 if optimizer.startswith('sh'):
                     if len(optimizer.split('_')) == 3:
                         optimizer, eta, r = optimizer.split('_')
                     else:
                         raise ValueError('Wrong SH params!')
+                if optimizer.startswith('rl'):
+                    if len(optimizer.split('_')) == 3:
+                        _, mode, eta = optimizer.split('_')
+                        mode = int(mode)
+                        optimizer = 'rl_smbo'
+                    else:
+                        raise ValueError('Wrong SH params!')
+                if optimizer.startswith('ts_smbo'):
+                    mode = 1
+                    if len(optimizer.split('_')) == 3:
+                        _, _, mode = optimizer.split('_')
+                        mode = int(mode)
+                        optimizer = 'ts_smbo'
+                if optimizer.startswith('mcmc_ts'):
+                    _, _, mode, eta, r = optimizer.split('_')
+                    mode = int(mode)
+                    eta = int(eta)
+                    r = int(r)
+                    optimizer = 'mcmc_ts_smbo'
+
+                if optimizer.startswith('ucb_smbo'):
+                    mode = 1
+                    if len(optimizer.split('_')) == 3:
+                        _, _, mode = optimizer.split('_')
+                        mode = int(mode)
+                        optimizer = 'ucb_smbo'
+
+                print('Test %s optimizer => %s' % (optimizer, task_name))
 
                 # Construct the AutoML classifier.
                 cls = Classifier(optimizer=optimizer, seed=seed).fit(
                     dm, metric='accuracy', runcount=run_count,
-                    task_name=task_name, update_mode=mode, eta=eta, r=r)
+                    task_name=task_name, update_mode=mode, eta=eta, r=r, param=eta)
                 acc = cls.score(X_test, y_test)
                 key_id = '%s_%d_%d_%s' % (dataset, run_count, run_id, optimizer)
                 result[key_id] = acc
@@ -96,7 +123,8 @@ def test_cash_module():
             # Display and save the test result.
             print(result)
             dataset_id = dataset.split('_')[0]
-            with open('data/%s/%s_test_result.pkl' % (dataset_id, dataset_id), 'wb') as f:
+            with open('data/%s/%s_test_result_%s_%d_%d_%d.pkl' %
+                              (dataset_id, dataset_id, task_id, run_count, rep_num, start_id), 'wb') as f:
                 pickle.dump(result, f)
 
 

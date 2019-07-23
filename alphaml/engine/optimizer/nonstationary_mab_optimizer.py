@@ -1,8 +1,6 @@
-import math
 import time
 import pickle
 import numpy as np
-from scipy.stats import norm
 from ConfigSpace.hyperparameters import CategoricalHyperparameter
 from litesmac.scenario.scenario import Scenario
 from litesmac.facade.smac_facade import SMAC
@@ -17,12 +15,13 @@ class TS_NON_SMBO(BaseOptimizer):
         self.iter_num = int(1e10) if ('runcount' not in kwargs or kwargs['runcount'] is None) else kwargs['runcount']
         self.estimator_arms = self.config_space.get_hyperparameter('estimator').choices
         self.task_name = kwargs['task_name'] if 'task_name' in kwargs else 'default'
-        self.result_file = self.task_name + '_ts_non_smac.data'
-        self.update_mode = kwargs['update_mode'] if 'update_mode' in kwargs else 1
+        self.result_file = self.task_name + '_non_mab_smac.data'
         self.smac_containers = dict()
         self.ts_cnts = dict()
         self.ts_rewards = dict()
         self.weight = None
+        self.configs_list = list()
+        self.config_values = list()
 
         for estimator in self.estimator_arms:
             # Scenario object
@@ -43,17 +42,15 @@ class TS_NON_SMBO(BaseOptimizer):
             self.ts_rewards[estimator] = list()
 
     def run(self):
-        configs_list = list()
-        config_values = list()
         time_list = list()
         iter_num = 0
-        best_perf = 0.
         start_time = time.time()
         self.logger.info('Start task: %s' % self.task_name)
 
         K = len(self.estimator_arms)
-        gamma = 0.99
-        delta_t = 300
+        delta_t = 1000
+        gamma = min(1., np.sqrt(K*np.log(K)/((np.e - 1)*delta_t)))
+        print('='*40, gamma)
         iter_id = 0
 
         while True:
@@ -71,18 +68,12 @@ class TS_NON_SMBO(BaseOptimizer):
             runhistory = self.smac_containers[best_arm].solver.runhistory
 
             # Observe the reward.
-            update_flag = False
-            best_reward = max(self.ts_rewards[best_arm]) if len(self.ts_rewards[best_arm]) > 0 else 0
             runkeys = list(runhistory.data.keys())
             for key in runkeys[self.ts_cnts[best_arm]:]:
                 reward = 1 - runhistory.data[key][0]
-                best_reward = reward if reward > best_reward else best_reward
-                if reward >= best_perf:
-                    update_flag = True
-                    best_perf = reward
                 self.ts_rewards[best_arm].append(reward)
-                configs_list.append(runhistory.ids_config[key[0]])
-                config_values.append(reward)
+                self.configs_list.append(runhistory.ids_config[key[0]])
+                self.config_values.append(reward)
 
             # Record the time cost.
             time_point = time.time() - start_time
@@ -93,16 +84,13 @@ class TS_NON_SMBO(BaseOptimizer):
                 tmp_list.append(time_point)
             time_list.extend(reversed(tmp_list))
 
-            self.logger.info('Iteration %d, the best reward found is %f' % (iter_num, max(config_values)))
+            self.logger.info('Iteration %d, the best reward found is %f' % (iter_num, max(self.config_values)))
             iter_num += (len(runkeys) - self.ts_cnts[best_arm])
             self.ts_cnts[best_arm] = len(runhistory.data.keys())
 
             # Update the weight w vector.
-            if self.update_mode == 1:
-                x_bar = best_reward/p[best_index]
-                self.weight[best_index] *= np.exp(gamma*x_bar/K)
-            else:
-                raise ValueError('Invalid update mode: %d' % self.update_mode)
+            x_bar = max(self.ts_rewards[best_arm]) / p[best_index]
+            self.weight[best_index] *= np.exp(gamma*x_bar/K)
 
             if iter_num >= self.iter_num:
                 break
@@ -116,21 +104,21 @@ class TS_NON_SMBO(BaseOptimizer):
         self.logger.info('ts rewards: %s' % self.ts_rewards)
 
         # Print the tuning result.
-        self.logger.info('TS smbo ==> the size of evaluations: %d' % len(configs_list))
-        if len(configs_list) > 0:
-            id = np.argmax(config_values)
-            self.logger.info('TS smbo ==> The time points: %s' % time_list)
-            self.logger.info('TS smbo ==> The best performance found: %f' % config_values[id])
-            self.logger.info('TS smbo ==> The best HP found: %s' % configs_list[id])
-            self.incumbent = configs_list[id]
+        self.logger.info('non-mab ==> the size of evaluations: %d' % len(self.configs_list))
+        if len(self.configs_list) > 0:
+            id = np.argmax(self.config_values)
+            self.logger.info('non-mab ==> The time points: %s' % time_list)
+            self.logger.info('non-mab ==> The best performance found: %f' % self.config_values[id])
+            self.logger.info('non-mab ==> The best HP found: %s' % self.configs_list[id])
+            self.incumbent = self.configs_list[id]
 
             # Save the experimental results.
             data = dict()
             data['ts_weight'] = self.weight
             data['ts_cnts'] = self.ts_cnts
             data['ts_rewards'] = self.ts_rewards
-            data['configs'] = configs_list
-            data['perfs'] = config_values
+            data['configs'] = self.configs_list
+            data['perfs'] = self.config_values
             data['time_cost'] = time_list
             dataset_id = self.result_file.split('_')[0]
             with open('data/%s/' % dataset_id + self.result_file, 'wb') as f:

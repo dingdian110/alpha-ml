@@ -17,8 +17,8 @@ class TS_SMBO(BaseOptimizer):
         self.iter_num = int(1e10) if ('runcount' not in kwargs or kwargs['runcount'] is None) else kwargs['runcount']
         self.estimator_arms = self.config_space.get_hyperparameter('estimator').choices
         self.task_name = kwargs['task_name'] if 'task_name' in kwargs else 'default'
-        self.result_file = self.task_name + '_ts_smac.data'
         self.update_mode = kwargs['update_mode'] if 'update_mode' in kwargs else 1
+        self.result_file = self.task_name + '_ts_%d_smac.data' % self.update_mode
         self.smac_containers = dict()
         self.ts_params = dict()
         self.ts_cnts = dict()

@@ -23,14 +23,10 @@ class SMAC_SMBO(BaseOptimizer):
             scenario_dict['runcount-limit'] = kwargs['runcount']
         self.scenario = Scenario(scenario_dict)
         self.smac = SMAC(scenario=self.scenario, rng=np.random.RandomState(self.seed), tae_runner=self.evaluator)
-        self.configs_list=list()
-        self.config_values=list()
+        self.configs_list = list()
+        self.config_values = list()
 
     def run(self):
-        # configs_list = list()
-        # config_values = list()
-        time_list = list()
-        start_time = time.time()
         self.logger.info('Start task: %s' % self.task_name)
 
         self.smac.optimize()
@@ -46,17 +42,17 @@ class SMAC_SMBO(BaseOptimizer):
             self.config_values.append(reward)
 
         # Record the time cost.
-        time_point = time.time() - start_time
+        time_point = time.time() - self.start_time
         tmp_list = list()
         tmp_list.append(time_point)
         for key in reversed(runkeys[1:]):
             time_point -= runhistory.data[key][1]
             tmp_list.append(time_point)
-        time_list.extend(reversed(tmp_list))
+        self.timing_list.extend(reversed(tmp_list))
 
         self.logger.info('SMAC smbo ==> the size of evaluations: %d' % len(self.configs_list))
         if len(self.configs_list) > 0:
-            self.logger.info('SMAC smbo ==> The time points: %s' % time_list)
+            self.logger.info('SMAC smbo ==> The time points: %s' % self.timing_list)
             self.logger.info('SMAC smbo ==> The best performance found: %f' % max(self.config_values))
             self.logger.info('SMAC smbo ==> The best HP found: %s' % self.incumbent)
 
@@ -64,7 +60,7 @@ class SMAC_SMBO(BaseOptimizer):
             data = dict()
             data['configs'] = self.configs_list
             data['perfs'] = self.config_values
-            data['time_cost'] = time_list
+            data['time_cost'] = self.timing_list
             dataset_id = self.result_file.split('_')[0]
             with open('data/%s/' % dataset_id + self.result_file, 'wb') as f:
                 pickle.dump(data, f)
