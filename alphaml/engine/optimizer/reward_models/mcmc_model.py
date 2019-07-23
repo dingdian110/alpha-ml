@@ -17,14 +17,22 @@ def weibull(x, alpha, beta, kappa, delta):
     return alpha - (alpha - beta) * np.exp(-(kappa * x)**delta)
 
 
-class CurveModel(object):
-    def __init__(self):
-        self.function = weibull
-        self.default_params = np.array([.7, .1, .01, 1, 0.01])
+def pow4(x, c, a, b, alpha):
+    return c - (a*x+b)**-alpha
 
-        self.ml_params = self.default_params
-        self.lower_bound = np.array([0, 0., 0., 1.])
-        self.upper_bound = np.array([1., 1., 1., 2.])
+
+class CurveModel(object):
+    def __init__(self, func='weibull'):
+        if func == 'weibull':
+            self.function = weibull
+            self.ml_params = np.array([.7, .1, .01, 1, 0.01])
+            self.lower_bound = np.array([0, 0., 0., 1.])
+            self.upper_bound = np.array([1., 1., 1e4, 1e4])
+        elif func == 'pow4':
+            self.function = pow4
+            self.ml_params = np.array([.8, 200, 0, 0.1, 0.01])
+            self.lower_bound = np.array([0, 0., 0., 0.])
+            self.upper_bound = np.array([1., 1e4, 1e4, 1e4])
 
     def are_params_in_bounds(self, theta):
         """
@@ -79,7 +87,7 @@ class MCMCModel(object):
         self.nwalkers = 30
         self.nthread = 1
         self.nsamples = 400
-        self.ndim = 5
+        self.ndim = len(self.curve_model.ml_params)
         self.burn_in = 300
         self.xlim = -1
         self.recency = recency_weight
