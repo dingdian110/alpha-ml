@@ -5,6 +5,7 @@ from alphaml.estimators.base_estimator import BaseEstimator
 from alphaml.engine.automl import AutoMLClassifier
 from alphaml.engine.components.data_manager import DataManager
 
+
 class Classifier(BaseEstimator):
     """This class implements the classification task. """
 
@@ -45,9 +46,9 @@ class Classifier(BaseEstimator):
         # Check the task type: {binary, multiclass}
         task_type = type_of_target(data.train_y)
         if task_type in ['multiclass-multioutput',
-                           'continuous',
-                           'continuous-multioutput',
-                           'unknown']:
+                         'continuous',
+                         'continuous-multioutput',
+                         'unknown']:
             raise ValueError("UNSUPPORTED TASK TYPE: %s!" % task_type)
         self.task_type = task_type
         kwargs['task_type'] = task_type
@@ -56,13 +57,13 @@ class Classifier(BaseEstimator):
         # Options for multicalss averaging.
         average = 'weighted'
         if isinstance(metric, str):
-            from sklearn.metrics import f1_score, auc, precision_score, recall_score
+            from sklearn.metrics import f1_score, roc_auc_score, precision_score, recall_score
             if metric == 'accuracy':
                 metric = accuracy_score
             elif metric == 'f1':
                 metric = f1_score
             elif metric == 'auc':
-                metric = auc
+                metric = roc_auc_score
             elif metric == 'precision':
                 metric = precision_score
             elif metric == 'recall':
@@ -114,15 +115,15 @@ class Classifier(BaseEstimator):
         pred_proba = super().predict_proba(X, batch_size=batch_size, n_jobs=n_jobs)
 
         if self.task_type not in ['multilabel-indicator']:
-            assert(
+            assert (
                 np.allclose(
                     np.sum(pred_proba, axis=1),
                     np.ones_like(pred_proba[:, 0]))
             ), "prediction probability does not sum up to 1!"
 
         # Check that all probability values lie between 0 and 1.
-        assert(
-            (pred_proba >= 0).all() and (pred_proba <= 1).all()
+        assert (
+                (pred_proba >= 0).all() and (pred_proba <= 1).all()
         ), "found prediction probability value outside of [0, 1]!"
 
         return pred_proba

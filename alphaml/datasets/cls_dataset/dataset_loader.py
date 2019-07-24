@@ -188,6 +188,10 @@ def load_data(dataset_name):
         from alphaml.datasets.cls_dataset.cifar10small import load_cifar10s
         X, y = load_cifar10s(data_dir_template % dataset_name)
         num_cls = 10
+    elif dataset_name == 'eucalyptus':
+        from alphaml.datasets.cls_dataset.eucalyptus import load_eucalyptus
+        X, y = load_eucalyptus(data_dir_template % dataset_name)
+        num_cls = 5
     else:
         raise ValueError('Invalid dataset name: %s!' % dataset_name)
     print(X.shape, y.shape)

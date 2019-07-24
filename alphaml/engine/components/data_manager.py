@@ -11,8 +11,8 @@ class DataManager(object):
 
     def __init__(self, train_X=None, train_y=None, val_X=None, val_y=None, val_size=0.2, stratify=True,
                  random_state=42):
-        self.train_X = train_X
-        self.train_y = train_y
+        self.train_X = np.array(train_X)
+        self.train_y = np.array(train_y)
         self.val_X = val_X
         self.val_y = val_y
         self.split_size = val_size
@@ -48,10 +48,10 @@ class DataManager(object):
             elif dtype in [np.str, np.str_, np.string_, np.object]:
                 self.feature_types.append("Categorical")
             else:
-                raise TypeError("Unknow data type:", dtype)
+                raise TypeError("Unknown data type:", dtype)
 
-    def load_train_csv(self, file_location, label_col=-1):
-        df = impute_df(pd.read_csv(file_location))
+    def load_train_csv(self, file_location, label_col=-1, keep_default_na=True, na_values=None):
+        df = impute_df(pd.read_csv(file_location, keep_default_na=keep_default_na, na_values=na_values))
         # set the feature types
         if self.feature_types is None:
             self.set_col_type(df)
@@ -64,8 +64,8 @@ class DataManager(object):
         self.train_y = data[:, -1]
         self.split(self.split_size, self.random_seed)
 
-    def load_test_csv(self, file_location):
-        df = impute_df(pd.read_csv(file_location))
+    def load_test_csv(self, file_location, keep_default_na=True, na_values=None):
+        df = impute_df(pd.read_csv(file_location, keep_default_na=keep_default_na, na_values=na_values))
         # set the feature types
         if self.feature_types is None:
             self.set_col_type(df)

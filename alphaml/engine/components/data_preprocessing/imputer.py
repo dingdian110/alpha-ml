@@ -46,6 +46,7 @@ def impute_df(df) -> pd.DataFrame:
             df[col] = impute_col(df[col], "categorical")
         else:
             raise TypeError("Unknow data type:", dtype)
+        print("Coltype:",dtype)
     return df
 
 
