@@ -82,7 +82,6 @@ def one_hot(dm: DataManager) -> DataManager:
         valid_size = len(valid_x)
     else:
         x = train_x
-
     categorical_x = x[:, categorical_index]
     other_x = x[:, other_index]
 
@@ -91,8 +90,6 @@ def one_hot(dm: DataManager) -> DataManager:
 
     categorical_features = ["One-Hot"] * categorical_x.shape[1]
     other_features = [feature_types[i] for i in other_index]
-    # print("categorical_x.shape =", categorical_x.__class__)
-    # print("other_x.shape =", other_x.__class__)
 
     x = np.hstack((categorical_x, other_x)).astype(np.float)
     dm.feature_types = np.concatenate((categorical_features, other_features))
