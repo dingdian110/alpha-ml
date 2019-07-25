@@ -229,7 +229,10 @@ class MCMC_TS_Optimizer(BaseOptimizer):
                     model.fit_mcmc(x, y)
                     self.logger.info('Fitting MCMC takes %.2f seconds' % (time.time()-mcmc_start_time))
                     # Update the expected rewards in next time step.
-                    next_mu, next_sigma = model.predict(self.ts_cnts[best_arm] + 1)
+                    if self.param_id == 7:
+                        next_mu, next_sigma = model.predict(self.iter_num)
+                    else:
+                        next_mu, next_sigma = model.predict(self.ts_cnts[best_arm] + 1)
                     if self.param_id == 3:
                         next_sigma *= self.penalty_factor[best_arm]
                     if self.param_id == 4:
