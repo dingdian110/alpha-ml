@@ -110,6 +110,13 @@ def test_cash_module():
                         mode = int(mode)
                         optimizer = 'ucb_smbo'
 
+                if optimizer.startswith('mono_smbo'):
+                    mode = 2
+                    if len(optimizer.split('_')) == 3:
+                        _, _, mode = optimizer.split('_')
+                        mode = int(mode)
+                        optimizer = 'mono_smbo'
+
                 print('Test %s optimizer => %s' % (optimizer, task_name))
 
                 # Construct the AutoML classifier.

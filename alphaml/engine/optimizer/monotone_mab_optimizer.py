@@ -1,8 +1,6 @@
-import math
 import time
 import pickle
 import numpy as np
-from scipy.stats import norm
 from ConfigSpace.hyperparameters import CategoricalHyperparameter
 from litesmac.scenario.scenario import Scenario
 from litesmac.facade.smac_facade import SMAC
@@ -16,13 +14,13 @@ class MONO_MAB_SMBO(BaseOptimizer):
 
         self.iter_num = int(1e10) if ('runcount' not in kwargs or kwargs['runcount'] is None) else kwargs['runcount']
         self.estimator_arms = self.config_space.get_hyperparameter('estimator').choices
-        self.mode = kwargs['update_mode'] if 'update_mode' in kwargs else 1
+        self.mode = kwargs['update_mode'] if 'update_mode' in kwargs else 2
         self.task_name = kwargs['task_name'] if 'task_name' in kwargs else 'default'
-        self.result_file = self.task_name + '_ts_mm_%d_smac.data' % self.mode
+        self.result_file = self.task_name + '_mm_bandit_%d_smac.data' % self.mode
 
         self.smac_containers = dict()
-        self.ts_cnts = dict()
-        self.ts_rewards = dict()
+        self.cnts = dict()
+        self.rewards = dict()
         self.updated_rewards = dict()
         self.configs_list = list()
         self.config_values = list()
@@ -42,19 +40,18 @@ class MONO_MAB_SMBO(BaseOptimizer):
             smac = SMAC(scenario=Scenario(scenario_dict),
                         rng=np.random.RandomState(self.seed), tae_runner=self.evaluator)
             self.smac_containers[estimator] = smac
-            self.ts_cnts[estimator] = 0
-            self.ts_rewards[estimator] = list()
+            self.cnts[estimator] = 0
+            self.rewards[estimator] = list()
             self.updated_rewards[estimator] = list()
 
     def run(self):
-        time_list = list()
-        iter_num = 0
-        start_time = time.time()
+
         self.logger.info('Start task: %s' % self.task_name)
 
         arm_set = list(self.estimator_arms)
-        tmp_iter = 0
         T = self.iter_num
+        iter_num = 0
+        tmp_iter = 0
         duration = 10
 
         while True:
@@ -69,27 +66,27 @@ class MONO_MAB_SMBO(BaseOptimizer):
 
                 # Observe the reward.
                 runkeys = list(runhistory.data.keys())
-                for key in runkeys[self.ts_cnts[arm]:]:
+                for key in runkeys[self.cnts[arm]:]:
                     reward = 1 - runhistory.data[key][0]
-                    self.ts_rewards[arm].append(reward)
-                    self.updated_rewards[arm].append(max(self.ts_rewards[arm]))
+                    self.rewards[arm].append(reward)
+                    self.updated_rewards[arm].append(max(self.rewards[arm]))
                     self.configs_list.append(runhistory.ids_config[key[0]])
                     self.config_values.append(reward)
 
                 # Record the time cost.
-                time_point = time.time() - start_time
+                time_point = time.time() - self.start_time
                 tmp_list = list()
                 tmp_list.append(time_point)
-                for key in reversed(runkeys[self.ts_cnts[arm]+1:]):
+                for key in reversed(runkeys[self.cnts[arm]+1:]):
                     time_point -= runhistory.data[key][1]
                     tmp_list.append(time_point)
-                time_list.extend(reversed(tmp_list))
+                self.timing_list.extend(reversed(tmp_list))
 
-                iter_num += (len(runkeys) - self.ts_cnts[arm])
-                self.ts_cnts[arm] = len(runhistory.data.keys())
+                iter_num += (len(runkeys) - self.cnts[arm])
+                self.cnts[arm] = len(runhistory.data.keys())
 
                 acc_reward = self.updated_rewards[arm]
-                if self.ts_cnts[arm] > 2:
+                if self.cnts[arm] > 2:
                     if len(acc_reward) >= duration:
                         estimated_slope = (acc_reward[-1] - acc_reward[-duration]) / duration
                     else:
@@ -104,20 +101,20 @@ class MONO_MAB_SMBO(BaseOptimizer):
                     elif self.mode == 2:
                         p.append(min(1., acc_reward[-1] + estimated_slope * (T - tmp_iter)))
                         q.append(acc_reward[-1])
+                    elif self.mode == 3:
+                        p.append(min(1., acc_reward[-1] + estimated_slope * (T - len(self.config_values))))
+                        q.append(acc_reward[-1])
                     else:
                         raise ValueError('Invalid mode: %d.' % self.mode)
-                    print('Slope, P, Q: %.4f' % estimated_slope)
-                    print(arm_set, p, q)
                 else:
                     p.append(acc_reward[-1])
                     q.append(acc_reward[-1])
-
+            self.logger.info('PQ estimate: %s' % dict(zip(arm_set, [[qt, pt] for qt, pt in zip(q, p)])))
             self.logger.info('Iteration %d, the best reward found is %f' % (iter_num, max(self.config_values)))
 
             # Remove some arm.
             N = len(arm_set)
             flags = [False] * N
-
             for i in range(N):
                 for j in range(N):
                     if i != j:
@@ -131,25 +128,25 @@ class MONO_MAB_SMBO(BaseOptimizer):
                 break
 
         # Print the parameters in Thompson sampling.
-        self.logger.info('ts counts: %s' % self.ts_cnts)
-        self.logger.info('ts rewards: %s' % self.ts_rewards)
+        self.logger.info('ARM counts: %s' % self.cnts)
+        self.logger.info('ARM rewards: %s' % self.rewards)
 
         # Print the tuning result.
-        self.logger.info('TS smbo ==> the size of evaluations: %d' % len(self.configs_list))
+        self.logger.info('MONO_BAI smbo ==> the size of evaluations: %d' % len(self.configs_list))
         if len(self.configs_list) > 0:
             id = np.argmax(self.config_values)
-            self.logger.info('TS smbo ==> The time points: %s' % time_list)
-            self.logger.info('TS smbo ==> The best performance found: %f' % self.config_values[id])
-            self.logger.info('TS smbo ==> The best HP found: %s' % self.configs_list[id])
+            self.logger.info('MONO_BAI smbo ==> The time points: %s' % self.timing_list)
+            self.logger.info('MONO_BAI smbo ==> The best performance found: %f' % self.config_values[id])
+            self.logger.info('MONO_BAI smbo ==> The best HP found: %s' % self.configs_list[id])
             self.incumbent = self.configs_list[id]
 
             # Save the experimental results.
             data = dict()
-            data['ts_cnts'] = self.ts_cnts
-            data['ts_rewards'] = self.ts_rewards
+            data['ts_cnts'] = self.cnts
+            data['ts_rewards'] = self.rewards
             data['configs'] = self.configs_list
             data['perfs'] = self.config_values
-            data['time_cost'] = time_list
+            data['time_cost'] = self.timing_list
             dataset_id = self.result_file.split('_')[0]
             with open('data/%s/' % dataset_id + self.result_file, 'wb') as f:
                 pickle.dump(data, f)
