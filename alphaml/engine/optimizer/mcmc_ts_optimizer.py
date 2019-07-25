@@ -231,6 +231,9 @@ class MCMC_TS_Optimizer(BaseOptimizer):
                     # Update the expected rewards in next time step.
                     if self.param_id == 7:
                         next_mu, next_sigma = model.predict(self.iter_num)
+                    elif self.param_id == 8:
+                        next_mu, next_sigma = model.predict(self.ts_cnts[best_arm] +
+                                                            self.iter_num - len(self.config_values))
                     else:
                         next_mu, next_sigma = model.predict(self.ts_cnts[best_arm] + 1)
                     if self.param_id == 3:
