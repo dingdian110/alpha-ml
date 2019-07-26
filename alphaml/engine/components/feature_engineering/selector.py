@@ -1,11 +1,11 @@
 import numpy as np
 
+
+
 from sklearn.feature_selection import SelectKBest
 from sklearn.feature_selection import f_classif, mutual_info_classif, chi2
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
-
-
 class BaseSelector:
 
     def __init__(self):
