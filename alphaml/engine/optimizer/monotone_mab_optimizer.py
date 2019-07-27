@@ -58,6 +58,7 @@ class MONO_MAB_SMBO(BaseOptimizer):
             # Pull each arm exactly once.
             tmp_iter += 1
             p, q = list(), list()
+            es_flag = False
 
             for arm in arm_set:
                 self.logger.info('Choosing to optimize %s arm' % arm)
@@ -72,6 +73,10 @@ class MONO_MAB_SMBO(BaseOptimizer):
                     self.updated_rewards[arm].append(max(self.rewards[arm]))
                     self.configs_list.append(runhistory.ids_config[key[0]])
                     self.config_values.append(reward)
+
+                # Determine whether to stop early.
+                if len(arm_set) == 1 and len(runkeys[self.cnts[arm]:]) == 0:
+                    es_flag = True
 
                 # Record the time cost.
                 time_point = time.time() - self.start_time
@@ -124,7 +129,7 @@ class MONO_MAB_SMBO(BaseOptimizer):
             self.logger.info('>>>>> Remove Models: %s' % [item for index, item in enumerate(arm_set) if flags[index]])
             arm_set = [item for index, item in enumerate(arm_set) if not flags[index]]
 
-            if iter_num >= self.iter_num:
+            if iter_num >= self.iter_num or es_flag:
                 break
 
         # Print the parameters in Thompson sampling.

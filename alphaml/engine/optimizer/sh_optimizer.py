@@ -15,9 +15,9 @@ class SH_SMBO(BaseOptimizer):
         self.iter_num = int(1e10) if ('runcount' not in kwargs or kwargs['runcount'] is None) else kwargs['runcount']
         self.estimator_arms = self.config_space.get_hyperparameter('estimator').choices
         self.task_name = kwargs['task_name'] if 'task_name' in kwargs else 'default'
-        self.eta = int(kwargs['eta']) if 'eta' in kwargs else 2
-        self.init_r = int(kwargs['r']) if 'r' in kwargs else 2
-        self.result_file = self.task_name + '_sh_smac_%d_%d.data' % (self.eta, self.init_r)
+        self.eta = 2
+        self.proportion = kwargs['param'] if 'param' in kwargs else 1.
+        self.result_file = self.task_name + '_sh_smac_%.2f.data' % self.proportion
 
         self.smac_containers = dict()
         self.cnts = dict()
@@ -44,22 +44,26 @@ class SH_SMBO(BaseOptimizer):
             self.rewards[estimator] = list()
 
     def run(self):
-        time_list = list()
-        iter_num = 0
-        start_time = time.time()
         self.logger.info('Start task: %s' % self.task_name)
-
+        n_arms = len(self.estimator_arms)
         arm_set = list(self.estimator_arms)
+        iter_num = 0
         k = 0
-        r_k = -1
+        # The budget used to identify the best arm.
+        B = int(self.iter_num * self.proportion)
 
         while True:
-            r_k = self.init_r if k == 0 else r_k * self.eta
             n_k = len(arm_set)
+            r_k = int(np.floor(B/(n_k*np.ceil(np.log2(n_arms)))))
+            r_k = max(1, r_k//2)
             if n_k == 1:
                 r_k = (self.iter_num - iter_num)//2 + 1
+
             self.logger.info('Iteration %s: r_k = %d, n_k = %d' % (k, r_k, n_k))
+
             perf = list()
+            es_flag = False
+
             # Pull each arm with r_k units of resource.
             for arm in arm_set:
                 self.logger.info('Optimize arm %s with %d units of budget!' % (arm, r_k))
@@ -75,14 +79,18 @@ class SH_SMBO(BaseOptimizer):
                     self.configs_list.append(runhistory.ids_config[key[0]])
                     self.config_values.append(reward)
 
+                # Determine whether to stop early.
+                if len(arm_set) == 1 and len(runkeys[self.cnts[arm]:]) == 0:
+                    es_flag = True
+
                 # Record the time cost.
-                time_point = time.time() - start_time
+                time_point = time.time() - self.start_time
                 tmp_list = list()
                 tmp_list.append(time_point)
                 for key in reversed(runkeys[self.cnts[arm]+1:]):
                     time_point -= runhistory.data[key][1]
                     tmp_list.append(time_point)
-                time_list.extend(reversed(tmp_list))
+                self.timing_list.extend(reversed(tmp_list))
 
                 iter_num += (len(runkeys) - self.cnts[arm])
                 self.cnts[arm] = len(runhistory.data.keys())
@@ -92,9 +100,9 @@ class SH_SMBO(BaseOptimizer):
             if n_k > 1:
                 indices = np.argsort(perf)[int(np.ceil(n_k/self.eta)):]
                 arm_set = [item for index, item in enumerate(arm_set) if index in indices]
-                self.logger.info('Arms left are: %s' % arm_set)
+                self.logger.info('Arms left: %s' % arm_set)
             k += 1
-            if iter_num >= self.iter_num:
+            if iter_num >= self.iter_num or es_flag:
                 break
 
         # Print the parameters in Thompson sampling.
@@ -105,7 +113,7 @@ class SH_SMBO(BaseOptimizer):
         self.logger.info('SH smbo ==> the size of evaluations: %d' % len(self.configs_list))
         if len(self.configs_list) > 0:
             id = np.argmax(self.config_values)
-            self.logger.info('SH smbo ==> The time points: %s' % time_list)
+            self.logger.info('SH smbo ==> The time points: %s' % self.timing_list)
             self.logger.info('SH smbo ==> The best performance found: %f' % self.config_values[id])
             self.logger.info('SH smbo ==> The best HP found: %s' % self.configs_list[id])
             self.incumbent = self.configs_list[id]
@@ -116,7 +124,7 @@ class SH_SMBO(BaseOptimizer):
             data['ts_rewards'] = self.rewards
             data['configs'] = self.configs_list
             data['perfs'] = self.config_values
-            data['time_cost'] = time_list
+            data['time_cost'] = self.timing_list
             dataset_id = self.result_file.split('_')[0]
             with open('data/%s/' % dataset_id + self.result_file, 'wb') as f:
                 pickle.dump(data, f)

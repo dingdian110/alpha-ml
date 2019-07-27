@@ -79,8 +79,9 @@ def test_cash_module():
                     optimizer, mode = optimizer.split('_')
                     mode = 1 if mode == 'rand' else 2
                 if optimizer.startswith('sh'):
-                    if len(optimizer.split('_')) == 3:
-                        optimizer, eta, r = optimizer.split('_')
+                    if len(optimizer.split('_')) == 2:
+                        optimizer, eta = optimizer.split('_')
+                        eta = float(eta)
                     else:
                         raise ValueError('Wrong SH params!')
                 if optimizer.startswith('rl'):
