@@ -2,7 +2,7 @@ import numpy as np
 
 from alphaml.engine.components.feature_engineering.auto_cross import AutoCross
 from alphaml.engine.components.feature_engineering.selector import RandomForestSelector
-from alphaml.utils.metrics_util import metrics_func
+from alphaml.utils.metrics_util import get_metric
 
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
@@ -53,19 +53,19 @@ class AutoFeature:
 
             lr = LogisticRegression()
 
-            best_perf = metrics_func(self.metrics, generated_train_data, dm.train_y, generated_valid_data, dm.val_y, lr)
+            best_perf = get_metric(self.metrics, generated_train_data, dm.train_y, generated_valid_data, dm.val_y, lr)
             best_k = 0
             for percentile in range(1, 10):
                 k = int((percentile / 10.0) * feature_num)
                 selected_train_data = selector.transform(dm.train_X, k)
                 selected_valid_data = selector.transform(dm.val_X, k)
 
-                perf = metrics_func(metrics=self.metrics,
-                                    x_train=np.hstack((generated_train_data, selected_train_data)),
-                                    y_train=dm.train_y,
-                                    x_valid=np.hstack((generated_valid_data, selected_valid_data)),
-                                    y_valid=dm.val_y,
-                                    model=lr)
+                perf = get_metric(metrics=self.metrics,
+                                  x_train=np.hstack((generated_train_data, selected_train_data)),
+                                  y_train=dm.train_y,
+                                  x_valid=np.hstack((generated_valid_data, selected_valid_data)),
+                                  y_valid=dm.val_y,
+                                  model=lr)
                 if perf <= best_perf:
                     break
                 else:

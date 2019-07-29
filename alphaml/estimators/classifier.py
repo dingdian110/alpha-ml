@@ -4,6 +4,7 @@ from sklearn.metrics import accuracy_score
 from alphaml.estimators.base_estimator import BaseEstimator
 from alphaml.engine.automl import AutoMLClassifier
 from alphaml.engine.components.data_manager import DataManager
+from alphaml.utils.metrics_util import get_metric
 
 
 class Classifier(BaseEstimator):
@@ -54,24 +55,10 @@ class Classifier(BaseEstimator):
         kwargs['task_type'] = task_type
         assert data is not None and isinstance(data, DataManager)
 
-        # Options for multicalss averaging.
+        # Options for multiclass averaging.
         average = 'weighted'
-        if isinstance(metric, str):
-            from sklearn.metrics import f1_score, roc_auc_score, precision_score, recall_score
-            if metric == 'accuracy':
-                metric = accuracy_score
-            elif metric == 'f1':
-                metric = f1_score
-            elif metric == 'auc':
-                metric = roc_auc_score
-            elif metric == 'precision':
-                metric = precision_score
-            elif metric == 'recall':
-                metric = recall_score
-            else:
-                raise ValueError('UNSUPPORTED metric: %s' % metric)
-        if not hasattr(metric, '__call__'):
-            raise ValueError('Input metric is not callable!')
+
+        metric = get_metric(metric)
         kwargs['metric'] = metric
 
         super().fit(data, **kwargs)

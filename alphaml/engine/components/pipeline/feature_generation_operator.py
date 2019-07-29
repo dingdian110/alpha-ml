@@ -8,7 +8,7 @@ from alphaml.engine.components.pipeline.base_operator import Operator, FEATURE_G
 class PolynomialFeaturesOperator(Operator):
     def __init__(self, params=2):
         '''
-        :param params: Stand for degree. Default 2
+        :param params: Stand for degrees. Default 2
         '''
         super().__init__(FEATURE_GENERATION, 'fg_polynomial', params)
         self.polynomialfeatures = PolynomialFeatures(degree=params, interaction_only=True)

@@ -6,7 +6,7 @@ from alphaml.engine.components.data_manager import DataManager
 from alphaml.engine.components.pipeline.base_operator import Operator, FEATURE_SELECTION
 
 
-class KBestSelectorOperator(Operator):
+class NaiveSelectorOperator(Operator):
     def __init__(self, params=[50, 0], metric=None):
         '''
         :param params: A list. The first element stands for k in 'k-best', the second stands for metric function
@@ -37,7 +37,7 @@ class KBestSelectorOperator(Operator):
         '''
         :return: self.result_dm is a new Datamanager with data splited for training and validation
         '''
-        # The input of a KBestSelectorOperator is a list of DataManager
+        # The input of a NaiveSelectorOperator is a list of DataManager
         x = None
         y = None
         for dm in dm_list:

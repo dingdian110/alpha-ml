@@ -2,11 +2,10 @@ import numpy as np
 import math
 
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score
 
 from lightgbm.sklearn import LGBMClassifier
 
-from alphaml.utils.metrics_util import metrics_func
+from alphaml.utils.metrics_util import get_metric
 
 from time import time
 
@@ -18,9 +17,18 @@ class TreeNode:
         self.feature_set = [int(feature) for feature in feature_key.split(',')]
         self.performance = 0.0
 
-    def set_performance(self, metrics, model, train_data, train_label, valid_data, valid_label):
-        self.performance = metrics_func(metrics=metrics, x_train=train_data, y_train=train_label,
-                                        x_valid=valid_data, y_valid=valid_label, model=model)
+    def _get_performance(self, metricstr, train_x, train_y, valid_x, valid_y, model):
+        metric = get_metric(metricstr)
+        model.fit(train_x, train_y)
+        if metricstr == 'auc':
+            pred = model.predict_proba(valid_x)[:, 1]
+        else:
+            pred = model.predict(valid_x)
+        return metric(pred, valid_y)
+
+    def set_performance(self, metricstr, model, train_data, train_label, valid_data, valid_label):
+        self.performance = self._get_performance(metricstr, train_data, train_label,
+                                                 valid_data, valid_label, model=model)
 
     def __lt__(self, other):
         return self.performance < other.performance
@@ -36,7 +44,7 @@ class TreeNode:
 
 
 """
-AutoCross is a feature generated algorithm based on the KDD 2019 paper.
+AutoCross is a feature generation algorithm based on the KDD 2019 paper.
 """
 
 
@@ -45,8 +53,8 @@ class AutoCross:
     def __init__(self, max_iter, metrics, model=LogisticRegression()):
         self.max_iter = max_iter
         self.model = model
-        self.metrics = metrics
-
+        self.metricstr = metrics
+        self.metric = get_metric(metrics)
         self.feature_sets = None
         self.feature_cols = dict()
         self.train_data = None
@@ -60,75 +68,84 @@ class AutoCross:
             feature_val *= x[:, feature_id]
         return feature_val.reshape((-1, 1))
 
+    def _get_performance(self, train_x, train_y, valid_x, valid_y, model):
+        metric = get_metric(self.metricstr)
+        model.fit(train_x, train_y)
+        if self.metricstr == 'auc':
+            pred = model.predict_proba(valid_x)[:, 1]
+        else:
+            pred = model.predict(valid_x)
+        return metric(pred, valid_y)
+
     def _get_lgb_perf(self, train_label, valid_label):
-        return metrics_func(self.metrics,
-                            self.train_data, train_label, self.valid_data, valid_label,
-                            LGBMClassifier())
 
-    def _greedy_search(self, x_train, x_valid, y_train, y_valid):
-        feature_num = x_train.shape[1]
-        self.feature_sets = [[feature_id] for feature_id in range(feature_num)]
-        for feature_id in range(feature_num):
-            self.feature_cols[str(feature_id)] = dict()
-            self.feature_cols[str(feature_id)]["train"] = x_train[:, feature_id]
-            self.feature_cols[str(feature_id)]["valid"] = x_valid[:, feature_id]
+        return self._get_performance(self.train_data, train_label, self.valid_data, valid_label,
+                                     LGBMClassifier())
 
-        for iteration in range(self.max_iter):
-            # generate new features via cross operation
-            best_feature = None
-            best_performance = 0
-            for i in range(len(self.feature_sets)):
-                for j in range(i + 1, len(self.feature_sets)):
-                    set1 = self.feature_sets[i]
-                    set2 = self.feature_sets[j]
-                    cross_set = set1 + set2
-                    feature_key = ','.join(str(feature) for feature in cross_set)
-
-                    if self.feature_cols.get(feature_key) is None:
-                        set1_key = ','.join(str(feature) for feature in set1)
-                        set2_key = ','.join(str(feature) for feature in set2)
-
-                        self.feature_cols[feature_key] = dict()
-                        self.feature_cols[feature_key]["train"] = \
-                            self.feature_cols[set1_key]["train"] * self.feature_cols[set2_key]["train"]
-                        self.feature_cols[feature_key]["valid"] = \
-                            self.feature_cols[set1_key]["valid"] * self.feature_cols[set2_key]["valid"]
-
-                    if self.train_data is None:
-                        train_data = self.feature_cols[feature_key]["train"].reshape((-1, 1))
-                    else:
-                        train_data = \
-                            np.hstack((self.train_data, self.feature_cols[feature_key]["train"].reshape((-1, 1))))
-
-                    if self.valid_data is None:
-                        valid_data = self.feature_cols[feature_key]["valid"].reshape((-1, 1))
-                    else:
-                        valid_data = \
-                            np.hstack((self.valid_data, self.feature_cols[feature_key]["valid"].reshape((-1, 1))))
-
-                    self.model.fit(train_data, y_train)
-                    y_pred = self.model.predict(valid_data)
-                    perf = accuracy_score(y_valid, y_pred)
-
-                    if perf > best_performance:
-                        best_feature = feature_key
-                        best_performance = perf
-
-            best_feature_list = [int(feature) for feature in best_feature.split(',')]
-            self.feature_sets.append(best_feature_list)
-            if self.train_data is None:
-                self.train_data = self.feature_cols[best_feature]["train"].reshape(-1, 1)
-            else:
-                self.train_data = \
-                    np.hstack((self.train_data, self.feature_cols[best_feature]["train"].reshape(-1, 1)))
-
-            if self.valid_data is None:
-                self.valid_data = self.feature_cols[best_feature]["valid"].reshape(-1, 1)
-            else:
-                self.valid_data = \
-                    np.hstack((self.valid_data, self.feature_cols[best_feature]["valid"].reshape(-1, 1)))
-
-            print("iteration:", iteration, "performance:", best_performance)
+    # def _greedy_search(self, x_train, x_valid, y_train, y_valid):
+    #     feature_num = x_train.shape[1]
+    #     self.feature_sets = [[feature_id] for feature_id in range(feature_num)]
+    #     for feature_id in range(feature_num):
+    #         self.feature_cols[str(feature_id)] = dict()
+    #         self.feature_cols[str(feature_id)]["train"] = x_train[:, feature_id]
+    #         self.feature_cols[str(feature_id)]["valid"] = x_valid[:, feature_id]
+    #
+    #     for iteration in range(self.max_iter):
+    #         # generate new features via cross operation
+    #         best_feature = None
+    #         best_performance = 0
+    #         for i in range(len(self.feature_sets)):
+    #             for j in range(i + 1, len(self.feature_sets)):
+    #                 set1 = self.feature_sets[i]
+    #                 set2 = self.feature_sets[j]
+    #                 cross_set = set1 + set2
+    #                 feature_key = ','.join(str(feature) for feature in cross_set)
+    #
+    #                 if self.feature_cols.get(feature_key) is None:
+    #                     set1_key = ','.join(str(feature) for feature in set1)
+    #                     set2_key = ','.join(str(feature) for feature in set2)
+    #
+    #                     self.feature_cols[feature_key] = dict()
+    #                     self.feature_cols[feature_key]["train"] = \
+    #                         self.feature_cols[set1_key]["train"] * self.feature_cols[set2_key]["train"]
+    #                     self.feature_cols[feature_key]["valid"] = \
+    #                         self.feature_cols[set1_key]["valid"] * self.feature_cols[set2_key]["valid"]
+    #
+    #                 if self.train_data is None:
+    #                     train_data = self.feature_cols[feature_key]["train"].reshape((-1, 1))
+    #                 else:
+    #                     train_data = \
+    #                         np.hstack((self.train_data, self.feature_cols[feature_key]["train"].reshape((-1, 1))))
+    #
+    #                 if self.valid_data is None:
+    #                     valid_data = self.feature_cols[feature_key]["valid"].reshape((-1, 1))
+    #                 else:
+    #                     valid_data = \
+    #                         np.hstack((self.valid_data, self.feature_cols[feature_key]["valid"].reshape((-1, 1))))
+    #
+    #                 self.model.fit(train_data, y_train)
+    #                 y_pred = self.model.predict(valid_data)
+    #                 perf = self.metric(y_valid, y_pred)
+    #
+    #                 if perf > best_performance:
+    #                     best_feature = feature_key
+    #                     best_performance = perf
+    #
+    #         best_feature_list = [int(feature) for feature in best_feature.split(',')]
+    #         self.feature_sets.append(best_feature_list)
+    #         if self.train_data is None:
+    #             self.train_data = self.feature_cols[best_feature]["train"].reshape(-1, 1)
+    #         else:
+    #             self.train_data = \
+    #                 np.hstack((self.train_data, self.feature_cols[best_feature]["train"].reshape(-1, 1)))
+    #
+    #         if self.valid_data is None:
+    #             self.valid_data = self.feature_cols[best_feature]["valid"].reshape(-1, 1)
+    #         else:
+    #             self.valid_data = \
+    #                 np.hstack((self.valid_data, self.feature_cols[best_feature]["valid"].reshape(-1, 1)))
+    #
+    #         print("iteration:", iteration, "performance:", best_performance)
 
     def _successive_halving(self, x_train, x_valid, y_train, y_valid):
         feature_num = x_train.shape[1]
@@ -188,7 +205,7 @@ class AutoCross:
                                        self.feature_cols[node.feature_key]["valid"].reshape((-1, 1))))
 
                     node.set_performance(model=self.model, train_data=train_data, train_label=y_train[n_samples],
-                                         valid_data=valid_data, valid_label=y_valid)
+                                         valid_data=valid_data, valid_label=y_valid, metricstr=self.metricstr)
                 nodes.sort(reverse=True)
                 if int(n / 2) >= 1:
                     nodes = nodes[:int(n / 2)]
@@ -212,9 +229,10 @@ class AutoCross:
 
             self.model.fit(np.hstack((x_train, self.train_data)), y_train)
             y_pred = self.model.predict(np.hstack((x_valid, self.valid_data)))
-            perf = accuracy_score(y_valid, y_pred)
+            perf = self.metric(y_valid, y_pred)
             # if iteration % 5 == 0:
-            print("iteration:", iteration, " performance:", best_node.performance, "all data perf:", perf," time:", time() - t0)
+            print("iteration:", iteration, " performance:", best_node.performance, "all data perf:", perf, " time:",
+                  time() - t0)
 
     def _hyperband(self, x_train, x_valid, y_train, y_valid, eta=3):
         feature_num = x_train.shape[1]
@@ -270,7 +288,7 @@ class AutoCross:
                                            self._get_cross_feature_val(node.feature_set, x_valid)))
 
                         node.set_performance(model=self.model, train_data=train_data, train_label=y_train[n_samples],
-                                             valid_data=valid_data, valid_label=y_valid, metrics=self.metrics)
+                                             valid_data=valid_data, valid_label=y_valid, metricstr=self.metricstr)
 
                     nodes.sort(reverse=True)
                     n = math.ceil(n / eta)

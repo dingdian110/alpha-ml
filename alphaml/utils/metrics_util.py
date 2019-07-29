@@ -1,18 +1,38 @@
-from sklearn.metrics import roc_auc_score, accuracy_score, mean_squared_error
+def get_metric(metricstr):
+    # Metrics for classification
+    if metricstr in ["accuracy", "acc"]:
+        from sklearn.metrics import accuracy_score
+        return accuracy_score
+    elif metricstr == 'f1':
+        from sklearn.metrics import f1_score
+        return f1_score
+    elif metricstr == 'precision':
+        from sklearn.metrics import precision_score
+        return precision_score
+    elif metricstr == 'recall':
+        from sklearn.metrics import recall_score
+        return recall_score
+    elif metricstr == "auc":
+        from sklearn.metrics import roc_auc_score
+        return roc_auc_score
 
-
-def metrics_func(metrics, x_train, y_train, x_valid, y_valid, model):
-    if metrics == "accuracy":
-        model.fit(x_train, y_train)
-        y_pred = model.predict(x_valid)
-        return accuracy_score(y_valid, y_pred)
-    elif metrics == "auc":
-        model.fit(x_train, y_train)
-        y_pred = model.predict_proba(x_valid)[:, 1]
-        return roc_auc_score(y_valid, y_pred)
-    elif metrics == "mse":
-        model.fit(x_train, y_train)
-        y_pred = model.predict(x_valid)
-        return mean_squared_error(y_valid, y_pred)
+    # Metrics for regression
+    elif metricstr in ["mean_squared_error", "mse"]:
+        from sklearn.metrics import mean_squared_error
+        return mean_squared_error
+    elif metricstr in ['mean_squared_log_error', "msle"]:
+        from sklearn.metrics import mean_squared_log_error
+        return mean_squared_log_error
+    elif metricstr == "evs":
+        from sklearn.metrics import explained_variance_score
+        return explained_variance_score
+    elif metricstr == "r2":
+        from sklearn.metrics import r2_score
+        return r2_score
+    elif metricstr in ["mean_absolute_error", "mae"]:
+        from sklearn.metrics import mean_absolute_error
+        return mean_absolute_error
+    elif callable(metricstr):
+        return metricstr
     else:
-        raise ValueError()
+        raise ValueError("Expected valid metric string like 'acc' or callable metric function!")

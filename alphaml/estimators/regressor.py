@@ -4,6 +4,7 @@ from sklearn.metrics import mean_squared_error
 from alphaml.estimators.base_estimator import BaseEstimator
 from alphaml.engine.automl import AutoMLRegressor
 from alphaml.engine.components.data_manager import DataManager
+from alphaml.utils.metrics_util import get_metric
 
 
 class Regressor(BaseEstimator):
@@ -28,8 +29,6 @@ class Regressor(BaseEstimator):
         self
 
         """
-
-        metric = mean_squared_error if 'metric' not in kwargs else kwargs['metric']
         # feat_type = None if 'feat_type' not in kwargs else kwargs['feat_type']
         # dataset_name = None if 'dataset_name' not in kwargs else kwargs['dataset_name']
         # # The number of evaluations.
@@ -43,22 +42,8 @@ class Regressor(BaseEstimator):
         kwargs['task_type'] = task_type
         assert data is not None and isinstance(data, DataManager)
 
-        if isinstance(metric, str):
-            from sklearn.metrics import mean_absolute_error, explained_variance_score, r2_score, mean_squared_log_error
-            if metric == 'mse':
-                metric = mean_squared_error
-            elif metric == 'msle':
-                metric = mean_squared_log_error
-            elif metric == 'mae':
-                metric = mean_absolute_error
-            elif metric == 'evs':
-                metric = explained_variance_score
-            elif metric == 'r2':
-                metric = r2_score
-            else:
-                raise ValueError('UNSUPPORTED metric: %s' % metric)
-        if not hasattr(metric, '__call__'):
-            raise ValueError('Input metric is not callable!')
+        metric = mean_squared_error if 'metric' not in kwargs else kwargs['metric']
+        metric = get_metric(metric)
         kwargs['metric'] = metric
 
         super().fit(data, **kwargs)
