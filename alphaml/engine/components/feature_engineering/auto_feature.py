@@ -28,7 +28,18 @@ class AutoFeature:
         self.solver.fit(dm.train_X, dm.val_X, dm.train_y, dm.val_y, dm.test_X)
 
     def transform(self, dm):
+        if self.solver is None:
+            raise ValueError("The AutoFeature has not been fitted!!!")
+        dm.train_X = self.solver.transform(dm.train_X)
+        dm.val_X = self.solver.transform(dm.val_X)
+        if dm.test_X is not None:
+            dm.test_X = self.solver.transform(dm.test_X)
+        return dm
+
+    def _selection_process(self, dm):
         generated_train_data, generated_valid_data, generated_test_data = self.solver.transform()
+        features = np.load("features_27.npz")
+        generated_train_data, generated_valid_data, generated_test_data = features["train"], features["valid"], None
         feature_num = dm.train_X.shape[1]
 
         if feature_num < 20:
@@ -71,5 +82,3 @@ class AutoFeature:
                 dm.train_X = generated_train_data
                 dm.val_X = generated_valid_data
                 dm.test_X = generated_test_data
-
-        return dm
