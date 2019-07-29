@@ -15,6 +15,7 @@ class TreeNode:
 
     def __init__(self, feature_key):
         self.feature_key = feature_key
+        self.feature_set = [int(feature) for feature in feature_key.split(',')]
         self.performance = 0.0
 
     def set_performance(self, metrics, model, train_data, train_label, valid_data, valid_label):
@@ -52,8 +53,12 @@ class AutoCross:
         self.valid_data = None
         self.test_data = None
 
-    def _get_node(self):
-        pass
+    def _get_cross_feature_val(self, feature_set, x):
+        assert len(feature_set) >= 1
+        feature_val = np.ones(len(x), dtype=np.float32)
+        for feature_id in feature_set:
+            feature_val *= x[:, feature_id]
+        return feature_val.reshape((-1, 1))
 
     def _get_lgb_perf(self, train_label, valid_label):
         return metrics_func(self.metrics,
@@ -211,15 +216,9 @@ class AutoCross:
             # if iteration % 5 == 0:
             print("iteration:", iteration, " performance:", best_node.performance, "all data perf:", perf," time:", time() - t0)
 
-    def _hyperband(self, x_train, x_valid, y_train, y_valid, x_test, eta=3):
+    def _hyperband(self, x_train, x_valid, y_train, y_valid, eta=3):
         feature_num = x_train.shape[1]
         self.feature_sets = [[feature_id] for feature_id in range(feature_num)]
-        for feature_id in range(feature_num):
-            self.feature_cols[str(feature_id)] = dict()
-            self.feature_cols[str(feature_id)]["train"] = x_train[:, feature_id]
-            self.feature_cols[str(feature_id)]["valid"] = x_valid[:, feature_id]
-            if x_test is not None:
-                self.feature_cols[str(feature_id)]["test"] = x_test[:, feature_id]
 
         global_best_perf = -1
         early_stopping_cnt = 0
@@ -249,19 +248,6 @@ class AutoCross:
                         continue
                     subset_records.add(feature_key)
 
-                    if self.feature_cols.get(feature_key) is None:
-                        set1_key = ','.join(str(feature) for feature in set1)
-                        set2_key = ','.join(str(feature) for feature in set2)
-
-                        self.feature_cols[feature_key] = dict()
-                        self.feature_cols[feature_key]["train"] = \
-                            self.feature_cols[set1_key]["train"] * self.feature_cols[set2_key]["train"]
-                        self.feature_cols[feature_key]["valid"] = \
-                            self.feature_cols[set1_key]["valid"] * self.feature_cols[set2_key]["valid"]
-                        if x_test is not None:
-                            self.feature_cols[feature_key]["test"] = \
-                                self.feature_cols[set1_key]["test"] * self.feature_cols[set2_key]["test"]
-
                     node = TreeNode(feature_key=feature_key)
                     nodes.append(node)
 
@@ -270,22 +256,22 @@ class AutoCross:
                     n_samples = np.random.choice(R, r, replace=False)
                     for node in nodes:
                         if self.train_data is None:
-                            train_data = self.feature_cols[node.feature_key]["train"].reshape((-1, 1))[n_samples]
+                            train_data = self._get_cross_feature_val(node.feature_set, x_train)[n_samples]
                         else:
                             train_data = \
                                 np.hstack((self.train_data,
-                                           self.feature_cols[node.feature_key]["train"].reshape((-1, 1))))[n_samples]
+                                           self._get_cross_feature_val(node.feature_set, x_train)))[n_samples]
 
                         if self.valid_data is None:
-                            valid_data = self.feature_cols[node.feature_key]["valid"].reshape((-1, 1))
+                            valid_data = self._get_cross_feature_val(node.feature_set, x_valid)
                         else:
                             valid_data = \
                                 np.hstack((self.valid_data,
-                                           self.feature_cols[node.feature_key]["valid"].reshape((-1, 1))))
+                                           self._get_cross_feature_val(node.feature_set, x_valid)))
 
                         node.set_performance(model=self.model, train_data=train_data, train_label=y_train[n_samples],
                                              valid_data=valid_data, valid_label=y_valid, metrics=self.metrics)
-                    # print("n=", n, "r=", r)
+
                     nodes.sort(reverse=True)
                     n = math.ceil(n / eta)
                     r = int(r * eta)
@@ -309,29 +295,21 @@ class AutoCross:
                 # update train_data and valid_data
                 best_feature_list = [int(feature) for feature in best_node.feature_key.split(',')]
                 self.feature_sets.append(best_feature_list)
+                new_train_featrue = self._get_cross_feature_val(best_node.feature_set, x_train)
+                new_valid_feature = self._get_cross_feature_val(best_node.feature_set, x_valid)
                 if self.train_data is None:
-                    self.train_data = self.feature_cols[best_node.feature_key]["train"].reshape(-1, 1)
+                    self.train_data = new_train_featrue
                 else:
-                    self.train_data = \
-                        np.hstack((self.train_data, self.feature_cols[best_node.feature_key]["train"].reshape(-1, 1)))
+                    self.train_data = np.hstack((self.train_data, new_train_featrue))
 
                 if self.valid_data is None:
-                    self.valid_data = self.feature_cols[best_node.feature_key]["valid"].reshape(-1, 1)
+                    self.valid_data = new_valid_feature
                 else:
-                    self.valid_data = \
-                        np.hstack((self.valid_data, self.feature_cols[best_node.feature_key]["valid"].reshape(-1, 1)))
-
-                if x_test is not None:
-                    if self.test_data is None:
-                        self.test_data = self.feature_cols[best_node.feature_key]["test"].reshape(-1, 1)
-                    else:
-                        self.test_data = \
-                            np.hstack(
-                                (self.test_data, self.feature_cols[best_node.feature_key]["test"].reshape(-1, 1)))
+                    self.valid_data = np.hstack((self.valid_data, new_valid_feature))
 
             else:
                 early_stopping_cnt += 1
-                if early_stopping_cnt == 5:
+                if early_stopping_cnt == 10:
                     print("no improvement for 5 iterations..........")
                     break
 
@@ -340,8 +318,13 @@ class AutoCross:
             np.savez("features_" + str(iteration), train=self.train_data, valid=self.valid_data, test=self.test_data)
 
     def fit(self, x_train, x_valid, y_train, y_valid, x_test):
-        self._hyperband(x_train=x_train, x_valid=x_valid, y_train=y_train, y_valid=y_valid, x_test=x_test)
+        self._hyperband(x_train=x_train, x_valid=x_valid, y_train=y_train, y_valid=y_valid)
 
-    def transform(self):
-        # generated_features = self
-        return self.train_data, self.valid_data, self.test_data
+    def transform(self, x):
+        generated_features = None
+        for feature_set in self.feature_sets:
+            if generated_features is None:
+                generated_features = self._get_cross_feature_val(feature_set, x)
+            else:
+                generated_features = np.hstack((generated_features, self._get_cross_feature_val(feature_set, x)))
+        return generated_features
