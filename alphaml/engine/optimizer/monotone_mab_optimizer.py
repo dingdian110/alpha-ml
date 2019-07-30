@@ -21,6 +21,7 @@ class MONO_MAB_SMBO(BaseOptimizer):
             self.result_file = self.task_name + '_mm_bandit_%d_smac.data' % self.mode
         else:
             self.result_file = self.task_name + '_mm_bandit_%d_%d_smac.data' % (self.mode, self.B)
+            self.iter_num = 100000
 
         self.smac_containers = dict()
         self.cnts = dict()
