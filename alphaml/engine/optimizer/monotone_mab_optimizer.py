@@ -150,6 +150,10 @@ class MONO_MAB_SMBO(BaseOptimizer):
             if iter_num >= self.iter_num or es_flag:
                 break
 
+            # Check the budget.
+            if self.B is not None and (time.time() - self.start_time >= self.B):
+                break
+
         # Print the parameters in Thompson sampling.
         self.logger.info('ARM counts: %s' % self.cnts)
         self.logger.info('ARM rewards: %s' % self.rewards)
