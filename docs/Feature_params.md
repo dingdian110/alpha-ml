@@ -1,6 +1,17 @@
-# Feature Engineering Hyperparameters
-The operators are under `alphaml/engine/components/pipeline`
+# Feature Engineering Operators
+All the operators are under directory `alphaml/engine/components/pipeline`  
+Each operator has a method *operate(dm_list:List,  phase:{'train','test'})*
+1. Parameter *dm_list*: A list of inputs.  
+For InputerOperator, it contains a single DataFrame.  
+For Data Preprocessing Operators and Feature Generation Operators, it contains a single DataManager.  
+For Feature Selection Operators, it contains at least one DataManager.
+2. The parameter *phase*: A string from {'train','test'}.  
+If set to 'train', the operator will fit the inner operator(or estimator) and transform the inputs.
+If set to 'test', the operator will transfrom the inputs according to the fitted inner operator.
+3. The method *operate* returns a DataManager
+
 ## Data Preprocessing Operators
+- **InputerOperator**: *params* None
 - **LabelEncoderOperator:** *params* None
 - **FeatureEncoderOperator:** *params* {0,1}  
     - 0 for One-hot Encoder
@@ -15,10 +26,14 @@ The operators are under `alphaml/engine/components/pipeline`
     
 ## Feature Generation Operators
 - **PolynomialFeaturesOperator:** *params* int
-    - *params* stand for degrees
+    - *params* stands for degrees
+
+- **PCAOperator** *params* int
+    - *params* stands for n_components (the number of features needed)
     
-- **AutoCrossOperator:** *params* int
-    - *params* stand for degrees
+- **AutoCrossOperator:** *params* int ***Not yet finished***
+
+
 
 ## Feature Selection Operators
 - **NaiveSelectorOperator:** *params* list [int,  {0,1,2,3,4}]

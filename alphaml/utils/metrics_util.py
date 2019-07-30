@@ -35,4 +35,4 @@ def get_metric(metricstr):
     elif callable(metricstr):
         return metricstr
     else:
-        raise ValueError("Expected valid metric string like 'acc' or callable metric function!")
+        raise ValueError("Given", metricstr, ". Expected valid metric string like 'acc' or callable metric function!")

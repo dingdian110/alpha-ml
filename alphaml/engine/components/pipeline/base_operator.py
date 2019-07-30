@@ -6,6 +6,7 @@ DATA_PERPROCESSING = 0
 FEATURE_GENERATION = 1
 FEATURE_SELECTION = 2
 
+
 class Operator(object, metaclass=abc.ABCMeta):
     def __init__(self, type, operator_name, params=None):
         self.type = type  # type: "data_preprocessing", "feature_generation","feature_selection"
@@ -13,12 +14,15 @@ class Operator(object, metaclass=abc.ABCMeta):
         self.params = params
         self.id = None
         self.origins = None
-        self.result_dm = None
 
     @abc.abstractmethod
-    def operate(self, dm_list: typing.List):
+    def operate(self, dm_list: typing.List, phase='train'):
         # After this operator, gc the result of operator.
-        pass
+        raise NotImplementedError()
+
+    def check_phase(self, phase):
+        if phase not in ['train', 'test']:
+            raise ValueError("Invalid phase. Expected 'train' or 'test'!")
 
 
 class EmptyOperator(Operator):

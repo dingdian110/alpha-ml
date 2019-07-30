@@ -31,26 +31,35 @@ class NaiveSelectorOperator(Operator):
             raise ValueError("Expected callable metric function for K-best Selector operator!")
         else:
             self.metric = metric
-        self.k_best = k_best
 
-    def operate(self, dm_list: typing.List):
-        '''
-        :return: self.result_dm is a new Datamanager with data splited for training and validation
-        '''
+        self.k_best = k_best
+        self.selector = SelectKBest(self.metric, k_best)
+
+    def operate(self, dm_list: typing.List, phase='train'):
         # The input of a NaiveSelectorOperator is a list of DataManager
+        self.check_phase(phase)
+
         x = None
         y = None
-        for dm in dm_list:
-            if x is None:
-                x = dm.train_X
-                y = dm.train_y
-            else:
-                x = np.hstack((x, dm.train_X))
-        if x.shape[1] < self.k_best:
-            self.k_best = x.shape[1]
-        self.selector = SelectKBest(self.metric, self.k_best)
-        x = self.selector.fit_transform(x, y)
-        self.result_dm = DataManager(x, y)
+        if phase == 'train':
+            for dm in dm_list:
+                if x is None:
+                    x = dm.train_X
+                    y = dm.train_y
+                else:
+                    x = np.hstack((x, dm.train_X))
+            x = self.selector.fit_transform(x, y)
+            dm = DataManager(x, y, spilt=False)
+        else:
+            for dm in dm_list:
+                if x is None:
+                    x = dm.test_X
+                else:
+                    x = np.hstack((x, dm.test_X))
+            x = self.selector.transform(x)
+            dm = DataManager()
+            dm.test_X = x
+        return dm
 
 
 class MLSelectorOperator(Operator):
@@ -67,6 +76,7 @@ class MLSelectorOperator(Operator):
                         The three element stands for machine learning models:
                         0 for RandomForest, 1 for LassoRegression
         '''
+        super().__init__(FEATURE_SELECTION, 'fs,mlselector', params)
         self.kbest, self.task, self.model = params
         if self.model == self.RANDOM_FOREST:
             if self.task == self.CLASSIFICATION:
@@ -84,19 +94,27 @@ class MLSelectorOperator(Operator):
                 self.selector = Lasso()
         self.sorted_features = None
 
-    def operate(self, dm_list: typing.List):
+    def operate(self, dm_list: typing.List, phase='train'):
         '''
         :return: self.result_dm is a new Datamanager with data splited for training and validation
         '''
         x = None
         y = None
-        for dm in dm_list:
-            if x is None:
-                x = dm.train_X
-                y = dm.train_y
-            else:
-                x = np.hstack((x, dm.train_X))
-        self.selector.fit(x, y)
+        if phase == 'train':
+            for dm in dm_list:
+                if x is None:
+                    x = dm.train_X
+                    y = dm.train_y
+                else:
+                    x = np.hstack((x, dm.train_X))
+            self.selector.fit(x, y)
+        else:
+            for dm in dm_list:
+                if x is None:
+                    x = dm.test_X
+                else:
+                    x = np.hstack((x, dm.test_X))
+
         if self.model == self.RANDOM_FOREST:
             self.sorted_features = np.argsort(self.selector.feature_importances_)[::-1]
         elif self.model == self.LASSO_REGRESSION:
@@ -106,4 +124,10 @@ class MLSelectorOperator(Operator):
                 importances = np.linalg.norm(self.selector.coef_, axis=0, ord=1)
                 self.sorted_features = np.argsort(importances)[::-1]
         x = x[:, self.sorted_features[:self.kbest]]
-        self.result_dm = DataManager(x, y)
+        dm = DataManager()
+        if phase == 'train':
+            dm.train_X = x
+            dm.train_y = y
+        else:
+            dm.test_X = x
+        return dm

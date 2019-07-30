@@ -234,7 +234,7 @@ class AutoCross:
             print("iteration:", iteration, " performance:", best_node.performance, "all data perf:", perf, " time:",
                   time() - t0)
 
-    def _hyperband(self, x_train, x_valid, y_train, y_valid, eta=3):
+    def _hyperband(self, x_train, x_valid, y_train, y_valid, eta=3, early_stop_iter=10):
         feature_num = x_train.shape[1]
         self.feature_sets = [[feature_id] for feature_id in range(feature_num)]
 
@@ -324,18 +324,17 @@ class AutoCross:
                     self.valid_data = new_valid_feature
                 else:
                     self.valid_data = np.hstack((self.valid_data, new_valid_feature))
-
             else:
                 early_stopping_cnt += 1
-                if early_stopping_cnt == 10:
-                    print("no improvement for 5 iterations..........")
+                if early_stopping_cnt == early_stop_iter:
+                    print("no improvement for", early_stopping_cnt, "iterations..........")
                     break
 
             print("generate feature:", str(iteration), "global performance:", global_best_perf)
 
             np.savez("features_" + str(iteration), train=self.train_data, valid=self.valid_data, test=self.test_data)
 
-    def fit(self, x_train, x_valid, y_train, y_valid, x_test):
+    def fit(self, x_train, x_valid, y_train, y_valid):
         self._hyperband(x_train=x_train, x_valid=x_valid, y_train=y_train, y_valid=y_valid)
 
     def transform(self, x):

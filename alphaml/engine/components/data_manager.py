@@ -10,7 +10,7 @@ _COL_TYPE = ["Float", "Discrete", "Categorical", "Text", "One-Hot"]
 
 class DataManager(object):
 
-    def __init__(self, train_X=None, train_y=None, val_X=None, val_y=None, val_size=0.2, stratify=True,
+    def __init__(self, train_X=None, train_y=None, val_X=None, val_y=None, val_size=0.2, stratify=True, spilt=True,
                  random_state=42):
         self.train_X = np.array(train_X)
         self.train_y = np.array(train_y)
@@ -21,7 +21,7 @@ class DataManager(object):
         self.stratify = stratify
         self.feature_types = None
 
-        if train_X is not None and train_y is not None and (self.val_X is None or self.val_y is None):
+        if spilt and train_X is not None and train_y is not None and (self.val_X is None or self.val_y is None):
             self.split(val_size, random_state)
 
         self.test_X = None

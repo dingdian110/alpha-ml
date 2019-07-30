@@ -5,7 +5,6 @@ from alphaml.engine.components.feature_engineering.selector import RandomForestS
 from alphaml.utils.metrics_util import get_metric
 
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score
 
 
 class AutoFeature:
