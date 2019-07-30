@@ -99,11 +99,12 @@ class MONO_MAB_SMBO(BaseOptimizer):
                 iter_num += (len(runkeys) - self.cnts[arm])
                 self.cnts[arm] = len(runhistory.data.keys())
 
-                eval_cost = self.runtime_est[arm] / self.cnts[arm]
-                eval_cnt_left = (self.start_time + self.B - time.time()) / eval_cost
-                eval_cnt_left //= 2
-                eval_cnt_left = max(1, eval_cnt_left)
-                self.logger.info('%s: Look Forward %d Steps' % (arm.upper(), eval_cnt_left))
+                if self.mode == 4:
+                    eval_cost = self.runtime_est[arm] / self.cnts[arm]
+                    eval_cnt_left = (self.start_time + self.B - time.time()) / eval_cost
+                    eval_cnt_left //= 2
+                    eval_cnt_left = max(1, eval_cnt_left)
+                    self.logger.info('%s: Look Forward %d Steps' % (arm.upper(), eval_cnt_left))
 
                 acc_reward = self.updated_rewards[arm]
                 if self.cnts[arm] > 2:
