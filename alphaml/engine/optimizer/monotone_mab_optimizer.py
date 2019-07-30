@@ -15,8 +15,12 @@ class MONO_MAB_SMBO(BaseOptimizer):
         self.iter_num = int(1e10) if ('runcount' not in kwargs or kwargs['runcount'] is None) else kwargs['runcount']
         self.estimator_arms = self.config_space.get_hyperparameter('estimator').choices
         self.mode = kwargs['update_mode'] if 'update_mode' in kwargs else 2
+        self.B = None if kwargs['r'] < 10 else kwargs['r']
         self.task_name = kwargs['task_name'] if 'task_name' in kwargs else 'default'
-        self.result_file = self.task_name + '_mm_bandit_%d_smac.data' % self.mode
+        if self.B is None:
+            self.result_file = self.task_name + '_mm_bandit_%d_smac.data' % self.mode
+        else:
+            self.result_file = self.task_name + '_mm_bandit_%d_%d_smac.data' % (self.mode, self.B)
 
         self.smac_containers = dict()
         self.cnts = dict()
@@ -24,6 +28,8 @@ class MONO_MAB_SMBO(BaseOptimizer):
         self.updated_rewards = dict()
         self.configs_list = list()
         self.config_values = list()
+        # Runtime estimate for each arm.
+        self.runtime_est = dict()
 
         for estimator in self.estimator_arms:
             # Scenario object
@@ -43,6 +49,7 @@ class MONO_MAB_SMBO(BaseOptimizer):
             self.cnts[estimator] = 0
             self.rewards[estimator] = list()
             self.updated_rewards[estimator] = list()
+            self.runtime_est[estimator] = 0.
 
     def run(self):
 
@@ -62,7 +69,9 @@ class MONO_MAB_SMBO(BaseOptimizer):
 
             for arm in arm_set:
                 self.logger.info('Choosing to optimize %s arm' % arm)
+                iter_start_time = time.time()
                 self.smac_containers[arm].iterate()
+                self.runtime_est[arm] += (time.time() - iter_start_time)
                 runhistory = self.smac_containers[arm].solver.runhistory
 
                 # Observe the reward.
@@ -90,6 +99,12 @@ class MONO_MAB_SMBO(BaseOptimizer):
                 iter_num += (len(runkeys) - self.cnts[arm])
                 self.cnts[arm] = len(runhistory.data.keys())
 
+                eval_cost = self.runtime_est[arm] / self.cnts[arm]
+                eval_cnt_left = (self.start_time + self.B - time.time()) / eval_cost
+                eval_cnt_left //= 2
+                eval_cnt_left = max(1, eval_cnt_left)
+                self.logger.info('%s: Look Forward %d Steps' % (arm.upper(), eval_cnt_left))
+
                 acc_reward = self.updated_rewards[arm]
                 if self.cnts[arm] > 2:
                     if len(acc_reward) >= duration:
@@ -108,6 +123,9 @@ class MONO_MAB_SMBO(BaseOptimizer):
                         q.append(acc_reward[-1])
                     elif self.mode == 3:
                         p.append(min(1., acc_reward[-1] + estimated_slope * (T - len(self.config_values))))
+                        q.append(acc_reward[-1])
+                    elif self.mode == 4:
+                        p.append(min(1., acc_reward[-1] + estimated_slope * eval_cnt_left))
                         q.append(acc_reward[-1])
                     else:
                         raise ValueError('Invalid mode: %d.' % self.mode)

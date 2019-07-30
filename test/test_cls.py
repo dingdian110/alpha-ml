@@ -113,9 +113,9 @@ def test_cash_module():
 
                 if optimizer.startswith('mono_smbo'):
                     mode = 2
-                    if len(optimizer.split('_')) == 3:
-                        _, _, mode = optimizer.split('_')
-                        mode = int(mode)
+                    if len(optimizer.split('_')) == 4:
+                        _, _, mode, r = optimizer.split('_')
+                        mode, r = int(mode), int(r)
                         optimizer = 'mono_smbo'
 
                 print('Test %s optimizer => %s' % (optimizer, task_name))
