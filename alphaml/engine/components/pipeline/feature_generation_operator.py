@@ -55,10 +55,11 @@ class AutoCrossOperator(Operator):
 
         if phase == 'train':
             from sklearn.model_selection import train_test_split
-            train_x, val_x, train_y, val_y = train_test_split(dm.train_X, dm.train_y, test_size=0.2, stratify=train_y)
+            train_x, val_x, train_y, val_y = train_test_split(dm.train_X, dm.train_y, test_size=0.2,
+                                                              stratify=dm.train_y)
             x = dm.train_X
             self.autocross.fit(train_x[:, numerical_index], val_x[:, numerical_index], train_y, val_y)
-            dm.train_X = self.autocross.transform(x)
+            dm.train_X = self.autocross.transform(x[:, numerical_index])
 
         else:
             x = dm.test_X
