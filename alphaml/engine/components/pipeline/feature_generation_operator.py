@@ -49,21 +49,21 @@ class AutoCrossOperator(Operator):
         assert isinstance(dm, DataManager)
         self.check_phase(phase)
 
-        feature_types = dm.feature_types
-        numerical_index = [i for i in range(len(feature_types))
-                           if feature_types[i] == "Float" or feature_types[i] == "Discrete"]
+        # feature_types = dm.feature_types
+        # numerical_index = [i for i in range(len(feature_types))
+        #                    if feature_types[i] == "Float" or feature_types[i] == "Discrete"]
 
         if phase == 'train':
             from sklearn.model_selection import train_test_split
             train_x, val_x, train_y, val_y = train_test_split(dm.train_X, dm.train_y, test_size=0.2,
                                                               stratify=dm.train_y)
             x = dm.train_X
-            self.autocross.fit(train_x[:, numerical_index], val_x[:, numerical_index], train_y, val_y)
-            dm.train_X = self.autocross.transform(x[:, numerical_index])
+            self.autocross.fit(train_x, val_x, train_y, val_y)
+            dm.train_X = self.autocross.transform(x)
 
         else:
             x = dm.test_X
-            dm.test_X = self.autocross.transform(x[:, numerical_index])
+            dm.test_X = self.autocross.transform(x)
         return dm
 
 

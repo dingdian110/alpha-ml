@@ -31,7 +31,9 @@ If set to 'test', the operator will transfrom the inputs according to the fitted
 - **PCAOperator** *params* int
     - *params* stands for n_components (the number of features needed)
     
-- **AutoCrossOperator:** *params* int ***Not yet finished***
+- **AutoCrossOperator:** *params* int
+    - *params* stands for max_iteration (the number of features needed). 
+    - Warning: The number of new features may be less than *params* due to early stop
 
 
 

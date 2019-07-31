@@ -92,11 +92,11 @@ def test_pca():
     return trdm, tsdm
 
 
-def test_ac():
+def test_autocross():
     print("Test AutoCross")
     from alphaml.engine.components.pipeline.feature_generation_operator import AutoCrossOperator
     trdm, tsdm = test_featureencoder()
-    acop = AutoCrossOperator(3, 'acc')
+    acop = AutoCrossOperator(2, 'acc')
     trdm = acop.operate([trdm], phase='train')
     print("New feature dimension:", trdm.train_X.shape[1])
     print(trdm.train_X)

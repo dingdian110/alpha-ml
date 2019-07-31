@@ -50,7 +50,7 @@ AutoCross is a feature generation algorithm based on the KDD 2019 paper.
 
 class AutoCross:
 
-    def __init__(self, max_iter, metrics, model=LogisticRegression()):
+    def __init__(self, max_iter, metrics, model=LogisticRegression(multi_class='auto', solver='liblinear')):
         self.max_iter = max_iter
         self.model = model
         self.metricstr = metrics
@@ -60,6 +60,7 @@ class AutoCross:
         self.train_data = None
         self.valid_data = None
         self.test_data = None
+        self.init_length = 0
 
     def _get_cross_feature_val(self, feature_set, x):
         assert len(feature_set) >= 1
@@ -335,11 +336,13 @@ class AutoCross:
             np.savez("features_" + str(iteration), train=self.train_data, valid=self.valid_data, test=self.test_data)
 
     def fit(self, x_train, x_valid, y_train, y_valid):
+        self.init_length = x_train.shape[1]
         self._hyperband(x_train=x_train, x_valid=x_valid, y_train=y_train, y_valid=y_valid)
 
     def transform(self, x):
         generated_features = None
-        for feature_set in self.feature_sets:
+        # Collect only new features
+        for feature_set in self.feature_sets[self.init_length:]:
             if generated_features is None:
                 generated_features = self._get_cross_feature_val(feature_set, x)
             else:
