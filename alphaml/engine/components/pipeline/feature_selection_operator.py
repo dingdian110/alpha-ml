@@ -7,7 +7,7 @@ from alphaml.engine.components.pipeline.base_operator import Operator, FEATURE_S
 
 
 class NaiveSelectorOperator(Operator):
-    def __init__(self, params=[50, 0], metric=None):
+    def __init__(self, params=[50, 0]):
         '''
         :param params: A list. The first element stands for k in 'k-best', the second stands for metric function
                         0 for chi2, 1 for f_classif, 2 for mutual_info_classif, 3 for f_regression, 4 for mutual_info_regression

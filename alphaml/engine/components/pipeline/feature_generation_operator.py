@@ -37,10 +37,12 @@ class PolynomialFeaturesOperator(Operator):
 
 
 class AutoCrossOperator(Operator):
-    def __init__(self, params=50, metric=None):
+    def __init__(self, stratify, metric=None, params=50):
         super().__init__(FEATURE_GENERATION, 'fg_autocross', params)
         self.metric = metric
-        self.autocross = AutoCross(params, metric)
+        self.autocross = AutoCross(max_iter=params, stratify=stratify, metrics=metric)
+        assert isinstance(stratify, bool)
+        self.stratify = stratify
 
     def operate(self, dm_list: typing.List, phase='train'):
         # The input of a AutoCrossOperator is a DataManager
@@ -49,16 +51,21 @@ class AutoCrossOperator(Operator):
         assert isinstance(dm, DataManager)
         self.check_phase(phase)
 
-        # feature_types = dm.feature_types
-        # numerical_index = [i for i in range(len(feature_types))
-        #                    if feature_types[i] == "Float" or feature_types[i] == "Discrete"]
+        feature_types = dm.feature_types
+        onehot_index = [i for i in range(len(feature_types))
+                        if feature_types[i] == "One-Hot"]
+        numerical_index = [i for i in range(len(feature_types))
+                           if feature_types[i] == 'Discrete' or feature_types[i] == 'Float']
 
         if phase == 'train':
             from sklearn.model_selection import train_test_split
-            train_x, val_x, train_y, val_y = train_test_split(dm.train_X, dm.train_y, test_size=0.2,
-                                                              stratify=dm.train_y)
+            if self.stratify:
+                train_x, val_x, train_y, val_y = train_test_split(dm.train_X, dm.train_y, test_size=0.2,
+                                                                  stratify=dm.train_y)
+            else:
+                train_x, val_x, train_y, val_y = train_test_split(dm.train_X, dm.train_y, test_size=0.2)
             x = dm.train_X
-            self.autocross.fit(train_x, val_x, train_y, val_y)
+            self.autocross.fit(train_x, val_x, train_y, val_y, onehot_index, numerical_index)
             dm.train_X = self.autocross.transform(x)
 
         else:
