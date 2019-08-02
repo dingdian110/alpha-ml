@@ -236,6 +236,10 @@ def load_data(dataset_name):
         from alphaml.datasets.cls_dataset.higgs import load_higgs
         X, y = load_higgs(data_dir_template % dataset_name)
         num_cls = 2
+    elif dataset_name == 'credit_g':
+        from alphaml.datasets.cls_dataset.credit_g import load_credit_g
+        X, y = load_credit_g(data_dir_template % dataset_name)
+        num_cls = 2
     else:
         raise ValueError('Invalid dataset name: %s!' % dataset_name)
     print(X.shape, y.shape)
