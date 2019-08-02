@@ -1,3 +1,4 @@
+import os
 import sys
 import pickle
 import argparse
@@ -31,6 +32,11 @@ def estimate_runtime():
     print(rep_num, run_count, datasets, task_id)
 
     for dataset in datasets:
+        # Make directories.
+        dataset_id = dataset.split('_')[0]
+        save_dir = "data/%s/" % dataset_id
+        if not os.path.exists(save_dir):
+            os.makedirs(save_dir)
         result = dict()
         seeds = get_seeds(dataset, rep_num)
         for run_id in range(start_id, rep_num):
@@ -58,7 +64,6 @@ def estimate_runtime():
 
             # Display and save the test result.
             print(result)
-            dataset_id = dataset.split('_')[0]
             with open('data/%s/%s_test_%s_%d_%d_%d.pkl' % (dataset_id, dataset,
                                                                task_id, run_count, rep_num, start_id), 'wb') as f:
                 pickle.dump(result, f)
