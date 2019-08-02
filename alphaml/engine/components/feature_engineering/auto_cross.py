@@ -2,11 +2,17 @@ import numpy as np
 import math
 
 from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split
 from lightgbm.sklearn import LGBMClassifier
 
 from alphaml.utils.metrics_util import get_metric
 
 from time import time
+
+
+# some the constants in autocross
+GAMMA = 1.5  # gamma is the decay rate to control the initial number of configurations in hyperband
+SAMPLES_PER_PARTITION = 243  # samples in a partition which is '1' resource
 
 
 class TreeNode:
@@ -83,6 +89,11 @@ class AutoCross:
 
         return self._get_performance(self.train_data, train_label, self.valid_data, valid_label,
                                      LGBMClassifier())
+
+    def _get_stratify_sample(self, x, y, n_samples):
+        assert len(x) == len(y)
+        _, x_sample, _, y_sample = train_test_split(x, y, test_size=n_samples / len(x), stratify=y)
+        return x_sample, y_sample
 
     # def _greedy_search(self, x_train, x_valid, y_train, y_valid):
     #     feature_num = x_train.shape[1]
@@ -255,8 +266,9 @@ class AutoCross:
                 subset_records = set()  # record the subset
                 # n = math.ceil((B / R) * (pow(eta, s) / (s + 1)))
                 configurations_num = len(self.feature_sets) * (len(self.feature_sets) - 1) // 2
-                n = int(configurations_num / 1.5 / pow(eta, s_max - s))
-                r = int(R * pow(eta, -s)) * int(R / 243)
+                n = int(configurations_num / GAMMA / pow(eta, s_max - s))
+                r = int(R * pow(eta, -s)) * int(R / SAMPLES_PER_PARTITION)
+                r = max(r, 50)
                 if n <= 1 or r > R:
                     continue
                 while len(nodes) < n:
@@ -278,13 +290,13 @@ class AutoCross:
 
                 # start the inner loop
                 while n > 1 and r <= R:
-                    n_samples = np.random.choice(R, r, replace=False)
                     for node in nodes:
                         train_data = np.hstack((self.train_data,
-                                                self._get_cross_feature_val(node.feature_set, x_train)))[n_samples]
+                                                self._get_cross_feature_val(node.feature_set, x_train)))
+                        train_data, train_label = self._get_stratify_sample(train_data, y_train, r)
                         valid_data = np.hstack((self.valid_data,
                                                 self._get_cross_feature_val(node.feature_set, x_valid)))
-                        node.set_performance(model=self.model, train_data=train_data, train_label=y_train[n_samples],
+                        node.set_performance(model=self.model, train_data=train_data, train_label=train_label,
                                              valid_data=valid_data, valid_label=y_valid, metricstr=self.metricstr)
 
                     nodes.sort(reverse=True)

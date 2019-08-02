@@ -96,7 +96,7 @@ def test_autocross():
     print("Test AutoCross")
     from alphaml.engine.components.pipeline.feature_generation_operator import AutoCrossOperator
     trdm, tsdm = test_featureencoder()
-    acop = AutoCrossOperator(2, 'acc')
+    acop = AutoCrossOperator(True, 'acc', 2)
     trdm = acop.operate([trdm], phase='train')
     print("New feature dimension:", trdm.train_X.shape[1])
     print(trdm.train_X)
@@ -138,3 +138,7 @@ def test_ml():
     print("New feature dimension:", tsdm.test_X.shape[1], '->', newtsdm.test_X.shape[1])
     print(newtsdm.test_X)
     return newtrdm, newtsdm
+
+
+if __name__ == '__main__':
+    test_autocross()
