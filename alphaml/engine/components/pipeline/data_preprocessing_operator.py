@@ -70,7 +70,7 @@ class ImputerOperator(Operator):
                 df[col] = self.impute_col(df[col], "categorical")
             else:
                 raise TypeError("Unknown data type:", dtype)
-            print("Coltype:", dtype)
+            # print("Coltype:", dtype)
         return df
 
 
