@@ -16,6 +16,7 @@ class MONO_MAB_SMBO(BaseOptimizer):
         self.estimator_arms = self.config_space.get_hyperparameter('estimator').choices
         self.mode = kwargs['update_mode'] if 'update_mode' in kwargs else 2
         self.B = None if kwargs['r'] < 10 else kwargs['r']
+        self.C = 10 if kwargs['param'] is None else kwargs['param']
         self.task_name = kwargs['task_name'] if 'task_name' in kwargs else 'default'
         if self.B is None:
             self.result_file = self.task_name + '_mm_bandit_%d_smac.data' % self.mode
@@ -60,7 +61,7 @@ class MONO_MAB_SMBO(BaseOptimizer):
         T = self.iter_num
         iter_num = 0
         tmp_iter = 0
-        duration = 10
+        duration = self.C
 
         while True:
             # Pull each arm exactly once.
