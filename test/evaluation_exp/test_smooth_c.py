@@ -49,7 +49,8 @@ def evaluate_c():
             dm = DataManager(X_train, y_train)
 
             # Test each optimizer algorithm:
-            for p in [1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20]:
+            # for p in [1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20]:
+            for p in [1, 4, 10, 14, 16, 20]:
                 task_name = dataset + '_%s_%d_%d_%d' % (task_id, run_count, run_id, p)
                 mode = 3
                 r = 2
