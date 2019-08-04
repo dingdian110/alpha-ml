@@ -39,8 +39,8 @@ def evaluate_c():
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
         result = dict()
-        seeds = get_seeds(dataset, rep_num)
-        for run_id in range(start_id, rep_num):
+        seeds = get_seeds(dataset, start_id+rep_num)
+        for run_id in range(start_id, start_id + rep_num):
             seed = seeds[run_id]
 
             # Dataset partition.
