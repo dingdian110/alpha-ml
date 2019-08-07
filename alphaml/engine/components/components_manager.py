@@ -37,16 +37,25 @@ class ComponentsManager(object):
         return self.get_configuration_space(builtin_estimators, list(model_candidates))
 
     def get_configuration_space(self, builtin_estimators, model_candidates):
+        config_dict = dict()
+        for model_item in model_candidates:
+            sub_configuration_space = builtin_estimators[model_item].get_hyperparameter_search_space()
+            config_dict[model_item] = sub_configuration_space
+        return config_dict
+
+    @staticmethod
+    def build_hierarchical_configspace(config_dict):
         """
         Reference: pipeline/base=325, classification/__init__=121
         """
         cs = ConfigurationSpace()
+        candidates = list(config_dict.keys())
         # TODO: set the default model.
-        model_option = CategoricalHyperparameter("estimator", model_candidates, default_value=model_candidates[0])
+        model_option = CategoricalHyperparameter("estimator", candidates, default_value=candidates[0])
         cs.add_hyperparameter(model_option)
 
-        for model_item in model_candidates:
-            sub_configuration_space = builtin_estimators[model_item].get_hyperparameter_search_space()
+        for model_item in candidates:
+            sub_configuration_space = config_dict[model_item]
             parent_hyperparameter = {'parent': model_option,
                                      'value': model_item}
             cs.add_configuration_space(model_item, sub_configuration_space, parent_hyperparameter=parent_hyperparameter)

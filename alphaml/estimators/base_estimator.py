@@ -3,7 +3,7 @@ class BaseEstimator(object):
 
     def __init__(
             self,
-            optimizer='ts_smbo',
+            optimizer='mono_smbo',
             time_budget=3600,
             each_run_budget=360,
             ensemble_method='none',
