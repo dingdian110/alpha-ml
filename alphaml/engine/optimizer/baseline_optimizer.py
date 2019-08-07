@@ -1,4 +1,5 @@
 import time
+import os
 import pickle
 import numpy as np
 from ConfigSpace.hyperparameters import CategoricalHyperparameter
@@ -116,5 +117,7 @@ class BASELINE(BaseOptimizer):
             data['perfs'] = self.config_values
             data['time_cost'] = self.time_list
             dataset_id = self.result_file.split('_')[0]
+            if not os.path.exists('data/%s' % dataset_id):
+                os.makedirs('data/%s' % dataset_id)
             with open('data/%s/' % dataset_id + self.result_file, 'wb') as f:
                 pickle.dump(data, f)

@@ -146,8 +146,8 @@ class AutoML(object):
         else:
             # Predict the result.
             pred1 = self.ensemble_model.predict(X)
-            pred2=self.evaluator.fit_predict(self.optimizer.incumbent, X)
-            return pred1,pred2
+            # pred2=self.evaluator.fit_predict(self.optimizer.incumbent, X)
+            return pred1
 
     def score(self, X, y):
         pred_y = self.predict(X)

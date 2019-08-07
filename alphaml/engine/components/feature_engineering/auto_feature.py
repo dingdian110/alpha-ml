@@ -2,10 +2,9 @@ import numpy as np
 
 from alphaml.engine.components.feature_engineering.auto_cross import AutoCross
 from alphaml.engine.components.feature_engineering.selector import RandomForestSelector
-from alphaml.utils.metrics_util import metrics_func
+from alphaml.utils.metrics_util import get_metric
 
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score
 
 
 class AutoFeature:
@@ -28,7 +27,18 @@ class AutoFeature:
         self.solver.fit(dm.train_X, dm.val_X, dm.train_y, dm.val_y, dm.test_X)
 
     def transform(self, dm):
+        if self.solver is None:
+            raise ValueError("The AutoFeature has not been fitted!!!")
+        dm.train_X = self.solver.transform(dm.train_X)
+        dm.val_X = self.solver.transform(dm.val_X)
+        if dm.test_X is not None:
+            dm.test_X = self.solver.transform(dm.test_X)
+        return dm
+
+    def _selection_process(self, dm):
         generated_train_data, generated_valid_data, generated_test_data = self.solver.transform()
+        features = np.load("features_27.npz")
+        generated_train_data, generated_valid_data, generated_test_data = features["train"], features["valid"], None
         feature_num = dm.train_X.shape[1]
 
         if feature_num < 20:
@@ -42,19 +52,19 @@ class AutoFeature:
 
             lr = LogisticRegression()
 
-            best_perf = metrics_func(self.metrics, generated_train_data, dm.train_y, generated_valid_data, dm.val_y, lr)
+            best_perf = get_metric(self.metrics, generated_train_data, dm.train_y, generated_valid_data, dm.val_y, lr)
             best_k = 0
             for percentile in range(1, 10):
                 k = int((percentile / 10.0) * feature_num)
                 selected_train_data = selector.transform(dm.train_X, k)
                 selected_valid_data = selector.transform(dm.val_X, k)
 
-                perf = metrics_func(metrics=self.metrics,
-                                    x_train=np.hstack((generated_train_data, selected_train_data)),
-                                    y_train=dm.train_y,
-                                    x_valid=np.hstack((generated_valid_data, selected_valid_data)),
-                                    y_valid=dm.val_y,
-                                    model=lr)
+                perf = get_metric(metrics=self.metrics,
+                                  x_train=np.hstack((generated_train_data, selected_train_data)),
+                                  y_train=dm.train_y,
+                                  x_valid=np.hstack((generated_valid_data, selected_valid_data)),
+                                  y_valid=dm.val_y,
+                                  model=lr)
                 if perf <= best_perf:
                     break
                 else:
@@ -71,5 +81,3 @@ class AutoFeature:
                 dm.train_X = generated_train_data
                 dm.val_X = generated_valid_data
                 dm.test_X = generated_test_data
-
-        return dm
