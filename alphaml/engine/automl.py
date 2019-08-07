@@ -18,7 +18,7 @@ from alphaml.engine.components.ensemble.stacking import Stacking
 from alphaml.engine.components.ensemble.ensemble_selection import EnsembleSelection
 from alphaml.utils.label_util import to_categorical, map_label, get_classnum
 import numpy as np
-import copy
+import pandas as pd
 
 
 class AutoML(object):
@@ -50,20 +50,23 @@ class AutoML(object):
         self.logger = logging.getLogger(__name__)
         self.ensemble_model = None
 
-    def fit(self, data: DataManager, **kwargs):
+    def fit(self, data, **kwargs):
         """
         1. Define the ML pipeline.
            1) the configuration space.
 
         2. Search the promising configurations for this pipeline.
 
-        :param X: array-like or sparse matrix of shape = [n_samples, n_features], the training input samples.
-        :param y: array-like, shape = [n_samples], the training target.
+        :param data: A DataManager or a DataFrame. Automated feature engineering will be applied if data is a DataFrame
         :return: self
         """
 
         task_type = kwargs['task_type']
         self.metric = kwargs['metric']
+
+        # TODO:Automated feature engineering
+        if isinstance(data, pd.DataFrame):
+            pass
 
         # Get the configuration space for the automl task.
         config_space = self.component_manager.get_hyperparameter_search_space(

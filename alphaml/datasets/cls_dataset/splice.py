@@ -9,5 +9,5 @@ def load_splice(data_folder):
     label = trans_label(data[:, -1])
     transformed_data = [trans_label(item) for item in data[:, 1:-1].T]
     transformed_data = np.array(transformed_data).T
-    transformed_data = one_hot(transformed_data)
+    transformed_data = one_hot(transformed_data).toarray()
     return transformed_data, label

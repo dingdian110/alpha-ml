@@ -39,9 +39,8 @@ class Stacking(BaseEnsembleModel):
             # Train basic models using a part of training data
             for i, config in enumerate(self.config_list):
                 for j, (train, test) in enumerate(kf.split(dm.train_X, dm.train_y)):
-                    estimator = self.get_estimator(config)
                     x_p1, x_p2, y_p1, _ = dm.train_X[train], dm.train_X[test], dm.train_y[train], dm.train_y[test]
-                    estimator.fit(x_p1, y_p1)
+                    estimator = self.get_estimator(config, x_p1, y_p1)
                     # The final list will contain self.kfold * self.ensemble_size models
                     self.ensemble_models.append(estimator)
                     pred = self.get_predictions(estimator, x_p2)
@@ -68,11 +67,6 @@ class Stacking(BaseEnsembleModel):
                         feature_p2[test, i * n_dim:(i + 1) * n_dim] = pred
             # Train model for stacking using the other part of training data
             self.meta_learner.fit(feature_p2, dm.train_y)
-
-            from sklearn.metrics import accuracy_score, mean_absolute_error
-            pred = self.meta_learner.predict(feature_p2)
-            print(mean_absolute_error(dm.train_y, pred))
-
         elif self.model_type == 'dl':
             pass
         return self

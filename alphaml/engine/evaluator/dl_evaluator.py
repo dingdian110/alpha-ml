@@ -1,8 +1,9 @@
 import os
 import json
-
+import pickle as pkl
 from alphaml.engine.components.models.image_classification import _img_classifiers
 from alphaml.engine.evaluator.base import BaseClassificationEvaluator, update_config
+from alphaml.utils.save_ease import save_ease
 
 
 class BaseImgEvaluator(BaseClassificationEvaluator):
@@ -11,13 +12,17 @@ class BaseImgEvaluator(BaseClassificationEvaluator):
         self.inputshape = inputshape
         self.classnum = classnum
 
-    def __call__(self, config):
+    @save_ease(save_dir='./data/save_models')
+    def __call__(self, config, **kwargs):
         _, estimator = self.set_config(config)
-
+        save_path = kwargs['save_path']
         # Fit the estimator on the training data.
         kwargs = {}
         kwargs['metric'] = self.metric_func
         _, modelpath = estimator.fit(self.data_manager, **kwargs)
+
+        with open(save_path, 'wb') as f:
+            pkl.dump(estimator, f)
 
         # Get the best result on val data
         metric = estimator.best_result

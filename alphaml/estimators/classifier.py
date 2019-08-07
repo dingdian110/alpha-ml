@@ -3,7 +3,7 @@ from sklearn.utils.multiclass import type_of_target
 from sklearn.metrics import accuracy_score
 from alphaml.estimators.base_estimator import BaseEstimator
 from alphaml.engine.automl import AutoMLClassifier
-from alphaml.engine.components.data_manager import DataManager
+
 from alphaml.utils.metrics_util import get_metric
 
 
@@ -53,7 +53,6 @@ class Classifier(BaseEstimator):
             raise ValueError("UNSUPPORTED TASK TYPE: %s!" % task_type)
         self.task_type = task_type
         kwargs['task_type'] = task_type
-        assert data is not None and isinstance(data, DataManager)
 
         # Options for multiclass averaging.
         average = 'weighted'

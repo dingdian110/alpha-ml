@@ -40,7 +40,6 @@ class Regressor(BaseEstimator):
             raise ValueError("UNSUPPORTED TASK TYPE: %s!" % task_type)
         self.task_type = task_type
         kwargs['task_type'] = task_type
-        assert data is not None and isinstance(data, DataManager)
 
         metric = mean_squared_error if 'metric' not in kwargs else kwargs['metric']
         metric = get_metric(metric)

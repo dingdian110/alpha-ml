@@ -24,8 +24,7 @@ class EnsembleSelection(BaseEnsembleModel):
         if self.model_type == 'ml':
             predictions = []
             for config in self.config_list:
-                estimator = self.get_estimator(config)
-                estimator.fit(dm.train_X, dm.train_y)
+                estimator = self.get_estimator(config, dm.train_X, dm.train_y, if_load=True)
                 self.ensemble_models.append(estimator)
                 pred = self.get_predictions(estimator, dm.val_X)
                 predictions.append(pred)

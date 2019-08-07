@@ -1,5 +1,9 @@
 from alphaml.utils.common import get_max_index
 from alphaml.engine.evaluator.base import BaseClassificationEvaluator, BaseRegressionEvaluator
+from alphaml.utils.save_ease import save_ease
+
+import os
+import pickle as pkl
 
 CLASSIFICATION = 1
 REGRESSION = 2
@@ -34,20 +38,28 @@ class BaseEnsembleModel(object):
     def predict(self, X):
         raise NotImplementedError
 
-    def get_estimator(self, config):
-        if self.task_type == CLASSIFICATION:
-            evaluator = BaseClassificationEvaluator()
-        elif self.task_type == REGRESSION:
-            evaluator = BaseRegressionEvaluator()
-        _, estimator = evaluator.set_config(config)
+    @save_ease(save_dir='./data/save_models')
+    def get_estimator(self, config, x, y, if_load=False, **kwargs):
+        save_path = kwargs['save_path']
+        if if_load and os.path.exists(save_path):
+            with open(save_path, 'rb') as f:
+                estimator = pkl.load(f)
+                print("Estimator loaded from", save_path)
+        else:
+            if self.task_type == CLASSIFICATION:
+                evaluator = BaseClassificationEvaluator()
+            elif self.task_type == REGRESSION:
+                evaluator = BaseRegressionEvaluator()
+            _, estimator = evaluator.set_config(config)
+            estimator.fit(x, y)
         return estimator
 
     def get_predictions(self, estimator, X):
         if self.task_type == CLASSIFICATION:
             return estimator.predict_proba(X)
         elif self.task_type == REGRESSION:
-            pred=estimator.predict(X)
-            shape=pred.shape
-            if len(shape)==1:
-                pred=pred.reshape((shape[0],1))
+            pred = estimator.predict(X)
+            shape = pred.shape
+            if len(shape) == 1:
+                pred = pred.reshape((shape[0], 1))
             return pred

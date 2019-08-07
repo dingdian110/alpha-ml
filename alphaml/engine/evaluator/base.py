@@ -1,8 +1,11 @@
 import time
 import logging
 import multiprocessing
+import pickle as pkl
+import os
 from alphaml.engine.components.models.classification import _classifiers
 from alphaml.engine.components.models.regression import _regressors
+from alphaml.utils.save_ease import save_ease
 
 
 def update_config(config):
@@ -29,10 +32,11 @@ class BaseClassificationEvaluator(object):
         self.metric_func = None
         self.logger = logging.getLogger(__name__)
 
-    def __call__(self, config):
+    @save_ease(save_dir='./data/save_models')
+    def __call__(self, config, **kwargs):
         # Build the corresponding estimator.
         classifier_type, estimator = self.set_config(config)
-
+        save_path = kwargs['save_path']
         # TODO: how to parallize.
         if hasattr(estimator, 'n_jobs'):
             setattr(estimator, 'n_jobs', multiprocessing.cpu_count() - 1)
@@ -41,6 +45,9 @@ class BaseClassificationEvaluator(object):
         self.logger.info('<CONFIG> %s' % config)
         # Fit the estimator on the training data.
         estimator.fit(self.data_manager.train_X, self.data_manager.train_y)
+
+        with open(save_path, 'wb') as f:
+            pkl.dump(estimator, f)
 
         # Validate it on val data.
         y_pred = estimator.predict(self.data_manager.val_X)
@@ -62,9 +69,16 @@ class BaseClassificationEvaluator(object):
         estimator.set_hyperparameters(config)
         return classifier_type, estimator
 
-    def fit_predict(self, config, test_X=None):
+    @save_ease(save_dir='data/save_models')
+    def fit_predict(self, config, test_X=None, **kwargs):
         # Build the corresponding estimator.
-        _, estimator = self.set_config(config)
+        save_path = kwargs['save_path']
+        if os.path.exists(save_path):
+            with open(save_path, 'rb') as f:
+                estimator = pkl.load(f)
+                print("Estimator loaded from", save_path)
+        else:
+            _, estimator = self.set_config(config)
 
         # Fit the estimator on the training data.
         estimator.fit(self.data_manager.train_X, self.data_manager.train_y)
@@ -74,6 +88,7 @@ class BaseClassificationEvaluator(object):
             test_X = self.data_manager.test_X
         y_pred = estimator.predict(test_X)
         return y_pred
+
 
 class BaseRegressionEvaluator(object):
     """
@@ -85,10 +100,11 @@ class BaseRegressionEvaluator(object):
         self.metric_func = None
         self.logger = logging.getLogger(__name__)
 
-    def __call__(self, config):
+    @save_ease(save_dir='./data/save_models')
+    def __call__(self, config, **kwargs):
         # Build the corresponding estimator.
         regressor_type, estimator = self.set_config(config)
-
+        save_path = kwargs['save_path']
         # TODO: how to parallize.
         if hasattr(estimator, 'n_jobs'):
             setattr(estimator, 'n_jobs', multiprocessing.cpu_count() - 1)
@@ -97,6 +113,9 @@ class BaseRegressionEvaluator(object):
         self.logger.info('<CONFIG> %s' % config)
         # Fit the estimator on the training data.
         estimator.fit(self.data_manager.train_X, self.data_manager.train_y)
+
+        with open(save_path, 'wb') as f:
+            pkl.dump(estimator, f)
 
         # Validate it on val data.
         y_pred = estimator.predict(self.data_manager.val_X)
@@ -118,9 +137,16 @@ class BaseRegressionEvaluator(object):
         estimator.set_hyperparameters(config)
         return regressor_type, estimator
 
-    def fit_predict(self, config, test_X=None):
+    @save_ease(save_dir='data/save_models')
+    def fit_predict(self, config, test_X=None, **kwargs):
         # Build the corresponding estimator.
-        _, estimator = self.set_config(config)
+        save_path = kwargs['save_path']
+        if os.path.exists(save_path):
+            with open(save_path, 'rb') as f:
+                estimator = pkl.load(f)
+                print("Estimator loaded from", save_path)
+        else:
+            _, estimator = self.set_config(config)
 
         # Fit the estimator on the training data.
         estimator.fit(self.data_manager.train_X, self.data_manager.train_y)
