@@ -5,7 +5,6 @@ from ConfigSpace.hyperparameters import CategoricalHyperparameter
 from litesmac.scenario.scenario import Scenario
 from litesmac.facade.smac_facade import SMAC
 from alphaml.engine.optimizer.base_optimizer import BaseOptimizer
-from alphaml.engine.components.models.classification import _classifiers
 
 
 class MONO_MAB_SMBO(BaseOptimizer):
@@ -13,7 +12,7 @@ class MONO_MAB_SMBO(BaseOptimizer):
         super().__init__(evaluator, config_space, data, kwargs['metric'], seed)
 
         self.iter_num = int(1e10) if ('runcount' not in kwargs or kwargs['runcount'] is None) else kwargs['runcount']
-        self.estimator_arms = self.config_space.get_hyperparameter('estimator').choices
+        self.estimator_arms = list(self.config_space.keys())
         self.mode = kwargs['update_mode'] if 'update_mode' in kwargs else 2
         self.B = None if kwargs['r'] < 10 else kwargs['r']
         self.C = 10 if kwargs['param'] is None else kwargs['param']
@@ -35,7 +34,7 @@ class MONO_MAB_SMBO(BaseOptimizer):
 
         for estimator in self.estimator_arms:
             # Scenario object
-            config_space = _classifiers[estimator].get_hyperparameter_search_space()
+            config_space = self.config_space[estimator]
             estimator_hp = CategoricalHyperparameter("estimator", [estimator], default_value=estimator)
             config_space.add_hyperparameter(estimator_hp)
             scenario_dict = {

@@ -1,3 +1,4 @@
+import os
 import sys
 import pickle
 import argparse
@@ -32,9 +33,14 @@ def evaluate_c():
     print(rep_num, run_count, datasets, task_id)
 
     for dataset in datasets:
+        # Make directories.
+        dataset_id = dataset.split('_')[0]
+        save_dir = "data/%s/" % dataset_id
+        if not os.path.exists(save_dir):
+            os.makedirs(save_dir)
         result = dict()
-        seeds = get_seeds(dataset, rep_num)
-        for run_id in range(start_id, rep_num):
+        seeds = get_seeds(dataset, start_id+rep_num)
+        for run_id in range(start_id, start_id + rep_num):
             seed = seeds[run_id]
 
             # Dataset partition.
@@ -43,7 +49,8 @@ def evaluate_c():
             dm = DataManager(X_train, y_train)
 
             # Test each optimizer algorithm:
-            for p in [1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20]:
+            # for p in [1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20]:
+            for p in [1, 4, 10, 14, 16, 20]:
                 task_name = dataset + '_%s_%d_%d_%d' % (task_id, run_count, run_id, p)
                 mode = 3
                 r = 2
@@ -61,7 +68,6 @@ def evaluate_c():
 
             # Display and save the test result.
             print(result)
-            dataset_id = dataset.split('_')[0]
             with open('data/%s/%s_test_%s_%d_%d_%d.pkl' % (dataset_id, dataset,
                                                                task_id, run_count, rep_num, start_id), 'wb') as f:
                 pickle.dump(result, f)

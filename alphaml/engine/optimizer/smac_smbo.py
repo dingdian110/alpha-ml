@@ -4,7 +4,7 @@ import numpy as np
 from smac.scenario.scenario import Scenario
 from smac.facade.smac_facade import SMAC
 from alphaml.engine.optimizer.base_optimizer import BaseOptimizer
-
+from alphaml.engine.components.components_manager import ComponentsManager
 
 class SMAC_SMBO(BaseOptimizer):
     def __init__(self, evaluator, config_space, data, seed, **kwargs):
@@ -13,10 +13,11 @@ class SMAC_SMBO(BaseOptimizer):
         self.result_file = self.task_name + '_smac.data'
 
         # Scenario object
+        config_space = ComponentsManager.build_hierarchical_configspace(self.config_space)
         scenario_dict = {
             'abort_on_first_run_crash': True,
             "run_obj": "quality",
-            "cs": self.config_space,
+            "cs": config_space,
             "deterministic": "true"
         }
         if 'runcount' in kwargs and kwargs['runcount'] > 0:
