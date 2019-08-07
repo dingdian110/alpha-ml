@@ -79,8 +79,9 @@ def test_cash_module():
                     optimizer, mode = optimizer.split('_')
                     mode = 1 if mode == 'rand' else 2
                 if optimizer.startswith('sh'):
-                    if len(optimizer.split('_')) == 3:
-                        optimizer, eta, r = optimizer.split('_')
+                    if len(optimizer.split('_')) == 2:
+                        optimizer, eta = optimizer.split('_')
+                        eta = float(eta)
                     else:
                         raise ValueError('Wrong SH params!')
                 if optimizer.startswith('rl'):
@@ -109,6 +110,14 @@ def test_cash_module():
                         _, _, mode = optimizer.split('_')
                         mode = int(mode)
                         optimizer = 'ucb_smbo'
+
+                if optimizer.startswith('mono_smbo'):
+                    mode = 2
+                    if len(optimizer.split('_')) == 4:
+                        _, _, mode, r = optimizer.split('_')
+                        mode, r = int(mode), int(r)
+                        eta = 10
+                        optimizer = 'mono_smbo'
 
                 print('Test %s optimizer => %s' % (optimizer, task_name))
 
