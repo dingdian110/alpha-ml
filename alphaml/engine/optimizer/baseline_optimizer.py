@@ -14,7 +14,7 @@ class BASELINE(BaseOptimizer):
         super().__init__(evaluator, config_space, data, kwargs['metric'], seed)
 
         self.iter_num = int(1e10) if ('runcount' not in kwargs or kwargs['runcount'] is None) else kwargs['runcount']
-        self.estimator_arms = self.config_space.get_hyperparameter('estimator').choices
+        self.estimator_arms = list(self.config_space.keys())
         self.task_name = kwargs['task_name'] if 'task_name' in kwargs else 'default'
         # update_mode = 1: the random search of an algorithm.
         # update_mode = 2: assign each algorthm with T/N budgets.

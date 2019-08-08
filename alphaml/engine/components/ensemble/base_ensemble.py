@@ -52,6 +52,7 @@ class BaseEnsembleModel(object):
                 evaluator = BaseRegressionEvaluator()
             _, estimator = evaluator.set_config(config)
             estimator.fit(x, y)
+            print("Estimator retrained.")
         return estimator
 
     def get_predictions(self, estimator, X):

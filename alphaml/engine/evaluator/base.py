@@ -3,6 +3,7 @@ import logging
 import multiprocessing
 import pickle as pkl
 import os
+from sklearn.metrics import roc_auc_score
 from alphaml.engine.components.models.classification import _classifiers
 from alphaml.engine.components.models.regression import _regressors
 from alphaml.utils.save_ease import save_ease
@@ -50,8 +51,12 @@ class BaseClassificationEvaluator(object):
             pkl.dump(estimator, f)
 
         # Validate it on val data.
-        y_pred = estimator.predict(self.data_manager.val_X)
-        metric = self.metric_func(self.data_manager.val_y, y_pred)
+        if self.metric_func == roc_auc_score:
+            y_pred = estimator.predict_proba(self.data_manager.val_X)[:, 1]
+            metric = self.metric_func(self.data_manager.val_y, y_pred)
+        else:
+            y_pred = estimator.predict(self.data_manager.val_X)
+            metric = self.metric_func(self.data_manager.val_y, y_pred)
 
         self.logger.info('<EVALUATE %s TAKES %.2f SECONDS>' % (classifier_type, time.time() - start_time))
         # Turn it to a minimization problem.
@@ -79,14 +84,17 @@ class BaseClassificationEvaluator(object):
                 print("Estimator loaded from", save_path)
         else:
             _, estimator = self.set_config(config)
-
-        # Fit the estimator on the training data.
-        estimator.fit(self.data_manager.train_X, self.data_manager.train_y)
+            # Fit the estimator on the training data.
+            estimator.fit(self.data_manager.train_X, self.data_manager.train_y)
 
         # Inference.
         if test_X is None:
             test_X = self.data_manager.test_X
-        y_pred = estimator.predict(test_X)
+
+        if self.metric_func == roc_auc_score:
+            y_pred = estimator.predict_proba(test_X)[:, 1]
+        else:
+            y_pred = estimator.predict(test_X)
         return y_pred
 
 
@@ -147,9 +155,8 @@ class BaseRegressionEvaluator(object):
                 print("Estimator loaded from", save_path)
         else:
             _, estimator = self.set_config(config)
-
-        # Fit the estimator on the training data.
-        estimator.fit(self.data_manager.train_X, self.data_manager.train_y)
+            # Fit the estimator on the training data.
+            estimator.fit(self.data_manager.train_X, self.data_manager.train_y)
 
         # Inference.
         if test_X is None:

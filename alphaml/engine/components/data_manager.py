@@ -27,11 +27,11 @@ class DataManager(object):
         self.test_X = None
         self.test_y = None
 
-    def split(self, val_size=0.2, random_state=42):
+    def split(self, val_size=0.2, random_state=42, stratify=True):
         assert self.train_X is not None and self.train_y is not None
 
         # Split input into train and val subsets.
-        if self.stratify:
+        if self.stratify and stratify:
             self.train_X, self.val_X, self.train_y, self.val_y = train_test_split(
                 self.train_X, self.train_y, test_size=val_size, random_state=random_state, stratify=self.train_y)
         else:
