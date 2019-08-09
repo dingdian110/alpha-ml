@@ -200,12 +200,13 @@ class EnsembleSelection(BaseEnsembleModel):
 
     def calculate_score(self, pred, y_true):
         if self.task_type == CLASSIFICATION:
-            if len(pred) == 1 or pred.shape[1] == 1:
-                pred = [int(i > 0.5) for i in pred]
+            from sklearn.metrics import roc_auc_score
+            if self.metric == roc_auc_score:
+                pred = pred[:, 1]
             else:
                 pred = np.argmax(pred, axis=1)
-            score = self.metric(pred, y_true)
+            score = self.metric(y_true, pred)
         elif self.task_type == REGRESSION:
-            score = -self.metric(pred, y_true)
+            score = -self.metric(y_true, pred)
         # We want to maximize score
         return score

@@ -10,17 +10,18 @@ from alphaml.engine.components.pipeline.data_preprocessing_operator import Imput
 
 
 def test_cash_module():
-    data = pd.read_csv("data/cls_data/santander/train.csv")
-    dm = ImputerOperator().operate([data.drop(columns=["ID"])])
-    dm.split(stratify=True)
-    cls = Classifier(include_models=['xgboost', 'random_forest', 'libsvm_svc', 'decision_tree'],
+    df = pd.read_csv("data/cls_data/santander/train.csv")
+    df = df.drop(columns=["ID"])
+    cls = Classifier(include_models=['xgboost', 'random_forest', 'decision_tree'],
                      optimizer='mono_smbo',
-                     # ensemble_method='stacking',
-                     # ensemble_size=6,
-                     ).fit(dm, metric='auc', runcount=200)
-    data = pd.read_csv("data/cls_data/santander/test.csv").values
-    x_data = data[:, 1:]
-    pred2 = cls.predict(x_data)
+                     # ensemble_method='ensemble_selection',
+                     # ensemble_size=5,
+                     ).fit(df, metric='auc', runcount=200)
+    df = pd.read_csv("data/cls_data/santander/test.csv")
+    data = df.values
+    df = df.drop(columns=["ID"])
+    pred2 = cls.predict(df)
+    print(pred2)
 
     import csv
     with open('data/cls_data/santander/submission.csv', 'w', newline='') as f:

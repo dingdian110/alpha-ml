@@ -118,6 +118,10 @@ class FeatureEncoderOperator(Operator):
         categorical_index = [i for i in range(len(feature_types)) if feature_types[i] == "Categorical"]
         other_index = [i for i in range(len(feature_types)) if feature_types[i] != "Categorical"]
 
+        # Check if there are no categorical features in train_x
+        if len(categorical_index) == 0:
+            return dm
+
         if phase == 'train':
             x = dm.train_X
         else:
@@ -182,6 +186,10 @@ class ScalerOperator(Operator):
         numercial_index = [i for i in range(len(feature_types))
                            if feature_types[i] == "Float" or feature_types[i] == "Discrete"]
 
+        # Check if there are no numerical features in train_x
+        if len(numercial_index) == 0:
+            return dm
+
         if phase == 'train':
             x = dm.train_X
             x[:, numercial_index] = self.scaler.fit_transform(x[:, numercial_index])
@@ -216,6 +224,11 @@ class NormalizerOperator(Operator):
         feature_types = dm.feature_types
         numercial_index = [i for i in range(len(feature_types))
                            if feature_types[i] == "Float" or feature_types[i] == "Discrete"]
+
+        # Check if there are no numerical features in train_x
+        if len(numercial_index) == 0:
+            return dm
+
         if phase == 'train':
             x = dm.train_X
             x[:, numercial_index] = self.normalizer.fit_transform(x[:, numercial_index])
