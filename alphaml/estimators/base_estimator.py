@@ -29,7 +29,7 @@ class BaseEstimator(object):
         self.seed = seed
         self.tmp_dir = tmp_dir
         self.output_dir = output_dir
-
+        self.pre_pipeline = None
         self._ml_engine = None
 
     def build_engine(self):

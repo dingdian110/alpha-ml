@@ -64,10 +64,6 @@ class AutoML(object):
         task_type = kwargs['task_type']
         self.metric = kwargs['metric']
 
-        # TODO:Automated feature engineering
-        if isinstance(data, pd.DataFrame):
-            pass
-
         # Get the configuration space for the automl task.
         config_space = self.component_manager.get_hyperparameter_search_space(
             task_type, self.include_models, self.exclude_models)
@@ -149,7 +145,6 @@ class AutoML(object):
         else:
             # Predict the result.
             pred1 = self.ensemble_model.predict(X)
-            # pred2=self.evaluator.fit_predict(self.optimizer.incumbent, X)
             return pred1
 
     def score(self, X, y):

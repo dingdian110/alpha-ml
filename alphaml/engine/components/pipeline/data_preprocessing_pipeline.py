@@ -20,12 +20,12 @@ class DP_Pipeline(object):
         # 1. Create the basic nodes.
         self.pipeline_operators = list()
         node1 = ImputerOperator()
-        node5 = FeatureEncoderOperator()
-        node2 = NormalizerOperator()
-        node3 = ScalerOperator()
-        node4 = LabelEncoder()
+        node2 = LabelEncoderOperator()
+        node3 = FeatureEncoderOperator()
+        # node4 = NormalizerOperator()
+        node5 = ScalerOperator()
 
-        self.pipeline_operators.extend([node1, node2, node3, node4, node5])
+        self.pipeline_operators.extend([node1, node2, node3, node5])
         self.cached_dm = dict()
 
         # Assign the node id.
@@ -34,7 +34,7 @@ class DP_Pipeline(object):
             if node_id != 0:
                 node.origin = [node_id - 1]
 
-    def execute(self, input: DataFrame) -> DataManager:
+    def execute(self, input: DataFrame, phase='train', stratify=True) -> DataManager:
         # DM caches.
         for node_id in range(len(self.pipeline_operators)):
             self.cached_dm[node_id] = None
@@ -45,7 +45,11 @@ class DP_Pipeline(object):
                 input_dm = [input]
             else:
                 input_dm = [self.cached_dm[id] for id in operator.origin]
-            output_dm = operator.operate(input_dm)
+            output_dm = operator.operate(input_dm, phase=phase)
             self.cached_dm[operator.id] = output_dm
 
-        return self.cached_dm[len(self.pipeline_operators)-1]
+        final_dm = self.cached_dm[len(self.pipeline_operators) - 1]
+        assert isinstance(final_dm, DataManager)
+        if phase == 'train':
+            final_dm.split(stratify=stratify)
+        return final_dm
