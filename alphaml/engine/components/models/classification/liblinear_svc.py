@@ -120,7 +120,13 @@ class LibLinear_SVC(BaseClassificationModel):
             ForbiddenEqualsClause(dual, "False"),
             ForbiddenEqualsClause(penalty, "l1")
         )
+        penalty_and_dual2 = ForbiddenAndConjunction(
+            ForbiddenEqualsClause(dual, "True"),
+            ForbiddenEqualsClause(penalty, "l1"),
+            ForbiddenEqualsClause(loss, "squared_hinge")
+        )
         cs.add_forbidden_clause(penalty_and_loss)
         cs.add_forbidden_clause(constant_penalty_and_loss)
         cs.add_forbidden_clause(penalty_and_dual)
+        cs.add_forbidden_clause(penalty_and_dual2)
         return cs
