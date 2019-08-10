@@ -10,9 +10,10 @@ REGRESSION = 2
 
 
 class BaseEnsembleModel(object):
-    def __init__(self, model_info, ensemble_size, task_type, model_type='ml'):
+    def __init__(self, model_info, ensemble_size, task_type, metric, model_type='ml'):
         self.model_info = model_info
         self.model_type = model_type
+        self.metric = metric
         self.ensemble_models = list()
         if task_type in ['binary', 'multiclass', 'img_binary', 'img_multiclass', 'img_multilabel-indicator']:
             self.task_type = CLASSIFICATION
@@ -25,9 +26,23 @@ class BaseEnsembleModel(object):
             self.ensemble_size = len(model_info[0])
         else:
             self.ensemble_size = ensemble_size
-
         # Determine the best basic models (with the best performance) from models_infos.
-        index_list = get_max_index(self.model_info[1], self.ensemble_size)
+        # index_list = get_max_index(self.model_info[1], self.ensemble_size)
+
+        # Determine the best basic models (the best for each algorithm) from models_infos.
+        index_list = []
+        model_len = len(self.model_info[1])
+        estimator_set = set([self.model_info[0][i]['estimator'] for i in range(model_len)])
+        for estimator in estimator_set:
+            best_perf = -float("Inf")
+            best_id = -1
+            for i in range(model_len):
+                if self.model_info[0][i]['estimator'] == estimator:
+                    if self.model_info[1][i] > best_perf:
+                        best_perf = self.model_info[1][i]
+                        best_id = i
+            index_list.append(best_id)
+
         self.config_list = [self.model_info[0][i] for i in index_list]
         for i in index_list:
             print(self.model_info[0][i], self.model_info[1][i])
@@ -56,8 +71,13 @@ class BaseEnsembleModel(object):
         return estimator
 
     def get_predictions(self, estimator, X):
+        print(self.metric)
         if self.task_type == CLASSIFICATION:
-            return estimator.predict_proba(X)
+            from sklearn.metrics import roc_auc_score
+            if self.metric == roc_auc_score:
+                return estimator.predict_proba(X)[:, 1]
+            else:
+                return estimator.predict_proba(X)
         elif self.task_type == REGRESSION:
             pred = estimator.predict(X)
             shape = pred.shape

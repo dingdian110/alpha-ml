@@ -222,21 +222,92 @@ class NormalizerOperator(Operator):
 
         dm = dm_list[0]
         feature_types = dm.feature_types
-        numercial_index = [i for i in range(len(feature_types))
-                           if feature_types[i] == "Float" or feature_types[i] == "Discrete"]
+        numericial_index = [i for i in range(len(feature_types))
+                            if feature_types[i] == "Float" or feature_types[i] == "Discrete"]
 
         # Check if there are no numerical features in train_x
-        if len(numercial_index) == 0:
+        if len(numericial_index) == 0:
             return dm
 
         if phase == 'train':
             x = dm.train_X
-            x[:, numercial_index] = self.normalizer.fit_transform(x[:, numercial_index])
+            x[:, numericial_index] = self.normalizer.fit_transform(x[:, numericial_index])
             dm.train_X = x
         else:
             x = dm.test_X
-            x[:, numercial_index] = self.normalizer.transform(x[:, numercial_index])
+            x[:, numericial_index] = self.normalizer.transform(x[:, numericial_index])
             dm.test_X = x
         return dm
 
+
 # TODO: Bucketizer
+
+class ConstantRemoverOperator(Operator):
+    def __init__(self, params=None):
+        super().__init__(DATA_PERPROCESSING, 'dp_constant_remover', params)
+        self.constant_indices = []
+
+    def operate(self, dm_list: typing.List, phase='train'):
+        assert len(dm_list) == 1 and isinstance(dm_list[0], DataManager)
+        self.check_phase(phase)
+
+        dm = dm_list[0]
+        feature_types = dm.feature_types
+        numericial_index = [i for i in range(len(feature_types))
+                            if feature_types[i] == "Float" or feature_types[i] == "Discrete"]
+
+        if phase == 'train':
+            x = dm.train_X
+            for index in numericial_index:
+                feature = x[:, index]
+                if len(set(feature)) == 1:  # Constant feature
+                    self.constant_indices.append(index)
+            self.constant_indices.reverse()
+            for index in self.constant_indices:
+                del (dm.feature_types[index])
+                x = np.delete(x, [index], axis=1)
+            dm.train_X = x
+        else:
+            x = dm.test_X
+            for index in self.constant_indices:
+                del (dm.feature_types[index])
+                x = np.delete(x, [index], axis=1)
+            dm.test_X = x
+        return dm
+
+
+class VarianceRemoverOperator(Operator):
+    def __init__(self, params=5e-5):
+        '''
+        :param params: variance threshold
+        '''
+        super().__init__(DATA_PERPROCESSING, 'dp_variance_remover', params)
+        self.low_variance_indices = []
+
+    def operate(self, dm_list: typing.List, phase='train'):
+        assert len(dm_list) == 1 and isinstance(dm_list[0], DataManager)
+        self.check_phase(phase)
+
+        dm = dm_list[0]
+        feature_types = dm.feature_types
+        numericial_index = [i for i in range(len(feature_types))
+                            if feature_types[i] == "Float" or feature_types[i] == "Discrete"]
+
+        if phase == 'train':
+            x = dm.train_X
+            for index in numericial_index:
+                feature = x[:, index]
+                if feature.var() < self.params:  # Low-variance feature
+                    self.low_variance_indices.append(index)
+            self.low_variance_indices.reverse()
+            for index in self.low_variance_indices:
+                del (dm.feature_types[index])
+                x = np.delete(x, [index], axis=1)
+            dm.train_X = x
+        else:
+            x = dm.test_X
+            for index in self.low_variance_indices:
+                del (dm.feature_types[index])
+                x = np.delete(x, [index], axis=1)
+            dm.test_X = x
+        return dm

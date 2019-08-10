@@ -1,4 +1,5 @@
 import typing
+import numpy as np
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.decomposition import PCA
 
@@ -28,12 +29,15 @@ class PolynomialFeaturesOperator(Operator):
         if phase == 'train':
             x = dm.train_X
             newfeatures = self.polynomialfeatures.fit_transform(x[:, numericial_index])
-            dm.train_X = newfeatures[:, init_length:]
+            result_dm = DataManager()
+            result_dm.train_X = newfeatures[:, init_length:]
+            result_dm.train_y = dm.train_y
         else:
             x = dm.test_X
             newfeatures = self.polynomialfeatures.transform(x[:, numericial_index])
-            dm.test_X = newfeatures[:, init_length:]
-        return dm
+            result_dm = DataManager()
+            result_dm.test_X = newfeatures[:, init_length:]
+        return result_dm
 
 
 class AutoCrossOperator(Operator):
@@ -66,12 +70,14 @@ class AutoCrossOperator(Operator):
                 train_x, val_x, train_y, val_y = train_test_split(dm.train_X, dm.train_y, test_size=0.2)
             x = dm.train_X
             self.autocross.fit(train_x, val_x, train_y, val_y, onehot_index, numerical_index)
-            dm.train_X = self.autocross.transform(x)
-
+            result_dm = DataManager()
+            result_dm.train_X = self.autocross.transform(x)
+            result_dm.train_y = dm.train_y
         else:
             x = dm.test_X
-            dm.test_X = self.autocross.transform(x)
-        return dm
+            result_dm = DataManager()
+            result_dm.test_X = self.autocross.transform(x)
+        return result_dm
 
 
 class PCAOperator(Operator):
@@ -93,8 +99,46 @@ class PCAOperator(Operator):
                            if feature_types[i] == "Float" or feature_types[i] == "Discrete"]
         if phase == 'train':
             x = dm.train_X
-            dm.train_X = self.pca.fit_transform(x[:, numerical_index])
+            result_dm = DataManager()
+            result_dm.train_X = self.pca.fit_transform(x[:, numerical_index])
+            result_dm.train_y = dm.train_y
         else:
             x = dm.test_X
-            dm.test_X = self.pca.fit_transform(x[:, numerical_index])
-        return dm
+            result_dm = DataManager()
+            result_dm.test_X = self.pca.fit_transform(x[:, numerical_index])
+        return result_dm
+
+
+class ZeroOperator(Operator):
+    def __init__(self, params=None):
+        super().__init__(FEATURE_GENERATION, 'fg_zero', params)
+
+    def operate(self, dm_list: typing.List, phase='train'):
+        assert len(dm_list) == 1 and isinstance(dm_list[0], DataManager)
+        self.check_phase(phase)
+
+        dm = dm_list[0]
+        if phase == 'train':
+            x = dm.train_X
+            newfeature = np.zeros((len(x), 1))
+            for i, sample in enumerate(x):
+                cnt = 0
+                for column in sample:
+                    if column == 0:
+                        cnt += 1
+                newfeature[i] = cnt
+            result_dm = DataManager()
+            result_dm.train_X = newfeature
+            result_dm.train_y = dm.train_y
+        else:
+            x = dm.test_X
+            newfeature = np.zeros((len(x), 1))
+            for i, sample in enumerate(x):
+                cnt = 0
+                for column in sample:
+                    if column == 0:
+                        cnt += 1
+                newfeature[i] = cnt
+            result_dm = DataManager()
+            result_dm.test_X = newfeature
+        return result_dm

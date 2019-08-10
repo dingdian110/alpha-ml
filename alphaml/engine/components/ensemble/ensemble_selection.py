@@ -8,14 +8,13 @@ from collections import Counter
 class EnsembleSelection(BaseEnsembleModel):
     def __init__(self, model_info, ensemble_size, task_type, metric, model_type='ml', mode='fast',
                  sorted_initialization=False, n_best=15):
-        super().__init__(model_info, ensemble_size, task_type, model_type)
+        super().__init__(model_info, ensemble_size, task_type, metric, model_type)
         self.sorted_initialization = sorted_initialization
         self.config_list = self.model_info[0]
         if n_best < self.ensemble_size:
             self.n_best = n_best
         else:
             self.n_best = self.ensemble_size
-        self.metric = metric
         self.mode = mode
         self.random_state = np.random.RandomState(42)
 
@@ -175,6 +174,7 @@ class EnsembleSelection(BaseEnsembleModel):
         predictions = []
         for estimator in self.ensemble_models:
             pred = self.get_predictions(estimator, X)
+            print(pred)
             predictions.append(pred)
         predictions = np.asarray(predictions)
 
@@ -193,18 +193,19 @@ class EnsembleSelection(BaseEnsembleModel):
         else:
             raise ValueError("The dimensions of ensemble predictions"
                              " and ensemble weights do not match!")
-        if self.task_type == CLASSIFICATION:
-            return np.argmax(pred, axis=-1)
-        elif self.task_type == REGRESSION:
-            return pred
+        # if self.task_type == CLASSIFICATION:
+        #     return np.argmax(pred, axis=-1)
+        # elif self.task_type == REGRESSION:
+        return pred
 
     def calculate_score(self, pred, y_true):
         if self.task_type == CLASSIFICATION:
             from sklearn.metrics import roc_auc_score
             if self.metric == roc_auc_score:
-                pred = pred[:, 1]
+                pred = pred
             else:
                 pred = np.argmax(pred, axis=1)
+            print(pred)
             score = self.metric(y_true, pred)
         elif self.task_type == REGRESSION:
             score = -self.metric(y_true, pred)

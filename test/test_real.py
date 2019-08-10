@@ -1,4 +1,5 @@
 import sys
+import pickle as pkl
 
 sys.path.append('/home/daim_gpu/sy/AlphaML')
 from alphaml.engine.components.data_manager import DataManager
@@ -13,10 +14,10 @@ def test_cash_module():
     df = pd.read_csv("data/cls_data/santander/train.csv")
     df = df.drop(columns=["ID"])
     cls = Classifier(include_models=['xgboost', 'random_forest', 'decision_tree'],
-                     optimizer='mono_smbo',
-                     # ensemble_method='ensemble_selection',
-                     # ensemble_size=5,
-                     ).fit(df, metric='auc', runcount=200)
+                     optimizer='baseline',
+                     ensemble_method='ensemble_selection',
+                     ensemble_size=30,
+                     ).fit(df, metric='auc', runcount=1)
     df = pd.read_csv("data/cls_data/santander/test.csv")
     data = df.values
     df = df.drop(columns=["ID"])

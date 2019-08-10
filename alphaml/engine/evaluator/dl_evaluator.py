@@ -51,6 +51,7 @@ class BaseImgEvaluator(BaseClassificationEvaluator):
 
         # Fit the estimator on the training data.
         # TODO: final fit (more epoches, lr strategies)
+        # TODO: load model
         estimator.fit(self.data_manager, **kwargs)
 
         # Inference.

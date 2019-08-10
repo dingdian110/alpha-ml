@@ -6,6 +6,34 @@ from alphaml.engine.components.data_manager import DataManager
 from alphaml.engine.components.pipeline.base_operator import Operator, FEATURE_SELECTION
 
 
+class IdenticalOperator(Operator):
+    def __init__(self, params=None):
+        super().__init__(FEATURE_SELECTION, 'fs_identicalselector', params)
+
+    def operate(self, dm_list: typing.List, phase='train'):
+        self.check_phase(phase)
+
+        x = None
+        y = None
+        if phase == 'train':
+            for dm in dm_list:
+                if x is None:
+                    x = dm.train_X
+                    y = dm.train_y
+                else:
+                    x = np.hstack((x, dm.train_X))
+            dm = DataManager(x, y, spilt=False)
+        else:
+            for dm in dm_list:
+                if x is None:
+                    x = dm.test_X
+                else:
+                    x = np.hstack((x, dm.test_X))
+            dm = DataManager()
+            dm.test_X = x
+        return dm
+
+
 class NaiveSelectorOperator(Operator):
     def __init__(self, params=[50, 0]):
         '''
