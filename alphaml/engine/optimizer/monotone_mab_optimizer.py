@@ -15,7 +15,7 @@ class MONO_MAB_SMBO(BaseOptimizer):
         self.iter_num = int(1e10) if ('runcount' not in kwargs or kwargs['runcount'] is None) else kwargs['runcount']
         self.estimator_arms = self.config_space.get_hyperparameter('estimator').choices
         self.mode = kwargs['update_mode'] if 'update_mode' in kwargs else 2
-        self.B = kwargs['r'] if ('r' in kwargs and kwargs['r'] < 10) else None
+        self.B = kwargs['r'] if ('r' in kwargs and kwargs['r'] > 10) else None
         self.C = 10 if 'param' not in kwargs else kwargs['param']
         self.task_name = kwargs['task_name'] if 'task_name' in kwargs else 'default'
         if self.B is None:
