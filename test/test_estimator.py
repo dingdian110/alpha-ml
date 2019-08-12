@@ -1,26 +1,12 @@
+import os
 import sys
 import argparse
-import pickle
 import numpy as np
-import seaborn as sns
-import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
-import matplotlib.lines as mlines
-sns.set_style(style='whitegrid')
-
-plt.rc('text', usetex=True)
-plt.rc('font', size=12.0, family='Times New Roman')
-plt.rcParams['figure.figsize'] = (8.0, 4.0)
-plt.rcParams['text.latex.preamble'] = [r"\usepackage{amsmath}"]
-plt.rcParams["legend.frameon"] = True
-plt.rcParams["legend.facecolor"] = 'white'
-plt.rcParams["legend.edgecolor"] = 'black'
-plt.rc('legend', **{'fontsize': 12})
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--mode', choices=['master', 'daim213'], default='master')
-parser.add_argument('--rep', type=int, default=5)
-parser.add_argument('--run_count', type=int, default=100)
+parser.add_argument('--rep', type=int, default=10)
+parser.add_argument('--run_count', type=int, default=200)
 parser.add_argument('--datasets', type=str, default='iris')
 args = parser.parse_args()
 
@@ -44,13 +30,18 @@ def test_estimator():
     print(rep_num, run_count, datasets)
 
     for dataset in datasets:
+        dataset_id = dataset.split('_')[0]
+        result_dir = 'data/' + dataset_id
+        if not os.path.exists(result_dir):
+            os.mkdir(result_dir)
+
         task_format = dataset + '_est_%d'
         X, y, _ = load_data(dataset)
         dm = DataManager(X, y)
         seed = np.random.random_integers(MAX_INT)
-        for optimizer in ['smbo', 'ts_smbo']:
+        for optimizer in ['smbo']:
             cls = Classifier(
-                include_models=['extra_trees'],
+                include_models=['gradient_boosting'],
                 optimizer=optimizer,
                 seed=seed
             ).fit(
