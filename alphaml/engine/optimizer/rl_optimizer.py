@@ -18,9 +18,9 @@ class RL_SMBO(BaseOptimizer):
 
         self.mode = kwargs['update_mode'] if 'update_mode' in kwargs else 1
         self.param = float(kwargs['param']) if 'param' in kwargs else None
-        self.avg = False
+        self.avg = True
         if self.mode > 3:
-            self.update_mth = True
+            self.avg = False
             self.mode -= 3
 
         if self.mode == 1:
