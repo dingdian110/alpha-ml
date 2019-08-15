@@ -2,6 +2,7 @@ import numpy as np
 
 
 def load_poker(data_folder):
+    # The dataset contains more than 1M samples. We use only 50000 of them.
     L = []
     file_path = data_folder + 'poker'
     with open(file_path, 'r') as f:
@@ -16,4 +17,4 @@ def load_poker(data_folder):
                 l[int(index)] = int(val)
             L.append(l)
     data = np.array(L)
-    return data[:, 1:], data[:, 0]
+    return data[:50000, 1:], data[:50000, 0]

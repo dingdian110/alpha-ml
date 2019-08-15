@@ -188,6 +188,58 @@ def load_data(dataset_name):
         from alphaml.datasets.cls_dataset.cifar10small import load_cifar10s
         X, y = load_cifar10s(data_dir_template % dataset_name)
         num_cls = 10
+    elif dataset_name == 'eucalyptus':
+        from alphaml.datasets.cls_dataset.eucalyptus import load_eucalyptus
+        X, y = load_eucalyptus(data_dir_template % dataset_name)
+        num_cls = 5
+    elif dataset_name == 'yeast':
+        from alphaml.datasets.cls_dataset.yeast import load_yeast
+        X, y = load_yeast(data_dir_template % dataset_name)
+        num_cls = 10
+    elif dataset_name == 'wind':
+        from alphaml.datasets.cls_dataset.wind import load_wind
+        X, y = load_wind(data_dir_template % dataset_name)
+        num_cls = 2
+    elif dataset_name == 'vehicle':
+        from alphaml.datasets.cls_dataset.vehicle import load_vehicle
+        X, y = load_vehicle(data_dir_template % dataset_name)
+        num_cls = 4
+    elif dataset_name == 'mammography':
+        from alphaml.datasets.cls_dataset.mammography import load_mammography
+        X, y = load_mammography(data_dir_template % dataset_name)
+        num_cls = 2
+    elif dataset_name == 'houses':
+        from alphaml.datasets.cls_dataset.houses import load_houses
+        X, y = load_houses(data_dir_template % dataset_name)
+        num_cls = 2
+    elif dataset_name == 'elevators':
+        from alphaml.datasets.cls_dataset.elevators import load_elevators
+        X, y = load_elevators(data_dir_template % dataset_name)
+        num_cls = 2
+    elif dataset_name == 'electricity':
+        from alphaml.datasets.cls_dataset.electricity import load_electricity
+        X, y = load_electricity(data_dir_template % dataset_name)
+        num_cls = 2
+    elif dataset_name == 'eeg_eye_state':
+        from alphaml.datasets.cls_dataset.eeg_eye_state import load_eeg_eye_state
+        X, y = load_eeg_eye_state(data_dir_template % dataset_name)
+        num_cls = 2
+    elif dataset_name == 'abalone':
+        from alphaml.datasets.cls_dataset.abalone import load_abalone
+        X, y = load_abalone(data_dir_template % dataset_name)
+        num_cls = 3
+    elif dataset_name == 'amazon':
+        from alphaml.datasets.cls_dataset.amazon import load_amazon
+        X, y = load_amazon(data_dir_template % dataset_name)
+        num_cls = 50
+    elif dataset_name == 'higgs':
+        from alphaml.datasets.cls_dataset.higgs import load_higgs
+        X, y = load_higgs(data_dir_template % dataset_name)
+        num_cls = 2
+    elif dataset_name == 'credit_g':
+        from alphaml.datasets.cls_dataset.credit_g import load_credit_g
+        X, y = load_credit_g(data_dir_template % dataset_name)
+        num_cls = 2
     else:
         raise ValueError('Invalid dataset name: %s!' % dataset_name)
     print(X.shape, y.shape)

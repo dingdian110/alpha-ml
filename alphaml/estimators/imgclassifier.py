@@ -63,7 +63,6 @@ class ImageClassifier(BaseEstimator):
                          ]:
             raise ValueError("Problematic Task Type: %s!" % task_type)
         assert task_type in ['binary', 'multiclass', 'multilabel-indicator']
-        assert data is not None and isinstance(data, DataManager)
 
         # Image classification task.
         task_type = 'img_' + task_type

@@ -58,3 +58,19 @@ def check_for_bool(p):
         return True
     else:
         raise ValueError("%s is not a bool" % str(p))
+
+def get_max_index(num_list, topk=3):
+    num_dict = {}
+    for i in range(len(num_list)):
+        num_dict[i] = num_list[i]
+    res_list = sorted(num_dict.items(), key=lambda e: e[1])
+    max_num_index = [x[0] for x in res_list[::-1][:topk]]
+    return max_num_index
+
+def get_most(num_list):
+    temp = 0
+    for i in num_list:
+        if num_list.count(i) > temp:
+            max_num = i
+            temp = num_list.count(i)
+    return max_num

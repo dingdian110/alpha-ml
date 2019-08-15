@@ -1,4 +1,5 @@
 import xgboost as xgb
+import numpy as np
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import UniformFloatHyperparameter, \
     UniformIntegerHyperparameter, CategoricalHyperparameter
@@ -42,7 +43,7 @@ class XGBoostClassifier(BaseClassificationModel):
 
         if self.num_cls > 2:
             parameters['num_class'] = self.num_cls
-            parameters['objective'] = 'multi:softmax'
+            parameters['objective'] = 'multi:softprob'
             parameters['eval_metric'] = 'merror'
         elif self.num_cls == 2:
             parameters['objective'] = 'binary:logistic'
@@ -55,6 +56,7 @@ class XGBoostClassifier(BaseClassificationModel):
         watchlist = [(dmtrain, 'train')]
 
         self.estimator = xgb.train(parameters, dmtrain, self.n_estimators, watchlist, verbose_eval=0)
+        self.objective = parameters['objective']
         return self
 
     def predict(self, X):
@@ -64,25 +66,34 @@ class XGBoostClassifier(BaseClassificationModel):
         pred = self.estimator.predict(dm)
         if self.num_cls == 2:
             pred = [int(i > 0.5) for i in pred]
-        return pred
+        else:
+            pred = np.argmax(pred, axis=-1)
+        return np.array(pred)
 
     def predict_proba(self, X):
         if self.estimator is None:
             raise NotImplementedError()
         dm = xgb.DMatrix(X, label=None)
-        return self.estimator.predict_proba(dm)
+        pred = self.estimator.predict(dm)
+        if self.objective == 'binary:logistic':
+            final_pred = np.zeros((pred.shape[0], 2))
+            for i, proba in enumerate(pred):
+                final_pred[i, :] = np.array([1 - proba, proba])
+            return final_pred
+        else:
+            return self.estimator.predict(dm)
 
     @staticmethod
     def get_properties(dataset_properties=None):
         return {'shortname': 'XGBoost',
-            'name': 'XGradient Boosting Classifier',
-            'handles_regression': False,
-            'handles_classification': True,
-            'handles_multiclass': True,
-            'handles_multilabel': False,
-            'is_deterministic': True,
-            'input': (DENSE, SPARSE, UNSIGNED_DATA),
-            'output': (PREDICTIONS,)}
+                'name': 'XGradient Boosting Classifier',
+                'handles_regression': False,
+                'handles_classification': True,
+                'handles_multiclass': True,
+                'handles_multilabel': False,
+                'is_deterministic': True,
+                'input': (DENSE, SPARSE, UNSIGNED_DATA),
+                'output': (PREDICTIONS,)}
 
     @staticmethod
     def get_hyperparameter_search_space(dataset_properties=None):

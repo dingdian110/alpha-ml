@@ -5,6 +5,7 @@ from __future__ import print_function
 import time
 import os
 import warnings
+import numpy as np
 from keras import Model
 from keras import layers
 from keras.optimizers import SGD, Adam
@@ -31,12 +32,18 @@ class BaseImageClassificationModel(BaseClassificationModel):
 
     @staticmethod
     def set_training_space(cs: ConfigurationSpace):
+        '''
+        Set hyperparameters for training
+        '''
         batch_size = CategoricalHyperparameter('batch_size', [16, 32], default_value=32)
         keep_prob = UniformFloatHyperparameter('keep_prob', 0, 0.99, default_value=0.5)
         cs.add_hyperparameters([batch_size, keep_prob])
 
     @staticmethod
     def set_optimizer_space(cs: ConfigurationSpace):
+        '''
+        Set hyperparameters for optimizers
+        '''
         optimizer = CategoricalHyperparameter('optimizer', ['SGD', 'Adam'], default_value='Adam')
         sgd_lr = UniformFloatHyperparameter('sgd_lr', 0.00001, 0.1,
                                             default_value=0.005, log=True)  # log scale
@@ -127,7 +134,7 @@ class BaseImageClassificationModel(BaseClassificationModel):
 
         timestr = time.strftime('%Y-%m-%d-%H:%M:%S', time.localtime(time.time()))
 
-        # model
+        # build model
         if self.classnum == 1:
             final_activation = 'sigmoid'
             loss = 'binary_crossentropy'
@@ -140,9 +147,10 @@ class BaseImageClassificationModel(BaseClassificationModel):
         y = layers.Dense(self.classnum, activation=final_activation, name='Dense_final')(y)
         model = Model(inputs=self.base_model.input, outputs=y)
         # TODO: save models after training
-        if not os.path.exists('dl_models'):
-            os.makedirs('dl_models')
-        modelpath = os.path.join('dl_models', 'model_%s.hdf5' % timestr)
+        save_dir = 'dl_models'
+        if not os.path.exists(save_dir):
+            os.makedirs(save_dir)
+        modelpath = os.path.join(save_dir, 'model_%s.hdf5' % timestr)
         checkpoint = ModelCheckpoint(filepath=modelpath,
                                      monitor=self.monitor,
                                      save_best_only=True,
@@ -157,7 +165,20 @@ class BaseImageClassificationModel(BaseClassificationModel):
         self.best_result = checkpoint.best
         return self, modelpath
 
-    def predict(self, X):
+    def predict_proba(self, data: DataManager):
         if self.estimator is None:
             raise TypeError("Unsupported estimator type 'NoneType'!")
-        return self.estimator.predict(X, batch_size=32)
+        _, testpregen = preprocess()
+        if hasattr(data, 'test_dir'):
+            self.test_gen = testpregen.flow_from_directory(data.test_dir, target_size=self.inputshape[:2],
+                                                           batch_size=32)
+        else:
+            self.test_gen = testpregen.flow(data.test_X, target_size=self.inputshape[:2],
+                                            batch_size=32)
+        pred = self.estimator.predict_generator(self.test_gen)
+        return pred
+
+    def predict(self, data: DataManager):
+        pred = self.predict_proba(data)
+        pred = np.argmax(pred, axis=-1)
+        return pred

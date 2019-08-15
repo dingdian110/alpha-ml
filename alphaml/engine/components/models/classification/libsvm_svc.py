@@ -99,7 +99,6 @@ class LibSVM_SVC(BaseClassificationModel):
                                            log=True, default_value=0.1)
         # TODO this is totally ad-hoc
         coef0 = UniformFloatHyperparameter("coef0", -1, 1, default_value=0)
-        # probability is no hyperparameter, but an argument to the SVM algo
         shrinking = CategoricalHyperparameter("shrinking", ["True", "False"],
                                               default_value="True")
         tol = UniformFloatHyperparameter("tol", 1e-5, 1e-1, default_value=1e-3,

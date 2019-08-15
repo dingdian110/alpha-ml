@@ -1,9 +1,13 @@
+import pandas as pd
+from alphaml.engine.components.data_manager import DataManager
+
+
 class BaseEstimator(object):
     """Base class for all estimators in alpha-ml. """
 
     def __init__(
             self,
-            optimizer='ts_smbo',
+            optimizer='mono_smbo',
             time_budget=3600,
             each_run_budget=360,
             ensemble_method='none',
@@ -25,7 +29,7 @@ class BaseEstimator(object):
         self.seed = seed
         self.tmp_dir = tmp_dir
         self.output_dir = output_dir
-
+        self.pre_pipeline = None
         self._ml_engine = None
 
     def build_engine(self):
@@ -43,6 +47,7 @@ class BaseEstimator(object):
         return engine
 
     def fit(self, data, **kwargs):
+        assert data is not None and isinstance(data, (DataManager, pd.DataFrame))
         self._ml_engine = self.build_engine()
         self._ml_engine.fit(data, **kwargs)
         return self

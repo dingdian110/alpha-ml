@@ -1,8 +1,11 @@
 import numpy as np
+import pandas as pd
 from sklearn.utils.multiclass import type_of_target
+from sklearn.metrics import accuracy_score
 from alphaml.estimators.base_estimator import BaseEstimator
 from alphaml.engine.automl import AutoMLClassifier
-from alphaml.engine.components.data_manager import DataManager
+from alphaml.engine.components.pipeline.data_preprocessing_pipeline import DP_Pipeline
+from alphaml.utils.metrics_util import get_metric
 
 
 class Classifier(BaseEstimator):
@@ -14,7 +17,7 @@ class Classifier(BaseEstimator):
         Parameters
         ----------
 
-        data : instance of DataManager.
+        data : instance of DataManager or DataFrame
 
         metric : callable, optional (default='autosklearn.metrics.accuracy_score').
 
@@ -36,42 +39,31 @@ class Classifier(BaseEstimator):
 
         """
 
-        # metric = None if 'metric' not in kwargs else kwargs['metric']
+        metric = accuracy_score if 'metric' not in kwargs else kwargs['metric']
         # feat_type = None if 'feat_type' not in kwargs else kwargs['feat_type']
         # dataset_name = None if 'dataset_name' not in kwargs else kwargs['dataset_name']
         # # The number of evaluations.
         # runcount = None if 'runcount' not in kwargs else kwargs['runcount']
 
+        # TODO:Automated feature engineering
+        if isinstance(data, pd.DataFrame):
+            self.pre_pipeline = DP_Pipeline(None)
+            data = self.pre_pipeline.execute(data, phase='train')
+
         # Check the task type: {binary, multiclass}
         task_type = type_of_target(data.train_y)
         if task_type in ['multiclass-multioutput',
-                           'continuous',
-                           'continuous-multioutput',
-                           'unknown']:
+                         'continuous',
+                         'continuous-multioutput',
+                         'unknown']:
             raise ValueError("UNSUPPORTED TASK TYPE: %s!" % task_type)
         self.task_type = task_type
         kwargs['task_type'] = task_type
-        assert data is not None and isinstance(data, DataManager)
 
-        # Options for multicalss averaging.
+        # Options for multiclass averaging.
         average = 'weighted'
-        metric = kwargs['metric']
-        if isinstance(metric, str):
-            from sklearn.metrics import accuracy_score, f1_score, auc, precision_score, recall_score
-            if metric == 'accuracy':
-                metric = accuracy_score
-            elif metric == 'f1':
-                metric = f1_score
-            elif metric == 'auc':
-                metric = auc
-            elif metric == 'precision':
-                metric = precision_score
-            elif metric == 'recall':
-                metric = recall_score
-            else:
-                raise ValueError('UNSUPPORTED metric: %s' % metric)
-        if not hasattr(metric, '__call__'):
-            raise ValueError('Input metric is not callable!')
+
+        metric = get_metric(metric)
         kwargs['metric'] = metric
 
         super().fit(data, **kwargs)
@@ -83,7 +75,7 @@ class Classifier(BaseEstimator):
 
         Parameters
         ----------
-        X : array-like or sparse matrix of shape = [n_samples, n_features]
+        X : array-like or sparse matrix of shape = [n_samples, n_features] or Dataframe
 
         Returns
         -------
@@ -91,6 +83,11 @@ class Classifier(BaseEstimator):
             The predicted classes.
 
         """
+        if isinstance(X, pd.DataFrame):
+            if not isinstance(self.pre_pipeline, DP_Pipeline):
+                raise ValueError("The preprocessing pipeline is empty. Use DataFrame as the input of function fit.")
+            dm = self.pre_pipeline.execute(X, phase='test')
+            X = dm.test_X
         return super().predict(X, batch_size=batch_size, n_jobs=n_jobs)
 
     def predict_proba(self, X, batch_size=None, n_jobs=1):
@@ -99,7 +96,7 @@ class Classifier(BaseEstimator):
 
         Parameters
         ----------
-        X : array-like or sparse matrix of shape = [n_samples, n_features]
+        X : array-like or sparse matrix of shape = [n_samples, n_features] or Dataframe
 
         batch_size : int (optional)
             Number of data points to predict for (predicts all points at once
@@ -112,18 +109,23 @@ class Classifier(BaseEstimator):
             The predicted class probabilities.
 
         """
+        if isinstance(X, pd.DataFrame):
+            if not isinstance(self.pre_pipeline, DP_Pipeline):
+                raise ValueError("The preprocessing pipeline is empty. Use DataFrame as the input of function fit.")
+            dm = self.pre_pipeline.execute(X, phase='test')
+            X = dm.test_X
         pred_proba = super().predict_proba(X, batch_size=batch_size, n_jobs=n_jobs)
 
         if self.task_type not in ['multilabel-indicator']:
-            assert(
+            assert (
                 np.allclose(
                     np.sum(pred_proba, axis=1),
                     np.ones_like(pred_proba[:, 0]))
             ), "prediction probability does not sum up to 1!"
 
         # Check that all probability values lie between 0 and 1.
-        assert(
-            (pred_proba >= 0).all() and (pred_proba <= 1).all()
+        assert (
+                (pred_proba >= 0).all() and (pred_proba <= 1).all()
         ), "found prediction probability value outside of [0, 1]!"
 
         return pred_proba
