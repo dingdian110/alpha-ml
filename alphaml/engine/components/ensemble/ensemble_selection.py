@@ -23,11 +23,14 @@ class EnsembleSelection(BaseEnsembleModel):
         if self.model_type == 'ml':
             predictions = []
             for config in self.config_list:
-                estimator = self.get_estimator(config, dm.train_X, dm.train_y, if_load=True)
-                self.ensemble_models.append(estimator)
-                pred = self.get_predictions(estimator, dm.val_X)
-                predictions.append(pred)
-                self._fit(predictions, dm.val_y)
+                try:
+                    estimator = self.get_estimator(config, dm.train_X, dm.train_y, if_load=True)
+                    self.ensemble_models.append(estimator)
+                    pred = self.get_predictions(estimator, dm.val_X)
+                    predictions.append(pred)
+                    self._fit(predictions, dm.val_y)
+                except ValueError as err:
+                    pass
 
         elif self.model_type == 'dl':
             pass
@@ -174,7 +177,7 @@ class EnsembleSelection(BaseEnsembleModel):
         predictions = []
         for estimator in self.ensemble_models:
             pred = self.get_predictions(estimator, X)
-            print(pred)
+            # print(pred)
             predictions.append(pred)
         predictions = np.asarray(predictions)
 
@@ -193,10 +196,10 @@ class EnsembleSelection(BaseEnsembleModel):
         else:
             raise ValueError("The dimensions of ensemble predictions"
                              " and ensemble weights do not match!")
-        # if self.task_type == CLASSIFICATION:
-        #     return np.argmax(pred, axis=-1)
-        # elif self.task_type == REGRESSION:
-        return pred
+        if self.task_type == CLASSIFICATION:
+            return np.argmax(pred, axis=-1)
+        elif self.task_type == REGRESSION:
+            return pred
 
     def calculate_score(self, pred, y_true):
         if self.task_type == CLASSIFICATION:
@@ -205,7 +208,7 @@ class EnsembleSelection(BaseEnsembleModel):
                 pred = pred
             else:
                 pred = np.argmax(pred, axis=1)
-            print(pred)
+            # print(pred)
             score = self.metric(y_true, pred)
         elif self.task_type == REGRESSION:
             score = -self.metric(y_true, pred)

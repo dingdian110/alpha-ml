@@ -126,7 +126,8 @@ class AutoML(object):
             elif self.ensemble_method == 'stacking':
                 self.ensemble_model = Stacking(model_infos, self.ensemble_size, task_type, self.metric)
             elif self.ensemble_method == 'ensemble_selection':
-                self.ensemble_model = EnsembleSelection(model_infos, self.ensemble_size, task_type, self.metric)
+                self.ensemble_model = EnsembleSelection(model_infos, self.ensemble_size, task_type, self.metric,
+                                                        n_best=7)
             else:
                 raise ValueError('UNSUPPORTED ensemble method: %s' % self.ensemble_method)
 
