@@ -33,6 +33,7 @@ class BaseEnsembleModel(object):
         index_list = []
         model_len = len(self.model_info[1])
         estimator_set = set([self.model_info[0][i]['estimator'] for i in range(model_len)])
+        # Get the estimator with the best performance for each algorithm
         for estimator in estimator_set:
             best_perf = -float("Inf")
             best_id = -1
@@ -71,7 +72,6 @@ class BaseEnsembleModel(object):
         return estimator
 
     def get_predictions(self, estimator, X):
-        print(self.metric)
         if self.task_type == CLASSIFICATION:
             from sklearn.metrics import roc_auc_score
             if self.metric == roc_auc_score:
