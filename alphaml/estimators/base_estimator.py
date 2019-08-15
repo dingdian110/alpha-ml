@@ -11,7 +11,7 @@ class BaseEstimator(object):
             time_budget=3600,
             each_run_budget=360,
             ensemble_method='none',
-            ensemble_size=10,
+            ensemble_size=50,
             memory_limit=1024,
             seed=None,
             include_models=None,
