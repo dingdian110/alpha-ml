@@ -128,7 +128,7 @@ def test_cash_module():
                 print('Test %s optimizer => %s' % (optimizer, task_name))
 
                 # Construct the AutoML classifier.
-                cls = Classifier(optimizer=optimizer, seed=seed).fit(
+                cls = Classifier(optimizer=optimizer, seed=seed, include_models=['xgboost']).fit(
                     dm, metric='accuracy', runcount=run_count,
                     task_name=task_name, update_mode=mode, eta=eta, r=r, param=eta)
                 acc = cls.score(X_test, y_test)
