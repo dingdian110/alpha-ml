@@ -45,7 +45,10 @@ class BaseEnsembleModel(object):
 
         self.config_list = [self.model_info[0][i] for i in index_list]
         for i in index_list:
+            print('------------------')
             print(self.model_info[0][i], self.model_info[1][i])
+            self.get_estimator(self.model_info[0][i], None, None, True)
+            print('------------------')
 
     def fit(self, dm):
         raise NotImplementedError
@@ -71,11 +74,10 @@ class BaseEnsembleModel(object):
         return estimator
 
     def get_predictions(self, estimator, X):
-        print(self.metric)
         if self.task_type == CLASSIFICATION:
             from sklearn.metrics import roc_auc_score
             if self.metric == roc_auc_score:
-                return estimator.predict_proba(X)[:, 1]
+                return estimator.predict_proba(X)[:, 1:]
             else:
                 return estimator.predict_proba(X)
         elif self.task_type == REGRESSION:

@@ -7,7 +7,7 @@ from collections import Counter
 
 class EnsembleSelection(BaseEnsembleModel):
     def __init__(self, model_info, ensemble_size, task_type, metric, model_type='ml', mode='fast',
-                 sorted_initialization=False, n_best=15):
+                 sorted_initialization=False, n_best=10):
         super().__init__(model_info, ensemble_size, task_type, metric, model_type)
         self.sorted_initialization = sorted_initialization
         self.config_list = self.model_info[0]
@@ -174,7 +174,6 @@ class EnsembleSelection(BaseEnsembleModel):
         predictions = []
         for estimator in self.ensemble_models:
             pred = self.get_predictions(estimator, X)
-            print(pred)
             predictions.append(pred)
         predictions = np.asarray(predictions)
 
@@ -193,9 +192,8 @@ class EnsembleSelection(BaseEnsembleModel):
         else:
             raise ValueError("The dimensions of ensemble predictions"
                              " and ensemble weights do not match!")
-        # if self.task_type == CLASSIFICATION:
-        #     return np.argmax(pred, axis=-1)
-        # elif self.task_type == REGRESSION:
+        if len(pred.shape) > 1 and pred.shape[1] == 1:
+            pred = np.reshape(pred, (pred.shape[0]))
         return pred
 
     def calculate_score(self, pred, y_true):
@@ -205,7 +203,6 @@ class EnsembleSelection(BaseEnsembleModel):
                 pred = pred
             else:
                 pred = np.argmax(pred, axis=1)
-            print(pred)
             score = self.metric(y_true, pred)
         elif self.task_type == REGRESSION:
             score = -self.metric(y_true, pred)

@@ -311,3 +311,40 @@ class VarianceRemoverOperator(Operator):
                 x = np.delete(x, [index], axis=1)
             dm.test_X = x
         return dm
+
+
+class IdenticalRemoverOperator(Operator):
+    def __init__(self, params=None):
+        super().__init__(DATA_PERPROCESSING, 'dp_constant_remover', params)
+        self.identical_indices = []
+
+    def operate(self, dm_list: typing.List, phase='train'):
+        assert len(dm_list) == 1 and isinstance(dm_list[0], DataManager)
+        self.check_phase(phase)
+
+        dm = dm_list[0]
+        feature_types = dm.feature_types
+        numericial_index = [i for i in range(len(feature_types))
+                            if feature_types[i] == "Float" or feature_types[i] == "Discrete"]
+
+        if phase == 'train':
+            x = dm.train_X
+            for i, index in enumerate(numericial_index):
+                feature = x[:, index]
+                for ano_index in numericial_index[:i]:
+                    ano_feature = x[:, ano_index]
+                    if (feature == ano_feature).all():
+                        self.identical_indices.append(i)
+                        break
+            self.identical_indices.reverse()
+            for index in self.identical_indices:
+                del (dm.feature_types[index])
+                x = np.delete(x, [index], axis=1)
+            dm.train_X = x
+        else:
+            x = dm.test_X
+            for index in self.identical_indices:
+                del (dm.feature_types[index])
+                x = np.delete(x, [index], axis=1)
+            dm.test_X = x
+        return dm
