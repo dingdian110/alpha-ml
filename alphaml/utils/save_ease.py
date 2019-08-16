@@ -38,7 +38,10 @@ def save_ease(*dargs, **dkargs):
 
 
 def get_configuration_id(config):
-    config_dict = config.get_dictionary()
+    try:
+        config_dict = config.get_dictionary()
+    except BaseException as err:
+        config_dict = config
     config_list = []
     for key, value in sorted(config_dict.items(), key=lambda t: t[0]):
         if isinstance(value, float):
