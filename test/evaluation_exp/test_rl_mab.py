@@ -33,10 +33,10 @@ def get_seeds(dataset, rep_num):
 
 def test_cash_module():
     rep_num = 20
-    run_count = 500
+    run_count = 200
     start_id = args.start_runid
     datasets = args.datasets.split(',')
-    task_id = "eval_non"
+    task_id = "eval_non_tmp"
     print(rep_num, run_count, datasets, task_id)
 
     result = dict()
@@ -80,7 +80,7 @@ def test_cash_module():
                 print('Test %s optimizer => %s' % (optimizer, task_name))
 
                 # Construct the AutoML classifier.
-                cls = Classifier(optimizer=optimizer, seed=seed).fit(
+                cls = Classifier(optimizer=optimizer, seed=seed, include_models=['xgboost']).fit(
                     dm, metric='accuracy', runcount=run_count,
                     task_name=task_name, update_mode=mode, param=eta)
                 acc = cls.score(X_test, y_test)

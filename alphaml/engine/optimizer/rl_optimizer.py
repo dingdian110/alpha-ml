@@ -13,7 +13,7 @@ class RL_SMBO(BaseOptimizer):
         super().__init__(evaluator, config_space, data, kwargs['metric'], seed)
 
         self.iter_num = int(1e10) if ('runcount' not in kwargs or kwargs['runcount'] is None) else kwargs['runcount']
-        self.estimator_arms = self.config_space.get_hyperparameter('estimator').choices
+        self.estimator_arms = list(self.config_space.keys())
         self.task_name = kwargs['task_name'] if 'task_name' in kwargs else 'default'
 
         self.mode = kwargs['update_mode'] if 'update_mode' in kwargs else 1
