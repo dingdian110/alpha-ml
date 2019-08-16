@@ -1,3 +1,5 @@
+import os
+import shutil
 import logging
 from alphaml.engine.components.components_manager import ComponentsManager
 from alphaml.engine.components.data_manager import DataManager
@@ -49,6 +51,9 @@ class AutoML(object):
         self.metric = None
         self.logger = logging.getLogger(__name__)
         self.ensemble_model = None
+        self.model_path = './data/save_models'
+        if os.path.exists(self.model_path):
+            shutil.rmtree(self.model_path)
 
     def fit(self, data, **kwargs):
         """
