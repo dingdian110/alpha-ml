@@ -15,10 +15,14 @@ class BaseEnsembleModel(object):
         self.model_type = model_type
         self.metric = metric
         self.ensemble_models = list()
+        if 'hyperopt' in task_type:
+            task_type = task_type.split('_')[1]
         if task_type in ['binary', 'multiclass', 'img_binary', 'img_multiclass', 'img_multilabel-indicator']:
             self.task_type = CLASSIFICATION
         elif task_type in ['continuous']:
             self.task_type = REGRESSION
+        elif 'hyperopt' in task_type:
+            self.task_type = CLASSIFICATION
         else:
             raise ValueError('Undefined Task Type: %s' % task_type)
 
@@ -32,17 +36,31 @@ class BaseEnsembleModel(object):
         # Determine the best basic models (the best for each algorithm) from models_infos.
         index_list = []
         model_len = len(self.model_info[1])
-        estimator_set = set([self.model_info[0][i]['estimator'] for i in range(model_len)])
-        # Get the estimator with the best performance for each algorithm
-        for estimator in estimator_set:
-            best_perf = -float("Inf")
-            best_id = -1
-            for i in range(model_len):
-                if self.model_info[0][i]['estimator'] == estimator:
-                    if self.model_info[1][i] > best_perf:
-                        best_perf = self.model_info[1][i]
-                        best_id = i
-            index_list.append(best_id)
+        try:
+            # SMAC
+            estimator_set = set([self.model_info[0][i]['estimator'] for i in range(model_len)])
+            # Get the estimator with the best performance for each algorithm
+            for estimator in estimator_set:
+                best_perf = -float("Inf")
+                best_id = -1
+                for i in range(model_len):
+                    if self.model_info[0][i]['estimator'] == estimator:
+                        if self.model_info[1][i] > best_perf:
+                            best_perf = self.model_info[1][i]
+                            best_id = i
+                index_list.append(best_id)
+        except:
+            # Hyperopt
+            estimator_set = set(self.model_info[0][i]['estimator'][0] for i in range(model_len))
+            for estimator in estimator_set:
+                best_perf = -float("Inf")
+                best_id = -1
+                for i in range(model_len):
+                    if self.model_info[0][i]['estimator'][0] == estimator:
+                        if self.model_info[1][i] > best_perf:
+                            best_perf = self.model_info[1][i]
+                            best_id = i
+                index_list.append(best_id)
 
         self.config_list = [self.model_info[0][i] for i in index_list]
         for i in index_list:
