@@ -45,15 +45,15 @@ def load_infos(dataset, task_id, run_count, id, mth):
 
 
 def test_ensemble():
-    rep_num = 3
-    run_count = 100
+    rep_num = 10
+    run_count = 500
     start_id = args.start_runid
     datasets = args.datasets.split(',')
     task_id = "eval_ensemble"
     print(rep_num, run_count, datasets, task_id)
 
-    result = dict()
     for dataset in datasets:
+        result = dict()
         dataset_id = dataset.split('_')[0]
         result_dir = 'data/'+dataset_id
         if not os.path.exists(result_dir):
@@ -115,7 +115,7 @@ def test_ensemble():
             # Display and save the test result.
             print(result)
             with open('data/%s/%s_test_result_%s_%d_%d_%d.pkl' %
-                              (dataset_id, dataset_id, task_id, run_count, rep_num, start_id), 'wb') as f:
+                              (dataset_id, dataset, task_id, run_count, rep_num, start_id), 'wb') as f:
                 pickle.dump(result, f)
 
 

@@ -3,11 +3,14 @@ import numpy as np
 
 def softmax(df):
     if len(df.shape) == 1:
-        df[df > 20] = 20
-        df[df < -20] = -20
-        ppositive = 1 / (1 + np.exp(-df))
-        ppositive[ppositive > 0.999999] = 1
-        ppositive[ppositive < 0.0000001] = 0
+        if np.isnan(df).any():
+            ppositive = np.array([0.5]*len(df))
+        else:
+            df[df > 20] = 20
+            df[df < -20] = -20
+            ppositive = 1 / (1 + np.exp(-df))
+            ppositive[ppositive > 0.999999] = 1
+            ppositive[ppositive < 0.0000001] = 0
         return np.transpose(np.array((1 - ppositive, ppositive)))
     else:
         # Compute the Softmax like it is described here:

@@ -55,15 +55,11 @@ class BaseEnsembleModel(object):
     @save_ease(save_dir='./data/save_models')
     def get_estimator(self, config, x, y, if_load=False, **kwargs):
         save_path = kwargs['save_path']
-        if if_load and os.path.exists(save_path):
+        if config['estimator'] != 'xgboost' and if_load and os.path.exists(save_path):
             with open(save_path, 'rb') as f:
                 estimator = pkl.load(f)
                 print("Estimator loaded from", save_path)
         else:
-            # if self.task_type == CLASSIFICATION:
-            #     evaluator = BaseClassificationEvaluator()
-            # elif self.task_type == REGRESSION:
-            #     evaluator = BaseRegressionEvaluator()
             evaluator = BaseEvaluator()
             _, estimator = evaluator.get_config(config)
             estimator.fit(x, y)
