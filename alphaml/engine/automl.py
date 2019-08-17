@@ -12,7 +12,6 @@ from alphaml.engine.optimizer.sh_optimizer import SH_SMBO
 from alphaml.engine.optimizer.rl_optimizer import RL_SMBO
 from alphaml.engine.optimizer.mcmc_ts_optimizer import MCMC_TS_Optimizer
 from alphaml.engine.optimizer.ucb_mab_optimizer import UCB_SMBO
-from alphaml.engine.components.ensemble.bagging import Bagging
 from alphaml.utils.label_util import to_categorical, map_label, get_classnum
 import numpy as np
 
@@ -116,7 +115,7 @@ class AutoML(object):
         if self.ensemble_method == 'none':
             self.ensemble_model = None
         elif self.ensemble_method == 'bagging':
-            self.ensemble_model = Bagging(model_infos, self.ensemble_size)
+            pass
 
         if self.ensemble_model is not None:
             # Train the ensemble model.
@@ -136,7 +135,7 @@ class AutoML(object):
 
     def score(self, X, y):
         pred_y = self.predict(X)
-        score = self.metric(y, pred_y)
+        score = self.metric(pred_y, y)
         return score
 
 

@@ -1,3 +1,4 @@
+import numpy as np
 import xgboost as xgb
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import UniformFloatHyperparameter, \
@@ -42,7 +43,7 @@ class XGBoostClassifier(BaseClassificationModel):
 
         if self.num_cls > 2:
             parameters['num_class'] = self.num_cls
-            parameters['objective'] = 'multi:softmax'
+            parameters['objective'] = 'multi:softprob'
             parameters['eval_metric'] = 'merror'
         elif self.num_cls == 2:
             parameters['objective'] = 'binary:logistic'
@@ -64,13 +65,22 @@ class XGBoostClassifier(BaseClassificationModel):
         pred = self.estimator.predict(dm)
         if self.num_cls == 2:
             pred = [int(i > 0.5) for i in pred]
-        return pred
+        else:
+            pred = np.argmax(pred, axis=-1)
+        return np.array(pred)
 
     def predict_proba(self, X):
         if self.estimator is None:
             raise NotImplementedError()
         dm = xgb.DMatrix(X, label=None)
-        return self.estimator.predict_proba(dm)
+        pred = self.estimator.predict(dm)
+        if self.num_cls == 2:
+            final_pred = np.zeros((pred.shape[0], 2))
+            for i, proba in enumerate(pred):
+                final_pred[i, :] = np.array([1 - proba, proba])
+            return final_pred
+        else:
+            return pred
 
     @staticmethod
     def get_properties(dataset_properties=None):

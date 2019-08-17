@@ -1,3 +1,7 @@
+import os
+import shutil
+
+
 class BaseEstimator(object):
     """Base class for all estimators in alpha-ml. """
 
@@ -12,7 +16,7 @@ class BaseEstimator(object):
             seed=None,
             include_models=None,
             exclude_models=None,
-            tmp_dir=None,
+            tmp_dir='./data/save_models',
             output_dir=None):
         self.optimizer_type = optimizer
         self.time_budget = time_budget
@@ -27,6 +31,14 @@ class BaseEstimator(object):
         self.output_dir = output_dir
 
         self._ml_engine = None
+
+        # Delete the temporary model files.
+        self.tmp_dir = tmp_dir
+        ls = os.listdir(self.tmp_dir)
+        for item in ls:
+            c_path = os.path.join(self.tmp_dir, item)
+            if os.path.isfile(c_path):
+                os.remove(c_path)
 
     def build_engine(self):
         engine = self.get_automl()(
