@@ -1,7 +1,5 @@
-from ConfigSpace.configuration_space import ConfigurationSpace
-from ConfigSpace.hyperparameters import UniformFloatHyperparameter, \
-    UniformIntegerHyperparameter, CategoricalHyperparameter
-from ConfigSpace.conditions import EqualsCondition
+import numpy as np
+from hyperopt import hp
 
 from alphaml.engine.components.models.base_model import BaseClassificationModel
 from alphaml.utils.common import check_none
@@ -20,6 +18,14 @@ class LDA(BaseClassificationModel):
     def fit(self, X, Y):
         import sklearn.multiclass
         from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+
+        # In case of nested shrinkage
+        if isinstance(self.shrinkage, tuple):
+            self.shrinkage_factor = self.shrinkage[1]['shrinkage_factor']
+            self.shrinkage = self.shrinkage[0]
+        else:
+            self.shrinkage = self.shrinkage
+            self.shrinkage_factor = 0.5
 
         if check_none(self.shrinkage):
             self.shrinkage_ = None
@@ -74,14 +80,11 @@ class LDA(BaseClassificationModel):
 
     @staticmethod
     def get_hyperparameter_search_space(dataset_properties=None):
-        cs = ConfigurationSpace()
-        shrinkage = CategoricalHyperparameter(
-            "shrinkage", ["None", "auto", "manual"], default_value="None")
-        shrinkage_factor = UniformFloatHyperparameter(
-            "shrinkage_factor", 0., 1., 0.5)
-        n_components = UniformIntegerHyperparameter('n_components', 1, 250, default_value=10)
-        tol = UniformFloatHyperparameter("tol", 1e-5, 1e-1, default_value=1e-4, log=True)
-        cs.add_hyperparameters([shrinkage, shrinkage_factor, n_components, tol])
+        space = {'n_components': hp.randint('lda_n_components', 250) + 1,
+                 'tol': hp.loguniform('lda_tol', np.log(1e-5), np.log(1e-1)),
+                 'shrinkage': hp.choice('lda_shrinkage', ["None", "auto", (
+                     "manual", {'shrinkage_factor': hp.uniform('lda_shrinkage_factor', 0, 1)})])
+                 }
 
-        cs.add_condition(EqualsCondition(shrinkage_factor, shrinkage, "manual"))
-        return cs
+        init_trial = {'n_components': 10, 'tol': 1e-4, 'shrinkage': "None"}
+        return space

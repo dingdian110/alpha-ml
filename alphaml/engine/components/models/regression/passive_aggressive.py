@@ -72,7 +72,7 @@ class PassiveAggressive(
                 X, y,
                 alpha=1.0,
                 C=self.estimator.C,
-                loss=self.estimator.loss,
+                loss="epsilon_insensitive",
                 learning_rate=lr,
                 max_iter=n_iter,
                 sample_weight=sample_weight,

@@ -1,3 +1,4 @@
+import numpy as np
 from hyperopt import hp
 
 from alphaml.engine.components.models.base_model import BaseClassificationModel
@@ -61,7 +62,7 @@ class AdaboostClassifier(BaseClassificationModel):
     @staticmethod
     def get_hyperparameter_search_space(dataset_properties=None):
         space = {'n_estimators': hp.randint('ab_n_estimators', 451) + 50,
-                 'learning_rate': hp.loguniform('ab_learning_rate', 0.01, 2),
+                 'learning_rate': hp.loguniform('ab_learning_rate', np.log(0.01), np.log(2)),
                  'algorithm': hp.choice('ab_algorithm', ["SAMME.R", "SAMME"]),
                  'max_depth': hp.randint('ab_max_depth', 10) + 1}
 

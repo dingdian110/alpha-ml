@@ -1,10 +1,5 @@
 import numpy as np
-
-from ConfigSpace.configuration_space import ConfigurationSpace
-from ConfigSpace.hyperparameters import UniformFloatHyperparameter, \
-    CategoricalHyperparameter, UnParametrizedHyperparameter, \
-    UniformIntegerHyperparameter
-from ConfigSpace.conditions import EqualsCondition, InCondition
+from hyperopt import hp
 
 from alphaml.engine.components.models.base_model import BaseClassificationModel, IterativeComponentWithSampleWeight
 from alphaml.utils.constants import *
@@ -47,6 +42,24 @@ class SGD(
             self.estimator = None
 
         if self.estimator is None:
+            nested_loss = self.loss
+            self.loss = nested_loss[0]
+            if self.loss == 'modified_huber':
+                self.epsilon = nested_loss[1]['epsilon']
+
+            nested_penalty = self.penalty
+            self.penalty = nested_penalty[0]
+            if self.penalty == "elasticnet":
+                self.l1_ratio = nested_penalty[1]['l1_ratio']
+
+            nested_learning_rate = self.learning_rate
+            self.learning_rate = nested_learning_rate[0]
+            if self.learning_rate == 'invscaling':
+                self.eta0 = nested_learning_rate[1]['eta0']
+                self.power_t = nested_learning_rate[1]['power_t']
+            elif self.learning_rate == 'constant':
+                self.eta0 = nested_learning_rate[1]['eta0']
+
             self.fully_fit_ = False
 
             self.alpha = float(self.alpha)
@@ -136,49 +149,36 @@ class SGD(
 
     @staticmethod
     def get_hyperparameter_search_space(dataset_properties=None):
-        cs = ConfigurationSpace()
+        eta0 = hp.loguniform('sgd_eta0', np.log(1e-7), np.log(1e-1))
+        space = {
+            'loss': hp.choice('sgd_loss', [
+                ("modified_huber", {'epsilon': hp.loguniform('sgd_epsilon', np.log(1e-5), np.log(1e-1))}),
+                ("hinge", {}),
+                ("log", {}),
+                ("squared_hinge", {}),
+                ("perceptron", {})]),
+            'penalty': hp.choice('sgd_penalty',
+                                 [("elasticnet", {'l1_ratio': hp.loguniform('sgd_l1_ratio', np.log(1e-9), np.log(1))}),
+                                  ("l1", {}),
+                                  ("l2", {})]),
+            'alpha': hp.loguniform('sgd_alpha', np.log(1e-7), np.log(1e-1)),
+            'fit_intercept': hp.choice('sgd_fit_intercept', ["True"]),
+            'tol': hp.loguniform('sgd_tol', np.log(1e-5), np.log(1e-1)),
+            'learning_rate': hp.choice('sgd_learning_rate', [("optimal", {}),
+                                                             ("invscaling",
+                                                              {'power_t': hp.loguniform('sgd_power_t', np.log(1e-5),
+                                                                                        np.log(1)),
+                                                               'eta0': eta0}),
+                                                             ("constant", {'eta0': eta0})]),
 
-        loss = CategoricalHyperparameter("loss",
-            ["hinge", "log", "modified_huber", "squared_hinge", "perceptron"],
-            default_value="log")
-        penalty = CategoricalHyperparameter(
-            "penalty", ["l1", "l2", "elasticnet"], default_value="l2")
-        alpha = UniformFloatHyperparameter(
-            "alpha", 1e-7, 1e-1, log=True, default_value=0.0001)
-        l1_ratio = UniformFloatHyperparameter(
-            "l1_ratio", 1e-9, 1,  log=True, default_value=0.15)
-        fit_intercept = UnParametrizedHyperparameter("fit_intercept", "True")
-        tol = UniformFloatHyperparameter("tol", 1e-5, 1e-1, log=True,
-                                         default_value=1e-4)
-        epsilon = UniformFloatHyperparameter(
-            "epsilon", 1e-5, 1e-1, default_value=1e-4, log=True)
-        learning_rate = CategoricalHyperparameter(
-            "learning_rate", ["optimal", "invscaling", "constant"],
-            default_value="invscaling")
-        eta0 = UniformFloatHyperparameter(
-            "eta0", 1e-7, 1e-1, default_value=0.01, log=True)
-        power_t = UniformFloatHyperparameter("power_t", 1e-5, 1,
-                                             default_value=0.5)
-        average = CategoricalHyperparameter(
-            "average", ["False", "True"], default_value="False")
-        cs.add_hyperparameters([loss, penalty, alpha, l1_ratio, fit_intercept,
-                                tol, epsilon, learning_rate, eta0, power_t,
-                                average])
+            'average': hp.choice('sgd_average', ["True", "False"])}
 
-        # TODO add passive/aggressive here, although not properly documented?
-        elasticnet = EqualsCondition(l1_ratio, penalty, "elasticnet")
-        epsilon_condition = EqualsCondition(epsilon, loss, "modified_huber")
+        init_trial = {'loss': ("log", {}),
+                      'penalty': ("l2", {}),
+                      'alpha': 1e-4,
+                      'fit_intercept': "True",
+                      'tol': 1e-4,
+                      'learning_rate': ("invscaling", {'power_t': 0.5, 'eta0': 0.01}),
+                      'average': "False"}
 
-        power_t_condition = EqualsCondition(power_t, learning_rate,
-                                            "invscaling")
-
-        # eta0 is only relevant if learning_rate!='optimal' according to code
-        # https://github.com/scikit-learn/scikit-learn/blob/0.19.X/sklearn/
-        # linear_model/sgd_fast.pyx#L603
-        eta0_in_inv_con = InCondition(eta0, learning_rate, ["invscaling",
-                                                            "constant"])
-        cs.add_conditions([elasticnet, epsilon_condition, power_t_condition,
-                           eta0_in_inv_con])
-
-        return cs
-
+        return space

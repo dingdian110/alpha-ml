@@ -1,8 +1,6 @@
 import numpy as np
 
-from ConfigSpace.configuration_space import ConfigurationSpace
-from ConfigSpace.hyperparameters import UniformFloatHyperparameter, \
-    UniformIntegerHyperparameter, CategoricalHyperparameter, UnParametrizedHyperparameter
+from hyperopt import hp
 
 from alphaml.utils.constants import *
 from alphaml.utils.model_util import softmax
@@ -82,7 +80,7 @@ class PassiveAggressive(
                     X, y,
                     alpha=1.0,
                     C=self.estimator.C,
-                    loss=self.estimator.loss,
+                    loss="hinge",
                     learning_rate=lr,
                     max_iter=n_iter,
                     classes=None,
@@ -91,8 +89,8 @@ class PassiveAggressive(
                     intercept_init=None
                 )
                 if (
-                    self.estimator.max_iter >= 1000
-                    or n_iter > self.estimator.n_iter_
+                        self.estimator.max_iter >= 1000
+                        or n_iter > self.estimator.n_iter_
                 ):
                     self.fully_fit_ = True
 
@@ -132,18 +130,13 @@ class PassiveAggressive(
 
     @staticmethod
     def get_hyperparameter_search_space(dataset_properties=None):
-        C = UniformFloatHyperparameter("C", 1e-5, 10, 1.0, log=True)
-        fit_intercept = UnParametrizedHyperparameter("fit_intercept", "True")
-        loss = CategoricalHyperparameter(
-            "loss", ["hinge", "squared_hinge"], default_value="hinge"
-        )
+        space = {'C': hp.loguniform("pa_C", np.log(1e-5), np.log(10)),
+                 'fit_intercept': hp.choice('pa_fit_intercept', ["True"]),
+                 'loss': hp.choice('pr_loss', ["hinge", "squared_hinge"]),
+                 'tol': hp.loguniform('pr_tol', np.log(1e-5), np.log(1e-1)),
+                 'average': hp.choice('pr_average', ["False", "True"])}
 
-        tol = UniformFloatHyperparameter("tol", 1e-5, 1e-1, default_value=1e-4,
-                                         log=True)
-        # Note: Average could also be an Integer if > 1
-        average = CategoricalHyperparameter('average', ['False', 'True'],
-                                            default_value='False')
+        init_trial = {'C': 1, 'fit_intercept': "True", 'loss': "hinge",
+                      'tol': 1e-4, 'average': "False"}
 
-        cs = ConfigurationSpace()
-        cs.add_hyperparameters([loss, fit_intercept, tol, C, average])
-        return cs
+        return space

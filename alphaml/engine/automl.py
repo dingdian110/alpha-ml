@@ -1,4 +1,5 @@
 import logging
+import os
 from alphaml.engine.components.components_manager import ComponentsManager
 from alphaml.engine.components.data_manager import DataManager
 from alphaml.engine.evaluator.base import BaseClassificationEvaluator, BaseRegressionEvaluator
@@ -51,6 +52,12 @@ class AutoML(object):
         self.metric = None
         self.logger = logging.getLogger(__name__)
         self.ensemble_model = None
+        self.model_path = './data/save_models'
+        ls = os.listdir(self.model_path)
+        for i in ls:
+            c_path = os.path.join(self.model_path, i)
+            if os.path.isfile(c_path):
+                os.remove(c_path)
 
     def fit(self, data, **kwargs):
         """
