@@ -1,5 +1,3 @@
-import os
-import shutil
 import logging
 from alphaml.engine.components.components_manager import ComponentsManager
 from alphaml.engine.components.data_manager import DataManager
@@ -22,7 +20,6 @@ from alphaml.engine.components.ensemble.stacking import Stacking
 from alphaml.engine.components.ensemble.ensemble_selection import EnsembleSelection
 from alphaml.utils.label_util import to_categorical, map_label, get_classnum
 import numpy as np
-import pandas as pd
 
 
 class AutoML(object):
@@ -53,9 +50,6 @@ class AutoML(object):
         self.metric = None
         self.logger = logging.getLogger(__name__)
         self.ensemble_model = None
-        self.model_path = './data/save_models'
-        if os.path.exists(self.model_path):
-            shutil.rmtree(self.model_path)
 
     def fit(self, data, **kwargs):
         """
