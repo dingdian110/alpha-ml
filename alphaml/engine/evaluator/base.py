@@ -40,7 +40,7 @@ class BaseClassificationEvaluator(object):
         save_path = kwargs['save_path']
         # TODO: how to parallize.
         if hasattr(estimator, 'n_jobs'):
-            setattr(estimator, 'n_jobs', 8)
+            setattr(estimator, 'n_jobs', multiprocessing.cpu_count() - 1)
         start_time = time.time()
         self.logger.info('<START TO FIT> %s' % classifier_type)
         self.logger.info('<CONFIG> %s' % config.get_dictionary())
