@@ -1,8 +1,5 @@
-from ConfigSpace.configuration_space import ConfigurationSpace
-from ConfigSpace.hyperparameters import UniformFloatHyperparameter, \
-    CategoricalHyperparameter, Constant
-from ConfigSpace.forbidden import ForbiddenEqualsClause, \
-    ForbiddenAndConjunction
+import numpy as np
+from hyperopt import hp
 
 from alphaml.utils.constants import *
 from alphaml.utils.model_util import softmax
@@ -30,7 +27,10 @@ class LibLinear_SVC(BaseClassificationModel):
     def fit(self, X, Y):
         import sklearn.svm
         import sklearn.multiclass
-
+        combination = self.penalty
+        self.penalty = combination['penalty']
+        self.loss = combination['loss']
+        self.dual = combination['dual']
         self.C = float(self.C)
         self.tol = float(self.tol)
 
@@ -88,45 +88,24 @@ class LibLinear_SVC(BaseClassificationModel):
 
     @staticmethod
     def get_hyperparameter_search_space(dataset_properties=None):
-        cs = ConfigurationSpace()
+        space = {'penalty': hp.choice('liblinear_combination',
+                                      [{'penalty': "l1", 'loss': "squared_hinge", 'dual': "False"},
+                                       {'penalty': "l2", 'loss': "hinge", 'dual': "True"},
+                                       {'penalty': "l2", 'loss': "squared_hinge", 'dual': "True"},
+                                       {'penalty': "l2", 'loss': "squared_hinge", 'dual': "False"}]),
+                 'loss': None,
+                 'dual': None,
+                 'tol': hp.loguniform('liblinear_tol', np.log(1e-5), np.log(1e-1)),
+                 'C': hp.loguniform('liblinear_C', np.log(0.03125), np.log(32768)),
+                 'multi_class': hp.choice('liblinear_multi_class', ["ovr"]),
+                 'fit_intercept': hp.choice('liblinear_fit_intercept', ["True"]),
+                 'intercept_scaling': hp.choice('liblinear_intercept_scaling', [1])}
 
-        penalty = CategoricalHyperparameter(
-            "penalty", ["l1", "l2"], default_value="l2")
-        loss = CategoricalHyperparameter(
-            "loss", ["hinge", "squared_hinge"], default_value="squared_hinge")
-        dual = CategoricalHyperparameter("dual", ['True', 'False'], default_value='True')
-        # This is set ad-hoc
-        tol = UniformFloatHyperparameter(
-            "tol", 1e-5, 1e-1, default_value=1e-4, log=True)
-        C = UniformFloatHyperparameter(
-            "C", 0.03125, 32768, log=True, default_value=1.0)
-        multi_class = Constant("multi_class", "ovr")
-        # These are set ad-hoc
-        fit_intercept = Constant("fit_intercept", "True")
-        intercept_scaling = Constant("intercept_scaling", 1)
-        cs.add_hyperparameters([penalty, loss, dual, tol, C, multi_class,
-                                fit_intercept, intercept_scaling])
+        init_trial = {'combination': {'penalty': "l2", 'loss': "squared_hinge", 'dual': "True"},
+                      'tol': 1e-4,
+                      'C': 1,
+                      'multiclass': "ovr",
+                      'fit_intercept': "True",
+                      'intercept_scaling': 1}
 
-        penalty_and_loss = ForbiddenAndConjunction(
-            ForbiddenEqualsClause(penalty, "l1"),
-            ForbiddenEqualsClause(loss, "hinge")
-        )
-        constant_penalty_and_loss = ForbiddenAndConjunction(
-            ForbiddenEqualsClause(dual, "False"),
-            ForbiddenEqualsClause(penalty, "l2"),
-            ForbiddenEqualsClause(loss, "hinge")
-        )
-        penalty_and_dual = ForbiddenAndConjunction(
-            ForbiddenEqualsClause(dual, "False"),
-            ForbiddenEqualsClause(penalty, "l1")
-        )
-        penalty_and_dual2 = ForbiddenAndConjunction(
-            ForbiddenEqualsClause(dual, "True"),
-            ForbiddenEqualsClause(penalty, "l1"),
-            ForbiddenEqualsClause(loss, "squared_hinge")
-        )
-        cs.add_forbidden_clause(penalty_and_loss)
-        cs.add_forbidden_clause(constant_penalty_and_loss)
-        cs.add_forbidden_clause(penalty_and_dual)
-        cs.add_forbidden_clause(penalty_and_dual2)
-        return cs
+        return space

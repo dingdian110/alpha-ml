@@ -71,7 +71,8 @@ class HyperoptClassificationEvaluator(BaseClassificationEvaluator):
     def fit_predict(self, config, test_X=None, **kwargs):
         # Build the corresponding estimator.
         save_path = kwargs['save_path']
-        if os.path.exists(save_path):
+        estimator_name = config['estimator'][0]
+        if os.path.exists(save_path) and estimator_name != 'xgboost':
             with open(save_path, 'rb') as f:
                 estimator = pkl.load(f)
                 print("Estimator loaded from", save_path)

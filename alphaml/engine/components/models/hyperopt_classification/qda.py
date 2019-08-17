@@ -1,6 +1,5 @@
 import numpy as np
-from ConfigSpace.configuration_space import ConfigurationSpace
-from ConfigSpace.hyperparameters import UniformFloatHyperparameter
+from hyperopt import hp
 
 from alphaml.utils.constants import *
 from alphaml.utils.model_util import softmax
@@ -20,7 +19,7 @@ class QDA(BaseClassificationModel):
     def fit(self, X, Y):
         import sklearn.discriminant_analysis
 
-        estimator = sklearn.discriminant_analysis.\
+        estimator = sklearn.discriminant_analysis. \
             QuadraticDiscriminantAnalysis(reg_param=self.reg_param)
 
         if len(Y.shape) == 2 and Y.shape[1] > 1:
@@ -71,11 +70,9 @@ class QDA(BaseClassificationModel):
 
     @staticmethod
     def get_hyperparameter_search_space(dataset_properties=None):
-        reg_param = UniformFloatHyperparameter('reg_param', 0.0, 1.0,
-                                               default_value=0.0)
-        tol = UniformFloatHyperparameter("tol", 1e-6, 1e-2, default_value=1e-4, log=True)
+        space = {'reg_param': hp.uniform('qda_reg_param', 0, 1),
+                 'tol': hp.loguniform('qda_tol', np.log(1e-6), np.log(1e-2))}
 
-        cs = ConfigurationSpace()
-        cs.add_hyperparameter(reg_param)
-        cs.add_hyperparameter(tol)
-        return cs
+        init_trial = {'reg_param': 0, 'tol': 1e-4}
+
+        return space

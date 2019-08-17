@@ -1,5 +1,6 @@
 from alphaml.utils.common import get_max_index
 from alphaml.engine.evaluator.base import BaseClassificationEvaluator, BaseRegressionEvaluator
+from alphaml.engine.evaluator.hyperopt_evaluator import HyperoptClassificationEvaluator
 from alphaml.utils.save_ease import save_ease
 
 import os
@@ -7,6 +8,7 @@ import pickle as pkl
 
 CLASSIFICATION = 1
 REGRESSION = 2
+HYPEROPT_CLASSIFICATION = 3
 
 
 class BaseEnsembleModel(object):
@@ -15,14 +17,12 @@ class BaseEnsembleModel(object):
         self.model_type = model_type
         self.metric = metric
         self.ensemble_models = list()
-        if 'hyperopt' in task_type:
-            task_type = task_type.split('_')[1]
         if task_type in ['binary', 'multiclass', 'img_binary', 'img_multiclass', 'img_multilabel-indicator']:
             self.task_type = CLASSIFICATION
         elif task_type in ['continuous']:
             self.task_type = REGRESSION
         elif 'hyperopt' in task_type:
-            self.task_type = CLASSIFICATION
+            self.task_type = HYPEROPT_CLASSIFICATION
         else:
             raise ValueError('Undefined Task Type: %s' % task_type)
 
@@ -63,11 +63,11 @@ class BaseEnsembleModel(object):
                 index_list.append(best_id)
 
         self.config_list = [self.model_info[0][i] for i in index_list]
-        for i in index_list:
-            print('------------------')
-            print(self.model_info[0][i], self.model_info[1][i])
-            self.get_estimator(self.model_info[0][i], None, None, True)
-            print('------------------')
+        # for i in index_list:
+        #     print('------------------')
+        #     print(self.model_info[0][i], self.model_info[1][i])
+        #     self.get_estimator(self.model_info[0][i], None, None, True)
+        #     print('------------------')
 
     def fit(self, dm):
         raise NotImplementedError
@@ -78,8 +78,10 @@ class BaseEnsembleModel(object):
     @save_ease(save_dir='./data/save_models')
     def get_estimator(self, config, x, y, if_load=False, **kwargs):
         save_path = kwargs['save_path']
-        if config['estimator'] is not None and config['estimator'] != 'xgboost' \
-                and if_load and os.path.exists(save_path):
+        estimator_name = config['estimator']
+        if isinstance(estimator_name, tuple):
+            estimator_name = estimator_name[0]
+        if if_load and os.path.exists(save_path) and estimator_name != 'xgboost':
             with open(save_path, 'rb') as f:
                 estimator = pkl.load(f)
                 print("Estimator loaded from", save_path)
@@ -88,13 +90,15 @@ class BaseEnsembleModel(object):
                 evaluator = BaseClassificationEvaluator()
             elif self.task_type == REGRESSION:
                 evaluator = BaseRegressionEvaluator()
+            elif self.task_type == HYPEROPT_CLASSIFICATION:
+                evaluator = HyperoptClassificationEvaluator()
             _, estimator = evaluator.set_config(config)
             estimator.fit(x, y)
             print("Estimator retrained.")
         return estimator
 
     def get_predictions(self, estimator, X):
-        if self.task_type == CLASSIFICATION:
+        if self.task_type == CLASSIFICATION or HYPEROPT_CLASSIFICATION:
             from sklearn.metrics import roc_auc_score
             if self.metric == roc_auc_score:
                 return estimator.predict_proba(X)[:, 1:2]

@@ -197,7 +197,7 @@ class EnsembleSelection(BaseEnsembleModel):
 
         if len(pred.shape) > 1 and pred.shape[1] == 1:
             pred = np.reshape(pred, (pred.shape[0]))
-        if self.task_type == CLASSIFICATION:
+        if self.task_type == CLASSIFICATION or HYPEROPT_CLASSIFICATION:
             from sklearn.metrics import roc_auc_score
             if self.metric == roc_auc_score:
                 return pred
@@ -209,7 +209,7 @@ class EnsembleSelection(BaseEnsembleModel):
             raise ValueError('No prediction warnings!')
 
     def calculate_score(self, pred, y_true):
-        if self.task_type == CLASSIFICATION:
+        if self.task_type == CLASSIFICATION or HYPEROPT_CLASSIFICATION:
             from sklearn.metrics import roc_auc_score
             if self.metric == roc_auc_score:
                 pred = pred
