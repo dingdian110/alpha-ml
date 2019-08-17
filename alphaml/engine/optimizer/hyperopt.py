@@ -1,6 +1,7 @@
 import time
 import pickle
 import datetime
+from datetime import timezone
 import numpy as np
 from hyperopt import hp, tpe, fmin, Trials, STATUS_OK, space_eval
 from alphaml.engine.optimizer.base_optimizer import BaseOptimizer
@@ -37,7 +38,7 @@ class Hyperopt(BaseOptimizer):
         for trial in self.trials.trials:
             config = trial['result']['config']
             perf = 1 - trial['result']['loss']
-            time_taken = trial['book_time'].timestamp() - self.start_time
+            time_taken = trial['book_time'].replace(tzinfo=timezone.utc).astimezone(tz=None).timestamp() - self.start_time
             self.configs_list.append(config)
             self.config_values.append(perf)
             self.timing_list.append(time_taken)
