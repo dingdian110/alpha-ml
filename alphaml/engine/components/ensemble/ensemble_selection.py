@@ -25,9 +25,9 @@ class EnsembleSelection(BaseEnsembleModel):
                 try:
                     estimator = self.get_estimator(config, dm.train_X, dm.train_y, if_load=True)
                     self.ensemble_models.append(estimator)
-                    pred = self.get_predictions(estimator, dm.val_X)
+                    pred = self.get_predictions(estimator, dm.train_X)
                     predictions.append(pred)
-                    self._fit(predictions, dm.val_y)
+                    self._fit(predictions, dm.train_y)
                 except ValueError as err:
                     pass
 
