@@ -1,13 +1,12 @@
 from alphaml.engine.components.ensemble.base_ensemble import *
 from alphaml.engine.components.data_manager import DataManager
-from alphaml.utils.common import get_max_index
 import numpy as np
 from collections import Counter
 
 
 class EnsembleSelection(BaseEnsembleModel):
     def __init__(self, model_info, ensemble_size, task_type, metric, model_type='ml', mode='fast',
-                 sorted_initialization=False, n_best=15):
+                 sorted_initialization=False, n_best=20):
         super().__init__(model_info, ensemble_size, task_type, metric, model_type)
         self.sorted_initialization = sorted_initialization
         self.config_list = self.model_info[0]
@@ -177,7 +176,6 @@ class EnsembleSelection(BaseEnsembleModel):
         predictions = []
         for estimator in self.ensemble_models:
             pred = self.get_predictions(estimator, X)
-            # print(pred)
             predictions.append(pred)
         predictions = np.asarray(predictions)
 
@@ -196,10 +194,19 @@ class EnsembleSelection(BaseEnsembleModel):
         else:
             raise ValueError("The dimensions of ensemble predictions"
                              " and ensemble weights do not match!")
+
+        if len(pred.shape) > 1 and pred.shape[1] == 1:
+            pred = np.reshape(pred, (pred.shape[0]))
         if self.task_type == CLASSIFICATION:
-            return np.argmax(pred, axis=-1)
+            from sklearn.metrics import roc_auc_score
+            if self.metric == roc_auc_score:
+                return pred
+            else:
+                return np.argmax(pred, axis=-1)
         elif self.task_type == REGRESSION:
             return pred
+        else:
+            raise ValueError('No prediction warnings!')
 
     def calculate_score(self, pred, y_true):
         if self.task_type == CLASSIFICATION:
@@ -208,7 +215,6 @@ class EnsembleSelection(BaseEnsembleModel):
                 pred = pred
             else:
                 pred = np.argmax(pred, axis=1)
-            # print(pred)
             score = self.metric(y_true, pred)
         elif self.task_type == REGRESSION:
             score = -self.metric(y_true, pred)

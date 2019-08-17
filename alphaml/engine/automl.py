@@ -4,6 +4,7 @@ import logging
 from alphaml.engine.components.components_manager import ComponentsManager
 from alphaml.engine.components.data_manager import DataManager
 from alphaml.engine.evaluator.base import BaseClassificationEvaluator, BaseRegressionEvaluator
+from alphaml.engine.evaluator.hyperopt_evaluator import HyperoptClassificationEvaluator
 from alphaml.engine.optimizer.smac_smbo import SMAC_SMBO
 from alphaml.engine.optimizer.ts_smbo import TS_SMBO
 from alphaml.engine.optimizer.nonstationary_mab_optimizer import TS_NON_SMBO
@@ -14,6 +15,7 @@ from alphaml.engine.optimizer.sh_optimizer import SH_SMBO
 from alphaml.engine.optimizer.rl_optimizer import RL_SMBO
 from alphaml.engine.optimizer.mcmc_ts_optimizer import MCMC_TS_Optimizer
 from alphaml.engine.optimizer.ucb_mab_optimizer import UCB_SMBO
+from alphaml.engine.optimizer.hyperopt import Hyperopt
 from alphaml.engine.components.ensemble.bagging import Bagging
 from alphaml.engine.components.ensemble.blending import Blending
 from alphaml.engine.components.ensemble.stacking import Stacking
@@ -116,6 +118,13 @@ class AutoML(object):
             # Create optimizer.
             self.optimizer = UCB_SMBO(self.evaluator, config_space, data, self.seed, **kwargs)
             self.optimizer.run()
+        elif self.optimizer_type == 'tpe':
+            self.evaluator = HyperoptClassificationEvaluator()
+            task_type = 'hyperopt_' + task_type
+            config_space = self.component_manager.get_hyperparameter_search_space(
+                task_type, self.include_models, self.exclude_models)
+            self.optimizer = Hyperopt(self.evaluator, config_space, data, self.seed, **kwargs)
+            self.optimizer.run()
         else:
             raise ValueError('UNSUPPORTED optimizer: %s' % self.optimizer)
 
@@ -143,6 +152,7 @@ class AutoML(object):
         return self
 
     def predict(self, X, **kwargs):
+        print(X.shape[1])
         if self.ensemble_model is None:
             # For traditional ML task:
             #   fit the optimized model on the whole training data and predict the input data's labels.

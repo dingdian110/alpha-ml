@@ -25,12 +25,12 @@ class DP_Pipeline(object):
         # node4 = NormalizerOperator()
         # node5 = ScalerOperator()
         node6 = ConstantRemoverOperator()
-        node7 = VarianceRemoverOperator()
+        node7 = IdenticalRemoverOperator()
         node8 = ZeroOperator()
         node9 = PCAOperator()
         node10 = IdenticalOperator()
 
-        self.pipeline_operators.extend([node1, node2, node3, node6, node7, node8, node10])
+        self.pipeline_operators.extend([node1, node2, node3, node6, node7, node10])
         self.cached_dm = dict()
 
         # Assign the node id.
