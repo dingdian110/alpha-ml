@@ -128,8 +128,8 @@ class GradientBoostingClassifier(IterativeComponentWithSampleWeight, BaseClassif
         max_depth = UniformIntegerHyperparameter(
             name="max_depth", lower=1, upper=10, default_value=3)
         criterion = CategoricalHyperparameter(
-            'criterion', ['friedman_mse', 'mse', 'mae'],
-            default_value='friedman_mse')
+            'criterion', ['friedman_mse', 'mse'],
+            default_value='mse')
         min_samples_split = UniformIntegerHyperparameter(
             name="min_samples_split", lower=2, upper=20, default_value=2)
         min_samples_leaf = UniformIntegerHyperparameter(

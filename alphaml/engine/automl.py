@@ -21,7 +21,6 @@ from alphaml.engine.components.ensemble.stacking import Stacking
 from alphaml.engine.components.ensemble.ensemble_selection import EnsembleSelection
 from alphaml.utils.label_util import to_categorical, map_label, get_classnum
 import numpy as np
-import pandas as pd
 
 
 class AutoML(object):
@@ -142,7 +141,8 @@ class AutoML(object):
             elif self.ensemble_method == 'stacking':
                 self.ensemble_model = Stacking(model_infos, self.ensemble_size, task_type, self.metric)
             elif self.ensemble_method == 'ensemble_selection':
-                self.ensemble_model = EnsembleSelection(model_infos, self.ensemble_size, task_type, self.metric)
+                self.ensemble_model = EnsembleSelection(model_infos, self.ensemble_size, task_type, self.metric,
+                                                        n_best=7)
             else:
                 raise ValueError('UNSUPPORTED ensemble method: %s' % self.ensemble_method)
 

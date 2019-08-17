@@ -1,6 +1,5 @@
 from alphaml.engine.components.ensemble.base_ensemble import *
 from alphaml.engine.components.data_manager import DataManager
-from alphaml.utils.common import get_max_index
 import numpy as np
 from collections import Counter
 
@@ -195,6 +194,7 @@ class EnsembleSelection(BaseEnsembleModel):
         else:
             raise ValueError("The dimensions of ensemble predictions"
                              " and ensemble weights do not match!")
+
         if len(pred.shape) > 1 and pred.shape[1] == 1:
             pred = np.reshape(pred, (pred.shape[0]))
         if self.task_type == CLASSIFICATION or HYPEROPT_CLASSIFICATION:
@@ -205,6 +205,8 @@ class EnsembleSelection(BaseEnsembleModel):
                 return np.argmax(pred, axis=-1)
         elif self.task_type == REGRESSION:
             return pred
+        else:
+            raise ValueError('No prediction warnings!')
 
     def calculate_score(self, pred, y_true):
         if self.task_type == CLASSIFICATION or HYPEROPT_CLASSIFICATION:

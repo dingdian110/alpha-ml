@@ -1,3 +1,4 @@
+import os
 import sys
 import time
 import pickle
@@ -60,6 +61,11 @@ def test_cash_module():
 
     result = dict()
     for dataset in datasets:
+        dataset_id = dataset.split('_')[0]
+        result_dir = 'data/'+dataset_id
+        if not os.path.exists(result_dir):
+            os.mkdir(result_dir)
+
         seeds = get_seeds(dataset, rep_num)
         for run_id in range(start_id, rep_num):
             task_name = dataset + '_%s_%d_%d' % (task_id, run_count, run_id)
@@ -131,7 +137,6 @@ def test_cash_module():
 
             # Display and save the test result.
             print(result)
-            dataset_id = dataset.split('_')[0]
             with open('data/%s/%s_test_result_%s_%d_%d_%d.pkl' %
                               (dataset_id, dataset_id, task_id, run_count, rep_num, start_id), 'wb') as f:
                 pickle.dump(result, f)
