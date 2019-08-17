@@ -1,5 +1,6 @@
 import time
 import pickle
+import datetime
 import numpy as np
 from hyperopt import hp, tpe, fmin, Trials, STATUS_OK, space_eval
 from alphaml.engine.optimizer.base_optimizer import BaseOptimizer
@@ -32,18 +33,20 @@ class Hyperopt(BaseOptimizer):
         self.logger.info('Start task: %s' % self.task_name)
 
         fmin(self.objective, self.config_space, tpe.suggest, self.runcount, trials=self.trials)
-        best = -float('inf')
+
         for trial in self.trials.trials:
             config = trial['result']['config']
+            perf = 1 - trial['result']['loss']
+            time_taken = trial['book_time'].timestamp() - self.start_time
             self.configs_list.append(config)
-            result = 1 - trial['result']['loss']
-            if result > best:
-                best = result
-                self.incumbent = config
-            self.config_values.append(1 - trial['result']['loss'])
+            self.config_values.append(perf)
+            self.timing_list.append(time_taken)
 
         self.logger.info('TPE ==> the size of evaluations: %d' % len(self.configs_list))
         if len(self.configs_list) > 0:
+            id = np.argmax(self.config_values)
+            self.incumbent = self.configs_list[id]
+
             self.logger.info('TPE ==> The time points: %s' % self.timing_list)
             self.logger.info('TPE ==> The best performance found: %f' % max(self.config_values))
             self.logger.info('TPE ==> The best HP found: %s' % self.incumbent)
@@ -52,6 +55,7 @@ class Hyperopt(BaseOptimizer):
             data = dict()
             data['configs'] = self.configs_list
             data['perfs'] = self.config_values
+            data['time_cost'] = self.timing_list
             dataset_id = self.result_file.split('_')[0]
             with open('data/%s/' % dataset_id + self.result_file, 'wb') as f:
                 pickle.dump(data, f)
