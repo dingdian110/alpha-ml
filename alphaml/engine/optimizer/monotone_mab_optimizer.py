@@ -5,23 +5,24 @@ from ConfigSpace.hyperparameters import CategoricalHyperparameter
 from litesmac.scenario.scenario import Scenario
 from litesmac.facade.smac_facade import SMAC
 from alphaml.engine.optimizer.base_optimizer import BaseOptimizer
+from alphaml.utils.constants import MAX_INT
 
 
 class MONO_MAB_SMBO(BaseOptimizer):
     def __init__(self, evaluator, config_space, data, seed, **kwargs):
         super().__init__(evaluator, config_space, data, kwargs['metric'], seed)
 
-        self.iter_num = int(1e10) if ('runcount' not in kwargs or kwargs['runcount'] is None) else kwargs['runcount']
+        self.B = kwargs['runtime'] if ('runtime' in kwargs and kwargs['runtime'] > 0) else None
+        if self.B is not None:
+            self.iter_num = MAX_INT
+        else:
+            self.iter_num = int(1e10) if ('runcount' not in kwargs or kwargs['runcount'] is None) else kwargs['runcount']
         self.estimator_arms = list(self.config_space.keys())
         self.mode = kwargs['update_mode'] if 'update_mode' in kwargs else 2
-        self.B = kwargs['r'] if ('r' in kwargs and kwargs['r'] > 10) else None
+
         self.C = 10 if 'param' not in kwargs else kwargs['param']
         self.task_name = kwargs['task_name'] if 'task_name' in kwargs else 'default'
-        if self.B is None:
-            self.result_file = self.task_name + '_mm_bandit_%d_smac.data' % self.mode
-        else:
-            self.result_file = self.task_name + '_mm_bandit_%d_%d_smac.data' % (self.mode, self.B)
-            self.iter_num = 100000
+        self.result_file = self.task_name + '_mm_bandit_%d_smac.data' % self.mode
 
         self.smac_containers = dict()
         self.cnts = dict()

@@ -9,6 +9,7 @@ parser.add_argument('--mode', choices=['master', 'daim213'], default='master')
 parser.add_argument('--start_runid', type=int, default=0)
 parser.add_argument('--rep', type=int, default=10)
 parser.add_argument('--run_count', type=int, default=500)
+parser.add_argument('--B', type=int, default=30)
 parser.add_argument('--datasets', type=str, default='pc4')
 args = parser.parse_args()
 
@@ -47,9 +48,13 @@ def load_infos(dataset, task_id, run_count, id, mth):
     return configs, perfs
 
 
-def test_cash_module():
+def test_exp4_runtime():
     rep_num = args.rep
     run_count = args.run_count
+    B = args.B
+    if B > 0:
+        run_count = 0
+
     start_id = args.start_runid
     datasets = args.datasets.split(',')
     print(rep_num, run_count, datasets)
@@ -68,7 +73,7 @@ def test_cash_module():
         dm = DataManager(X_train, y_train)
 
         # optimizer_algos = ['mono_smbo_3_0', 'smbo', 'tpe']
-        optimizer_algos = ['tpe']
+        optimizer_algos = ['mono_smbo_3_0']
         # Test each optimizer algorithm:
         for opt_algo in optimizer_algos:
             result = dict()
@@ -88,12 +93,15 @@ def test_cash_module():
 
             seeds = get_seeds(dataset, rep_num)
             for run_id in range(start_id, rep_num):
-                task_name = dataset + '_%s_%d_%d' % (task_id, run_count, run_id)
+                if B > 0:
+                    task_name = dataset + '_%s_%d_%d_%d' % (task_id, B, run_count, run_id)
+                else:
+                    task_name = dataset + '_%s_%d_%d' % (task_id, run_count, run_id)
                 seed = seeds[run_id]
 
                 # Construct the AutoML classifier.
                 cls = Classifier(optimizer=optimizer, seed=seed).fit(
-                    dm, metric='accuracy', runcount=run_count,
+                    dm, metric='accuracy', runcount=run_count, runtime=B,
                     task_name=task_name, update_mode=mode, param=eta)
 
                 # Test the CASH performance on test set.
@@ -109,10 +117,13 @@ def test_cash_module():
                 else:
                     raise ValueError('Invalid optimizer!')
 
-                tmp_configs, tmp_perfs = load_infos(dataset, task_id, run_count, run_id, file_id)
+                tmp_task_id = '%s_%d' % (task_id, B) if B > 0 else task_id
+                tmp_configs, tmp_perfs = load_infos(dataset, tmp_task_id, run_count, run_id, file_id)
                 model_infos = (tmp_configs, tmp_perfs)
                 ensemble_size = 50
                 task_type = type_of_target(dm.train_y)
+                if optimizer == 'tpe':
+                    task_type = 'hyperopt_' + task_type
                 metric = accuracy_score
 
                 ensemble_model = EnsembleSelection(model_infos, ensemble_size, task_type, metric, n_best=20)
@@ -135,4 +146,4 @@ def test_cash_module():
 
 
 if __name__ == "__main__":
-    test_cash_module()
+    test_exp4_runtime()

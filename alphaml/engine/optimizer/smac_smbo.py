@@ -6,6 +6,7 @@ from smac.facade.smac_facade import SMAC
 from alphaml.engine.optimizer.base_optimizer import BaseOptimizer
 from alphaml.engine.components.components_manager import ComponentsManager
 
+
 class SMAC_SMBO(BaseOptimizer):
     def __init__(self, evaluator, config_space, data, seed, **kwargs):
         super().__init__(evaluator, config_space, data, kwargs['metric'], seed)
@@ -20,8 +21,16 @@ class SMAC_SMBO(BaseOptimizer):
             "cs": config_space,
             "deterministic": "true"
         }
-        if 'runcount' in kwargs and kwargs['runcount'] > 0:
-            scenario_dict['runcount-limit'] = kwargs['runcount']
+        self.runtime = None
+        if 'runtime' in kwargs and kwargs['runtime'] > 0:
+            scenario_dict['wallclock_limit'] = kwargs['runtime']
+            self.runtime = kwargs['runtime']
+        else:
+            if 'runcount' in kwargs and kwargs['runcount'] > 0:
+                scenario_dict['runcount-limit'] = kwargs['runcount']
+            else:
+                raise ValueError('Limit value error!')
+
         self.scenario = Scenario(scenario_dict)
         self.smac = SMAC(scenario=self.scenario, rng=np.random.RandomState(self.seed), tae_runner=self.evaluator)
         self.configs_list = list()
@@ -29,7 +38,6 @@ class SMAC_SMBO(BaseOptimizer):
 
     def run(self):
         self.logger.info('Start task: %s' % self.task_name)
-
         self.smac.optimize()
         runhistory = self.smac.solver.runhistory
         trajectory = self.smac.solver.intensifier.traj_logger.trajectory
