@@ -18,7 +18,7 @@ class CMAB_TS(BaseOptimizer):
             self.iter_num = MAX_INT
         else:
             self.iter_num = int(1e10) if ('runcount' not in kwargs or kwargs['runcount'] is None) else kwargs['runcount']
-        self.estimator_arms = self.config_space.get_hyperparameter('estimator').choices
+        self.estimator_arms = list(self.config_space.keys())
         self.task_name = kwargs['task_name'] if 'task_name' in kwargs else 'default'
         self.result_file = self.task_name + '_cmab_ts_smac.data'
         self.smac_containers = dict()
