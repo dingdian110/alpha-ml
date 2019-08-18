@@ -6,13 +6,18 @@ from litesmac.scenario.scenario import Scenario
 from litesmac.facade.smac_facade import SMAC
 from alphaml.engine.optimizer.base_optimizer import BaseOptimizer
 from alphaml.engine.components.models.classification import _classifiers
+from alphaml.utils.constants import MAX_INT
 
 
 class CMAB_TS(BaseOptimizer):
     def __init__(self, evaluator, config_space, data, seed, **kwargs):
         super().__init__(evaluator, config_space, data, kwargs['metric'], seed)
 
-        self.iter_num = int(1e10) if ('runcount' not in kwargs or kwargs['runcount'] is None) else kwargs['runcount']
+        self.B = kwargs['runtime'] if ('runtime' in kwargs and kwargs['runtime'] > 0) else None
+        if self.B is not None:
+            self.iter_num = MAX_INT
+        else:
+            self.iter_num = int(1e10) if ('runcount' not in kwargs or kwargs['runcount'] is None) else kwargs['runcount']
         self.estimator_arms = self.config_space.get_hyperparameter('estimator').choices
         self.task_name = kwargs['task_name'] if 'task_name' in kwargs else 'default'
         self.result_file = self.task_name + '_cmab_ts_smac.data'
@@ -46,9 +51,7 @@ class CMAB_TS(BaseOptimizer):
             self.rewards[estimator] = list()
 
     def run(self):
-        time_list = list()
         iter_num = 0
-        start_time = time.time()
         self.logger.info('Start task: %s' % self.task_name)
 
         K = len(self.estimator_arms)
@@ -84,17 +87,21 @@ class CMAB_TS(BaseOptimizer):
                 iter_num += 1
 
             # Record the time cost.
-            time_point = time.time() - start_time
+            time_point = time.time() - self.start_time
             tmp_list = list()
             tmp_list.append(time_point)
             for key in reversed(runkeys[self.ts_cnts[best_arm]+1:]):
                 time_point -= runhistory.data[key][1]
                 tmp_list.append(time_point)
-            time_list.extend(reversed(tmp_list))
+            self.timing_list.extend(reversed(tmp_list))
 
             self.logger.info('Iteration %d, the best reward found is %f' % (iter_num, max(self.config_values)))
 
             if iter_num >= self.iter_num:
+                break
+
+            # Check the budget.
+            if self.B is not None and (time.time() - self.start_time >= self.B):
                 break
 
             # Print the parameters in Thompson sampling.
@@ -109,7 +116,7 @@ class CMAB_TS(BaseOptimizer):
         self.logger.info('TS smbo ==> the size of evaluations: %d' % len(self.configs_list))
         if len(self.configs_list) > 0:
             id = np.argmax(self.config_values)
-            self.logger.info('TS smbo ==> The time points: %s' % time_list)
+            self.logger.info('TS smbo ==> The time points: %s' % self.timing_list)
             self.logger.info('TS smbo ==> The best performance found: %f' % self.config_values[id])
             self.logger.info('TS smbo ==> The best HP found: %s' % self.configs_list[id])
             self.incumbent = self.configs_list[id]
@@ -120,7 +127,7 @@ class CMAB_TS(BaseOptimizer):
             data['ts_rewards'] = self.ts_rewards
             data['configs'] = self.configs_list
             data['perfs'] = self.config_values
-            data['time_cost'] = time_list
+            data['time_cost'] = self.timing_list
             dataset_id = self.result_file.split('_')[0]
             with open('data/%s/' % dataset_id + self.result_file, 'wb') as f:
                 pickle.dump(data, f)
