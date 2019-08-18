@@ -144,7 +144,7 @@ def test_exp4_runtime():
 
             # Save the test result.
             with open('data/%s/%s_test_result_%s_%s_%d_%d_%d.pkl' %
-                              (dataset_id, dataset, optimizer, task_id, run_count, rep_num, start_id), 'wb') as f:
+                              (dataset_id, dataset, opt_algo, task_id, run_count, rep_num, start_id), 'wb') as f:
                 pickle.dump(result, f)
 
 
