@@ -7,15 +7,18 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--mode', choices=['master', 'daim213'], default='master')
 parser.add_argument('--start_runid', type=int, default=0)
-parser.add_argument('--datasets', type=str, default='glass')
+parser.add_argument('--datasets', type=str, default='pc4')
 args = parser.parse_args()
 
 if args.mode == 'master':
-    sys.path.append('/home/thomas/PycharmProjects/alpha-ml')
+    project_folder = '/home/thomas/PycharmProjects/alpha-ml'
 elif args.mode == 'daim213':
-    sys.path.append('/home/liyang/codes/alpha-ml')
+    project_folder = '/home/liyang/codes/alpha-ml'
+elif args.mode == 'gc':
+    project_folder = '/home/contact_ds3lab/testinstall/alpha-ml'
 else:
     raise ValueError('Invalid mode: %s' % args.mode)
+sys.path.append(project_folder)
 
 from alphaml.engine.components.data_manager import DataManager
 from alphaml.estimators.classifier import Classifier
@@ -29,7 +32,7 @@ def evaluate_c():
     run_count = 500
     start_id = args.start_runid
     datasets = args.datasets.split(',')
-    task_id = 'eval_c'
+    task_id = 'exp5_eval_c'
     print(rep_num, run_count, datasets, task_id)
 
     for dataset in datasets:
@@ -49,11 +52,9 @@ def evaluate_c():
             dm = DataManager(X_train, y_train)
 
             # Test each optimizer algorithm:
-            # for p in [1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20]:
             for p in [1, 4, 10, 14, 16, 20]:
                 task_name = dataset + '_%s_%d_%d_%d' % (task_id, run_count, run_id, p)
                 mode = 3
-                r = 2
                 optimizer = 'mono_smbo'
 
                 print('Test %s optimizer => %s' % (optimizer, task_name))
@@ -61,9 +62,9 @@ def evaluate_c():
                 # Construct the AutoML classifier.
                 cls = Classifier(optimizer=optimizer, seed=seed).fit(
                     dm, metric='accuracy', runcount=run_count,
-                    task_name=task_name, update_mode=mode, r=r, param=p)
+                    task_name=task_name, update_mode=mode, param=p)
                 acc = cls.score(X_test, y_test)
-                key_id = '%s_%d_%d_%s' % (dataset, run_count, run_id, optimizer)
+                key_id = '%s_%d_%d_%d_%s' % (dataset, run_count, run_id, p, optimizer)
                 result[key_id] = acc
 
             # Display and save the test result.
