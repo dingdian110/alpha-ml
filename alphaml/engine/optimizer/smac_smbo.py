@@ -22,11 +22,11 @@ class SMAC_SMBO(BaseOptimizer):
             "deterministic": "true"
         }
         self.runtime = None
-        if 'runtime' in kwargs and kwargs['runtime'] > 0:
+        if 'runtime' in kwargs and kwargs['runtime'] is not None and kwargs['runtime'] > 0:
             scenario_dict['wallclock_limit'] = kwargs['runtime']
             self.runtime = kwargs['runtime']
         else:
-            if 'runcount' in kwargs and kwargs['runcount'] > 0:
+            if 'runcount' in kwargs and kwargs['runcount'] is not None and kwargs['runcount'] > 0:
                 scenario_dict['runcount-limit'] = kwargs['runcount']
             else:
                 raise ValueError('Limit value error!')

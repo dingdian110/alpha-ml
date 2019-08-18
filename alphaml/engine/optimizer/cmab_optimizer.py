@@ -13,7 +13,8 @@ class CMAB_TS(BaseOptimizer):
     def __init__(self, evaluator, config_space, data, seed, **kwargs):
         super().__init__(evaluator, config_space, data, kwargs['metric'], seed)
 
-        self.B = kwargs['runtime'] if ('runtime' in kwargs and kwargs['runtime'] > 0) else None
+        self.B = kwargs['runtime'] if ('runtime' in kwargs and kwargs['runtime'] is not None and
+                                       kwargs['runtime'] > 0) else None
         if self.B is not None:
             self.iter_num = MAX_INT
         else:

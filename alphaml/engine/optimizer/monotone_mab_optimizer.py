@@ -12,11 +12,13 @@ class MONO_MAB_SMBO(BaseOptimizer):
     def __init__(self, evaluator, config_space, data, seed, **kwargs):
         super().__init__(evaluator, config_space, data, kwargs['metric'], seed)
 
-        self.B = kwargs['runtime'] if ('runtime' in kwargs and kwargs['runtime'] > 0) else None
+        self.B = kwargs['runtime'] if ('runtime' in kwargs and kwargs['runtime'] is not None and
+                                       kwargs['runtime'] > 0) else None
         if self.B is not None:
             self.iter_num = MAX_INT
         else:
-            self.iter_num = int(1e10) if ('runcount' not in kwargs or kwargs['runcount'] is None) else kwargs['runcount']
+            self.iter_num = MAX_INT if ('runcount' not in kwargs or kwargs['runcount'] is None) else kwargs['runcount']
+
         self.estimator_arms = list(self.config_space.keys())
         self.mode = kwargs['update_mode'] if 'update_mode' in kwargs else 2
 
