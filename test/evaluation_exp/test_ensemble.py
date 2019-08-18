@@ -95,11 +95,11 @@ def test_ensemble():
                 # Load CASH intermediate infos.
                 tmp_configs, tmp_perfs = load_infos(dataset, task_id, run_count, run_id, 'mm_bandit_3_smac')
                 model_infos = (tmp_configs, tmp_perfs)
-                ensemble_size = 10
+                ensemble_size = 50
                 task_type = type_of_target(dm.train_y)
                 metric = accuracy_score
 
-                ensemble_model = EnsembleSelection(model_infos, ensemble_size, task_type, metric, n_best=7)
+                ensemble_model = EnsembleSelection(model_infos, ensemble_size, task_type, metric, n_best=20)
                 ensemble_model.fit(dm)
 
                 ens_pred_val = ensemble_model.predict(dm.val_X)
