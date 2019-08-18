@@ -142,7 +142,6 @@ class AutoML(object):
         return self
 
     def predict(self, X, **kwargs):
-        print(X.shape[1])
         if self.ensemble_model is None:
             # For traditional ML task:
             #   fit the optimized model on the whole training data and predict the input data's labels.
