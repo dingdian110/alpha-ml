@@ -57,7 +57,7 @@ def test_exp1_evaluation():
                                                             stratify=y)
         dm = DataManager(X_train, y_train)
 
-        optimizer_algos = ['baseline_2', 'smbo', 'tpe', 'cmab_ts', 'mono_smbo_3_0']
+        optimizer_algos = ['baseline_2', 'smbo', 'cmab_ts', 'mono_smbo_3_0', 'tpe']
         # Test each optimizer algorithm:
         for opt_algo in optimizer_algos:
             result = dict()
