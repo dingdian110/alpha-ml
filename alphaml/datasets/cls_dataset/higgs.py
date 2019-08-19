@@ -8,4 +8,5 @@ def load_higgs(data_folder):
     df = pd.read_csv(file_path, delimiter=',', na_values=['?'])
     op = ImputerOperator(label_col=0)
     dm = op.operate([df])
-    return dm.train_X, trans_label(dm.train_y)
+    label=trans_label(dm.train_y)
+    return dm.train_X, label
