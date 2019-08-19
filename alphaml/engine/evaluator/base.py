@@ -46,10 +46,10 @@ class BaseClassificationEvaluator(object):
         self.logger.info('<CONFIG> %s' % config.get_dictionary())
         # Fit the estimator on the training data.
         estimator.fit(self.data_manager.train_X, self.data_manager.train_y)
-
+        self.logger.info('<FIT MODEL> finished!')
         with open(save_path, 'wb') as f:
-            self.logger.info('<MODEL SAVED IN %s>' % save_path)
             pkl.dump(estimator, f)
+            self.logger.info('<MODEL SAVED IN %s>' % save_path)
 
         # Validate it on val data.
         if self.metric_func == roc_auc_score:
