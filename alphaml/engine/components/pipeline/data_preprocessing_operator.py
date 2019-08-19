@@ -32,7 +32,6 @@ class ImputerOperator(Operator):
             del(swap_list[self.label_col])
             swap_list.append(self.label_col)
             data=data[:,swap_list]
-            print(data)
             dm.train_X = data[:, :-1]
             dm.train_y = data[:, -1]
         else:
