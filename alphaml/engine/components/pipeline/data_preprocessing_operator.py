@@ -28,17 +28,11 @@ class ImputerOperator(Operator):
         data = df.values
         if phase == 'train':
             # Swap label index to -1
-            last_index=data.shape[1]-1
-            swap_list=[]
-            for i in range(data.shape[1]):
-                if i==self.label_col:
-                    swap_list.append(last_index)
-                elif i==last_index:
-                    swap_list.append(self.label_col)
-                else:
-                    swap_list.append(i)
+            swap_list=list(range(data.shape[1]))
+            del(swap_list[self.label_col])
+            swap_list.append(self.label_col)
             data=data[:,swap_list]
-
+            print(data)
             dm.train_X = data[:, :-1]
             dm.train_y = data[:, -1]
         else:
