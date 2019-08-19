@@ -59,7 +59,7 @@ class BaseClassificationEvaluator(object):
             y_pred = estimator.predict(self.data_manager.val_X)
             metric = self.metric_func(self.data_manager.val_y, y_pred)
 
-        self.logger.info('<EVALUATE %s TAKES %.2f SECONDS>' % (classifier_type, time.time() - start_time))
+        self.logger.info('<EVALUATE %s-%.2f TAKES %.2f SECONDS>' % (classifier_type, 1-metric, time.time() - start_time))
         # Turn it to a minimization problem.
         return 1 - metric
 
