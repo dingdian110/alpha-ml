@@ -115,7 +115,8 @@ class MONO_MAB_SMBO(BaseOptimizer):
                     if len(acc_reward) >= duration:
                         estimated_slope = (acc_reward[-1] - acc_reward[-duration]) / duration
                     else:
-                        estimated_slope = (acc_reward[-1] - acc_reward[0]) / len(acc_reward)
+                        # estimated_slope = (acc_reward[-1] - acc_reward[0]) / len(acc_reward)
+                        estimated_slope = 1.
 
                     if self.mode == 1:
                         F = sum(acc_reward)
