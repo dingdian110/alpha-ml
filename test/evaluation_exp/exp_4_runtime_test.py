@@ -7,7 +7,7 @@ import numpy as np
 parser = argparse.ArgumentParser()
 parser.add_argument('--mode', choices=['master', 'daim213', 'gc'], default='master')
 parser.add_argument('--start_runid', type=int, default=0)
-parser.add_argument('--rep', type=int, default=10)
+parser.add_argument('--rep', type=int, default=5)
 parser.add_argument('--run_count', type=int, default=500)
 parser.add_argument('--B', type=int, default=3600)
 parser.add_argument('--datasets', type=str, default='pc4')
