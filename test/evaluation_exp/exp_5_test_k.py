@@ -62,7 +62,7 @@ def evaluate_k():
                 seed = seeds[run_id]
 
                 # Test each optimizer algorithm:
-                for n_est in [1, 2, 4, 8, 12, 15]:
+                for n_est in [15, 12, 8, 4, 2, 1]:
                     algos = algo_list[:n_est]
                     task_name = dataset + '_%s_%d_%d_%d' % (task_id, run_count, run_id, n_est)
                     mode, param = 3, None
