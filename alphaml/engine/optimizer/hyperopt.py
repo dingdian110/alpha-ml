@@ -17,7 +17,7 @@ class Hyperopt(BaseOptimizer):
             'estimator': hp.choice('estimator',
                                    [(estimator, self.config_space[estimator]) for estimator in self.estimators])}
         self.trials = Trials()
-        self.runcount = int(1e10) if 'runcount' not in kwargs or kwargs is None else kwargs['runcount']
+        self.runcount = int(1e10) if 'runcount' not in kwargs or kwargs['runcount'] is None else kwargs['runcount']
 
         def objective(x):
             return {

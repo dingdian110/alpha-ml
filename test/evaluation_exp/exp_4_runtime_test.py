@@ -75,17 +75,24 @@ def test_exp4_runtime():
                                                             stratify=y)
         dm = DataManager(X_train, y_train)
 
-        runcount_est = list()
+        runcount_dict = dict()
         tpe_runcount = 0.
 
         optimizer_algos = ['mono_smbo_4', 'smbo', 'tpe']
         # optimizer_algos = ['mono_smbo_3_0']
         # Test each optimizer algorithm:
+        assert optimizer_algos[-1] == 'tpe'
         for opt_algo in optimizer_algos:
             # if algo is tpe, we need to estimate its runcount in one hour.
-            if opt_algo == 'tpe':
-                assert len(runcount_est) > 0
-                tpe_runcount = int(np.mean(runcount_est) * 1.1)
+            if opt_algo != 'tpe':
+                runcount_dict[opt_algo] = list()
+            else:
+                count_list = list()
+                for key in runcount_dict.keys():
+                    count_list.append(np.mean(runcount_dict[key]))
+                assert len(count_list) > 0
+                tpe_runcount = np.min(count_list)
+                print('='*50, tpe_runcount)
 
             result = dict()
             mode, eta = None, None
@@ -125,14 +132,14 @@ def test_exp4_runtime():
                 elif optimizer == 'tpe':
                     file_id = 'hyperopt'
                 elif optimizer == 'mono_smbo':
-                    file_id = 'mm_bandit_3_smac'
+                    file_id = 'mm_bandit_%d_smac' % mode
                 else:
                     raise ValueError('Invalid optimizer!')
 
                 tmp_task_id = '%s_%d' % (task_id, B) if B > 0 else task_id
                 tmp_configs, tmp_perfs = load_infos(dataset, tmp_task_id, run_count, run_id, file_id)
-                if opt_algo == 'smbo':
-                    runcount_est.append(len(tmp_configs))
+                if opt_algo != 'tpe':
+                    runcount_dict[opt_algo].append(len(tmp_configs))
 
                 model_infos = (tmp_configs, tmp_perfs)
                 ensemble_size = 50
