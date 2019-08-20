@@ -5,7 +5,7 @@ import argparse
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--mode', choices=['master', 'daim213'], default='master')
+parser.add_argument('--mode', choices=['master', 'daim213', 'gc'], default='master')
 parser.add_argument('--start_runid', type=int, default=0)
 parser.add_argument('--datasets', type=str, default='pc4')
 args = parser.parse_args()

@@ -5,7 +5,7 @@ import argparse
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--mode', choices=['master', 'daim213'], default='master')
+parser.add_argument('--mode', choices=['master', 'daim213', 'gc'], default='master')
 parser.add_argument('--start_runid', type=int, default=0)
 parser.add_argument('--rep', type=int, default=50)
 parser.add_argument('--run_count', type=int, default=500)
