@@ -75,10 +75,18 @@ def test_exp4_runtime():
                                                             stratify=y)
         dm = DataManager(X_train, y_train)
 
+        runcount_est = list()
+        tpe_runcount = 0.
+
         optimizer_algos = ['mono_smbo_4', 'smbo', 'tpe']
         # optimizer_algos = ['mono_smbo_3_0']
         # Test each optimizer algorithm:
         for opt_algo in optimizer_algos:
+            # if algo is tpe, we need to estimate its runcount in one hour.
+            if opt_algo == 'tpe':
+                assert len(runcount_est) > 0
+                tpe_runcount = int(np.mean(runcount_est) * 1.1)
+
             result = dict()
             mode, eta = None, None
             # Parse the parameters for each optimizer.
@@ -102,9 +110,10 @@ def test_exp4_runtime():
                     task_name = dataset + '_%s_%d_%d' % (task_id, run_count, run_id)
                 seed = seeds[run_id]
 
+                runcount_const = run_count if opt_algo != 'tpe' else tpe_runcount
                 # Construct the AutoML classifier.
                 cls = Classifier(optimizer=optimizer, seed=seed).fit(
-                    dm, metric='accuracy', runcount=run_count, runtime=B,
+                    dm, metric='accuracy', runcount=runcount_const, runtime=B,
                     task_name=task_name, update_mode=mode, param=eta)
 
                 # Test the CASH performance on test set.
@@ -122,6 +131,9 @@ def test_exp4_runtime():
 
                 tmp_task_id = '%s_%d' % (task_id, B) if B > 0 else task_id
                 tmp_configs, tmp_perfs = load_infos(dataset, tmp_task_id, run_count, run_id, file_id)
+                if opt_algo == 'smbo':
+                    runcount_est.append(len(tmp_configs))
+
                 model_infos = (tmp_configs, tmp_perfs)
                 ensemble_size = 50
                 task_type = type_of_target(dm.train_y)
