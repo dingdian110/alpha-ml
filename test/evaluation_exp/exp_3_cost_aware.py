@@ -9,7 +9,7 @@ parser.add_argument('--mode', choices=['master', 'daim213', 'gc'], default='mast
 parser.add_argument('--start_runid', type=int, default=0)
 parser.add_argument('--rep', type=int, default=10)
 parser.add_argument('--run_count', type=int, default=500)
-parser.add_argument('--B', type=int, default=30)
+parser.add_argument('--B', type=int, default=3600)
 parser.add_argument('--datasets', type=str, default='pc4')
 args = parser.parse_args()
 
@@ -61,7 +61,8 @@ def test_exp3_cost_aware():
         dm = DataManager(X_train, y_train)
 
         # optimizer_algos = ['cmab_ts', 'mono_smbo_3', 'mono_smbo_4', 'smbo', 'tpe']
-        optimizer_algos = ['cmab_ts']
+        optimizer_algos = ['mono_smbo_3', 'cmab_ts']
+        # optimizer_algos = ['mono_smbo_4', 'smbo', 'tpe']
         # Test each optimizer algorithm:
         for opt_algo in optimizer_algos:
             result = dict()
