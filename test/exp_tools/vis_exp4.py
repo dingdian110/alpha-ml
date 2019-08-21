@@ -26,6 +26,7 @@ def plot(dataset, rep_num, start_id):
     tmp_d = dataset.split('_')[0]
 
     for algo in optimizer_algos:
+        exp_result[algo] = list()
         # Extract test performance.
         file_id = '/data/%s/%s_test_result_%s_%s_%d_%d.pkl' % (tmp_d, dataset, algo, task_id, rep_num, start_id)
         print(file_id)
@@ -34,7 +35,7 @@ def plot(dataset, rep_num, start_id):
                 test_data = pickle.load(f)
                 values = np.array(list(test_data.values()))
             assert len(values) == rep_num
-            exp_result[algo].append(np.mean(values, axis=0))
+            exp_result[algo].extend(list(np.mean(values, axis=0)))
         except EOFError:
             pass
 
