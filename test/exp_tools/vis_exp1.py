@@ -48,10 +48,14 @@ def plot(dataset, rep_num, start_id):
         file_id = '/data/%s/%s_test_result_%s_%s_%d_%d.pkl' % (tmp_d, dataset,
             optimizer_algos[idx], task_id, rep_num, start_id)
         print(file_id)
-        with open(project_folder + file_id, 'rb') as f:
-            test_data = pickle.load(f)
-        assert len(test_data.values()) == rep_num
-        exp_result[mth].append(np.mean(test_data.values()))
+        try:
+            with open(project_folder + file_id, 'rb') as f:
+                test_data = pickle.load(f)
+            assert len(test_data.values()) == rep_num
+            exp_result[mth].append(np.mean(test_data.values()))
+        except EOFError:
+            pass
+
     print('='*50)
     print(exp_result)
     print('='*50)
