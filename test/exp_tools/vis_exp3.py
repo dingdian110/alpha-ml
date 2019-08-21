@@ -25,6 +25,7 @@ data_folder = '/home/contact_ds3lab/testinstall/alpha-ml/data/'
 parser = argparse.ArgumentParser()
 parser.add_argument('--rep', type=int, default=10)
 parser.add_argument('--dataset', type=str, default='elevators')
+parser.add_argument('--mth', type=str, default='0,1')
 args = parser.parse_args()
 
 
@@ -112,5 +113,5 @@ def plot(dataset, rep_num, mths):
 
 
 if __name__ == "__main__":
-    mths = [int(item) for item in args.mth.split('_')]
+    mths = [int(item) for item in args.mth.split(',')]
     plot(args.dataset, args.rep, mths=mths)
