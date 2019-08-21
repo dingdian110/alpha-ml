@@ -124,7 +124,7 @@ class GradientBoostingClassifier(IterativeComponentWithSampleWeight, BaseClassif
         learning_rate = UniformFloatHyperparameter(
             name="learning_rate", lower=0.01, upper=1, default_value=0.1, log=True)
         n_estimators = UniformIntegerHyperparameter(
-            "n_estimators", 50, 500, default_value=200)
+            "n_estimators", 50, 350, default_value=200)
         max_depth = UniformIntegerHyperparameter(
             name="max_depth", lower=1, upper=10, default_value=3)
         criterion = CategoricalHyperparameter(
