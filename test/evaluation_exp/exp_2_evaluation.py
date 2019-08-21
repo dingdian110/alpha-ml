@@ -93,10 +93,10 @@ def test_exp2_evaluation():
                 result[key_id] = [cash_test_acc]
                 print(result)
 
-            # Save the test result.
-            with open('data/%s/%s_test_result_%s_%s_%d_%d_%d.pkl' %
-                              (dataset_id, dataset, opt_algo, task_id, run_count, rep_num, start_id), 'wb') as f:
-                pickle.dump(result, f)
+                # Save the test result.
+                with open('data/%s/%s_test_result_%s_%s_%d_%d_%d.pkl' %
+                                  (dataset_id, dataset, opt_algo, task_id, run_count, rep_num, start_id), 'wb') as f:
+                    pickle.dump(result, f)
 
 
 if __name__ == "__main__":
