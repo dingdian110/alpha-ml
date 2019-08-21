@@ -12,7 +12,7 @@ import argparse
 plt.switch_backend('agg')
 sns.set_style(style='whitegrid')
 
-plt.rc('font', size=12.0, family='Times New Roman')
+plt.rc('font', size=12.0)
 plt.rcParams['figure.figsize'] = (8.0, 4.0)
 plt.rcParams["legend.frameon"] = True
 plt.rcParams["legend.facecolor"] = 'white'
