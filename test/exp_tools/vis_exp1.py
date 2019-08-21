@@ -58,7 +58,8 @@ def plot(dataset, rep_num, start_id):
             pass
 
     print('='*50)
-    print(exp_result)
+    for item, values in exp_result.items():
+        print(item, values)
     print('='*50)
 
 
