@@ -157,7 +157,7 @@ class SGD(
             default_value="invscaling")
         eta0 = UniformFloatHyperparameter(
             "eta0", 1e-7, 1e-1, default_value=0.01, log=True)
-        power_t = UniformFloatHyperparameter("power_t", 1e-5, 1,
+        power_t = UniformFloatHyperparameter("power_t", 1e-5, 1, log=True,
                                              default_value=0.5)
         average = CategoricalHyperparameter(
             "average", ["False", "True"], default_value="False")
