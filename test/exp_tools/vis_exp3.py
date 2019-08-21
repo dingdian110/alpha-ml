@@ -61,12 +61,13 @@ def plot(dataset, rep_num, mths):
     color_list = ['purple', 'royalblue', 'green', 'red', 'brown', 'orange', 'yellowgreen']
     markers = ['s', '^', '2', 'o', 'v', 'p', '*']
     mth_sets= ['mm_bandit_3_smac', 'mm_bandit_4_smac', 'smac']
+    dis_names = ['RB', 'RB*', 'SMAC']
     mth_list = [mth_sets[item] for item in mths]
     print(mth_list)
 
     lw = 2
     ms = 4
-    me = 10
+    me = 100
 
     color_dict, marker_dict = dict(), dict()
     for index, mth in enumerate(mth_list):
@@ -75,9 +76,8 @@ def plot(dataset, rep_num, mths):
 
     fig, ax = plt.subplots(1)
     handles = list()
-    x_num = b
 
-    for mth in mth_list:
+    for idx, mth in enumerate(mth_list):
         perfs = list()
         x = np.linspace(0, b, num=1000)
         tmp_d = dataset.split('_')[0]
@@ -94,7 +94,7 @@ def plot(dataset, rep_num, mths):
         perfs = np.mean(perfs, axis=0)
         print(mth, max(perfs), np.argmax(perfs))
         x_num = len(perfs)
-        method_name = mth
+        method_name = dis_names[idx]
         # method_name = 'Test' if mth == 'ts_smac' else 'Auto-Sklearn'
         ax.plot(x, perfs, label=mth, lw=lw, color=color_dict[mth],
                 marker=marker_dict[mth], markersize=ms, markevery=me)
@@ -102,13 +102,13 @@ def plot(dataset, rep_num, mths):
                              markersize=ms, label=method_name)
         handles.append(line)
 
-    ax.xaxis.set_major_locator(ticker.MultipleLocator(x_num // 100))
+    ax.xaxis.set_major_locator(ticker.MultipleLocator(100))
     legend = ax.legend(handles=handles)
     ax.set_xlabel('Time (Seconds)', fontsize=15)
     ax.set_ylabel('Validation accuracy', fontsize=15)
-    ax.set_ylim(.7, 1.)
+    ax.set_ylim(.8, .93)
 
-    plt.savefig("./result_cost_aware_%s.pdf" % dataset)
+    plt.savefig("./exp3_%s.pdf" % dataset)
     # plt.show()
 
 
