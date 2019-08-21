@@ -86,7 +86,7 @@ def test_exp3_cost_aware():
                 for key in runcount_dict.keys():
                     count_list.append(np.mean(runcount_dict[key]))
                 assert len(count_list) > 0
-                tpe_runcount = np.min(count_list)
+                tpe_runcount = int(np.min(count_list))
                 print('='*50, tpe_runcount)
 
             result = dict()
