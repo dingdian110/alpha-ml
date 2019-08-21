@@ -102,8 +102,8 @@ def plot(dataset, rep_num, mths):
                              markersize=ms, label=method_name)
         handles.append(line)
 
-    ax.xaxis.set_major_locator(ticker.MultipleLocator(x_num // 500))
-    legend = ax.legend(handles=handles, loc='lower right', ncol=2)
+    ax.xaxis.set_major_locator(ticker.MultipleLocator(x_num // 360))
+    legend = ax.legend(handles=handles)
     ax.set_xlabel('Time (Seconds)', fontsize=15)
     ax.set_ylabel('Validation accuracy', fontsize=15)
     ax.set_ylim(.7, 1.)
