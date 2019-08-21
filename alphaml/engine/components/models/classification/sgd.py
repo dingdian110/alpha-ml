@@ -139,14 +139,14 @@ class SGD(
         cs = ConfigurationSpace()
 
         loss = CategoricalHyperparameter("loss",
-            ["hinge", "log", "modified_huber", "squared_hinge", "perceptron"],
-            default_value="log")
+                                         ["hinge", "log", "modified_huber", "squared_hinge", "perceptron"],
+                                         default_value="log")
         penalty = CategoricalHyperparameter(
             "penalty", ["l1", "l2", "elasticnet"], default_value="l2")
         alpha = UniformFloatHyperparameter(
             "alpha", 1e-7, 1e-1, log=True, default_value=0.0001)
         l1_ratio = UniformFloatHyperparameter(
-            "l1_ratio", 1e-9, 1,  log=True, default_value=0.15)
+            "l1_ratio", 1e-9, 1, log=True, default_value=0.15)
         fit_intercept = UnParametrizedHyperparameter("fit_intercept", "True")
         tol = UniformFloatHyperparameter("tol", 1e-5, 1e-1, log=True,
                                          default_value=1e-4)
@@ -157,7 +157,7 @@ class SGD(
             default_value="invscaling")
         eta0 = UniformFloatHyperparameter(
             "eta0", 1e-7, 1e-1, default_value=0.01, log=True)
-        power_t = UniformFloatHyperparameter("power_t", 1e-5, 1,
+        power_t = UniformFloatHyperparameter("power_t", 1e-5, 1, log=True,
                                              default_value=0.5)
         average = CategoricalHyperparameter(
             "average", ["False", "True"], default_value="False")
@@ -181,4 +181,3 @@ class SGD(
                            eta0_in_inv_con])
 
         return cs
-

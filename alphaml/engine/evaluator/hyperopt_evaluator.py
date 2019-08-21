@@ -42,6 +42,7 @@ class HyperoptClassificationEvaluator(BaseClassificationEvaluator):
 
         with open(save_path, 'wb') as f:
             pkl.dump(estimator, f)
+            self.logger.info('<MODEL SAVED IN %s>' % save_path)
 
         # Validate it on val data.
         if self.metric_func == roc_auc_score:
