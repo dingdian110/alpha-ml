@@ -22,7 +22,7 @@ def plot(dataset, rep_num):
     task_id = 'exp_1_evaluation_500'
     mth_list = ['avg_smac', 'cmab_ts_smac', 'smbo',
                 'mm_bandit_3_smac', 'softmax_mab_1_1.0000_smac', 'ucb_mab_1_0.0000_smac']
-    for mth in enumerate(mth_list):
+    for mth in mth_list:
         perfs = list()
         tmp_d = dataset.split('_')[0]
         for id in range(rep_num):
