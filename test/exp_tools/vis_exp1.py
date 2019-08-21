@@ -20,7 +20,7 @@ else:
 
 def plot(dataset, rep_num):
     task_id = 'exp_1_evaluation_500'
-    mth_list = ['avg_smac', 'cmab_ts_smac', 'smbo',
+    mth_list = ['avg_smac', 'cmab_ts_smac', 'smac',
                 'mm_bandit_3_smac', 'softmax_mab_1_1.0000_smac', 'ucb_mab_1_0.0000_smac']
     for mth in mth_list:
         perfs = list()
