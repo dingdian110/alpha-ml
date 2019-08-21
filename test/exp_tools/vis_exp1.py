@@ -51,8 +51,9 @@ def plot(dataset, rep_num, start_id):
         try:
             with open(project_folder + file_id, 'rb') as f:
                 test_data = pickle.load(f)
-            assert len(test_data.values()) == rep_num
-            exp_result[mth].append(np.mean(test_data.values()))
+                values = list(test_data.values())
+            assert len(values) == rep_num
+            exp_result[mth].append(np.mean(values))
         except EOFError:
             pass
 
