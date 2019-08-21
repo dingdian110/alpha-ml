@@ -46,7 +46,7 @@ def plot(dataset, rep_num, start_id):
 
         # Extract test performance.
         with open('data/%s/%s_test_result_%s_%s_%d_%d.pkl' %
-                  (tmp_d, dataset, optimizer_algos[idx], task_id, rep_num, start_id), 'wb') as f:
+                  (tmp_d, dataset, optimizer_algos[idx], task_id, rep_num, start_id), 'rb') as f:
             test_data = pickle.load(f)
         assert len(test_data.values()) == rep_num
         exp_result[mth].append(np.mean(test_data.values()))
