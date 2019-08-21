@@ -79,7 +79,7 @@ def plot(dataset, rep_num, mths):
 
     for idx, mth in enumerate(mth_list):
         perfs = list()
-        x = np.linspace(0, b, num=1000)
+        x = list(range(b+1))
         tmp_d = dataset.split('_')[0]
         for id in range(rep_num):
             file_id = data_folder + '%s/%s_%s_%d_%s.data' % (tmp_d, dataset, task_id, id, mth)
@@ -93,7 +93,6 @@ def plot(dataset, rep_num, mths):
         print(np.array(perfs).shape)
         perfs = np.mean(perfs, axis=0)
         print(mth, max(perfs), np.argmax(perfs))
-        x_num = len(perfs)
         method_name = dis_names[idx]
         # method_name = 'Test' if mth == 'ts_smac' else 'Auto-Sklearn'
         ax.plot(x, perfs, label=mth, lw=lw, color=color_dict[mth],
@@ -102,7 +101,7 @@ def plot(dataset, rep_num, mths):
                              markersize=ms, label=method_name)
         handles.append(line)
 
-    ax.xaxis.set_major_locator(ticker.MultipleLocator(100))
+    ax.xaxis.set_major_locator(ticker.MultipleLocator(360))
     legend = ax.legend(handles=handles)
     ax.set_xlabel('Time (Seconds)', fontsize=15)
     ax.set_ylabel('Validation accuracy', fontsize=15)
