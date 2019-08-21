@@ -116,18 +116,18 @@ class SGD(
         solver = CategoricalHyperparameter("solver", ["sgd", "adam"], default_value="adam")
 
         alpha = UniformFloatHyperparameter(
-            "alpha", 1e-7, 1e-1, log=True, default_value=0.0001)
+            "alpha", 1e-7, 1., log=True, default_value=0.0001)
 
         learning_rate = CategoricalHyperparameter(
             "learning_rate", ["adaptive", "invscaling", "constant"],
             default_value="constant")
 
         learning_rate_init = UniformFloatHyperparameter(
-            "learning_rate_init", 1e-6, 1e-1, default_value=0.001, log=True)
+            "learning_rate_init", 1e-4, 3e-1, default_value=0.001, log=True)
 
-        tol = UniformFloatHyperparameter("tol", 1e-5, 1e-1, log=True,
+        tol = UniformFloatHyperparameter("tol", 1e-5, 1e-2, log=True,
                                          default_value=1e-4)
-        momentum = UniformFloatHyperparameter("momentum", 0.6, 1, default_value=0.9)
+        momentum = UniformFloatHyperparameter("momentum", 0.6, 1, q=0.05, default_value=0.9)
 
         nesterovs_momentum = CategoricalHyperparameter("nesterovs_momentum", [True, False], default_value=True)
         beta1 = UniformFloatHyperparameter("beta1", 0.6, 1, default_value=0.9)
