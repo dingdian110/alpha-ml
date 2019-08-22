@@ -95,6 +95,7 @@ def plot(dataset, rep_num, start_id):
     test_strings = generate_str(missing_flag, test_res)
     print(val_strings)
     print(test_strings)
+    print('Latex code: ', '%s & \n & %s' % (val_strings, test_strings))
 
 
 if __name__ == "__main__":
