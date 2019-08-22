@@ -74,7 +74,9 @@ def plot(dataset, rep_num, start_id):
             pass
 
     print('='*50)
-    for item, values in exp_result.items():
+    for mth in mth_list:
+        item = mth
+        values = exp_result[mth]
         print(item.ljust(30, ' '), ['%.2f' % (100*val) for val in values])
     print('='*50)
 
