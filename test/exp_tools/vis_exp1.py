@@ -37,8 +37,8 @@ def generate_str(missing_flag, data_res):
 
 def plot(dataset, rep_num, start_id):
     task_id = 'exp_1_evaluation_500'
-    mth_list = ['avg_smac', 'cmab_ts_smac', 'smac',
-                'softmax_mab_1_1.0000_smac', 'ucb_mab_1_0.0000_smac', 'mm_bandit_3_smac']
+    mth_list = ['avg_smac', 'smac', 'ucb_mab_1_0.0000_smac', 'cmab_ts_smac',
+                'softmax_mab_1_1.0000_smac' , 'mm_bandit_3_smac']
     optimizer_algos = ['baseline_2', 'cmab_ts', 'smbo', 'rl_2_1', 'rl_3_0', 'mono_smbo_3_0']
     assert len(mth_list) == len(optimizer_algos)
     exp_result = dict()
