@@ -60,8 +60,8 @@ def plot(dataset, rep_num, mths):
     task_id = '%s_%d_0' % (task_id, b)
     color_list = ['purple', 'royalblue', 'green', 'red', 'brown', 'orange', 'yellowgreen']
     markers = ['s', '^', '2', 'o', 'v', 'p', '*']
-    mth_sets= ['mm_bandit_3_smac', 'mm_bandit_4_smac', 'smac']
-    dis_names = ['RB', 'RB*', 'SMAC']
+    mth_sets= ['mm_bandit_4_smac', 'smac', 'hyperopt']
+    dis_names = ['RB', 'SMAC', 'TPE']
     mth_list = [mth_sets[item] for item in mths]
     print(mth_list)
 
