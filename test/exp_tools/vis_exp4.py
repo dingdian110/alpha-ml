@@ -36,7 +36,8 @@ def plot(dataset, rep_num, start_id, mth_list):
             with open(project_folder + file_id, 'rb') as f:
                 test_data = pickle.load(f)
                 values = np.array(list(test_data.values()))
-            assert len(values) == rep_num
+            # assert len(values) == rep_num
+            print(len(values), values)
             exp_result[algo].extend(list(np.mean(values, axis=0)))
         except EOFError:
             pass
