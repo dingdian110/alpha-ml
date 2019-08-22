@@ -19,6 +19,22 @@ else:
     raise ValueError('Invalid mode: %s' % args.mode)
 
 
+def generate_str(missing_flag, data_res):
+    max_val = np.max(data_res)
+    str_list = list()
+    for idx, val in enumerate(data_res):
+        if val == max_val:
+            str_list.append('$\\bm{%.2f}$' % (100 * val))
+        else:
+            str_list.append('%.2f' % (100 * val))
+    if len(missing_flag) > len(data_res):
+        for idx, flag in enumerate(missing_flag):
+            if flag:
+                str_list.insert(idx, 'x')
+    string = ' & '.join(str_list)
+    return string
+
+
 def plot(dataset, rep_num, start_id):
     task_id = 'exp_1_evaluation_500'
     mth_list = ['avg_smac', 'cmab_ts_smac', 'smac',
@@ -61,6 +77,22 @@ def plot(dataset, rep_num, start_id):
     for item, values in exp_result.items():
         print(item.ljust(30, ' '), ['%.2f' % (100*val) for val in values])
     print('='*50)
+
+    val_res, test_res = list(), list()
+    missing_flag = [False] * len(mth_list)
+
+    for mth in mth_list:
+        if len(exp_result[mth]) < 2:
+            missing_flag[mth] = True
+        else:
+            val1, val2 = exp_result[mth]
+            val_res.append(val1)
+            test_res.append(val2)
+
+    val_strings = generate_str(missing_flag, val_res)
+    test_strings = generate_str(missing_flag, test_res)
+    print(val_strings)
+    print(test_strings)
 
 
 if __name__ == "__main__":
