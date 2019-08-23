@@ -127,7 +127,7 @@ class GradientBoostingClassifier(IterativeComponentWithSampleWeight, BaseClassif
         #     "n_estimators", 100, 100, default_value=100)
         n_estimators = Constant("n_estimators", 100)
         max_depth = UniformIntegerHyperparameter(
-            name="max_depth", lower=1, upper=10, default_value=3)
+            name="max_depth", lower=1, upper=8, default_value=3)
         criterion = CategoricalHyperparameter(
             'criterion', ['friedman_mse', 'mse'],
             default_value='mse')

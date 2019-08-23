@@ -120,7 +120,7 @@ class GradientBoostingClassifier(IterativeComponentWithSampleWeight, BaseClassif
                  'learning_rate': hp.loguniform('gb_learning_rate', np.log(0.01), np.log(1)),
                  # 'n_estimators': hp.randint('gb_n_estimators', 451) + 50,
                  'n_estimators': hp.choice('gb_n_estimators', [100]),
-                 'max_depth': hp.randint('gb_max_depth', 10) + 1,
+                 'max_depth': hp.randint('gb_max_depth', 8) + 1,
                  'criterion': hp.choice('gb_criterion', ['friedman_mse', 'mse', 'mae']),
                  'min_samples_split': hp.randint('gb_min_samples_split', 19) + 2,
                  'min_samples_leaf': hp.randint('gb_min_samples_leaf', 20) + 1,
