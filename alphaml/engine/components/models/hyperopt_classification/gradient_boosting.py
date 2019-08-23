@@ -118,7 +118,8 @@ class GradientBoostingClassifier(IterativeComponentWithSampleWeight, BaseClassif
     def get_hyperparameter_search_space(dataset_properties=None):
         space = {'loss': hp.choice('gb_loss', ["deviance"]),
                  'learning_rate': hp.loguniform('gb_learning_rate', np.log(0.01), np.log(1)),
-                 'n_estimators': hp.randint('gb_n_estimators', 451) + 50,
+                 # 'n_estimators': hp.randint('gb_n_estimators', 451) + 50,
+                 'n_estimators': hp.choice('gb_n_estimators', [100]),
                  'max_depth': hp.randint('gb_max_depth', 10) + 1,
                  'criterion': hp.choice('gb_criterion', ['friedman_mse', 'mse', 'mae']),
                  'min_samples_split': hp.randint('gb_min_samples_split', 19) + 2,
@@ -129,7 +130,7 @@ class GradientBoostingClassifier(IterativeComponentWithSampleWeight, BaseClassif
                  'max_leaf_nodes': hp.choice('gb_max_leaf_nodes', [None]),
                  'min_impurity_decrease': hp.choice('gb_min_impurity_decrease', [0])}
 
-        init_trial = {'loss': "deviance", 'learning_rate': 0.1, 'n_estimators': 200, 'max_depth': 3,
+        init_trial = {'loss': "deviance", 'learning_rate': 0.1, 'n_estimators': 100, 'max_depth': 3,
                       'criterion': "friedman_mse", 'min_samples_split': 2, 'min_samples_leaf': 1,
                       'min_weight_fraction_leaf': 0, 'subsample': 1, 'max_features': 1,
                       'max_leaf_nodes': None, 'min_impurity_decrease': 0}
