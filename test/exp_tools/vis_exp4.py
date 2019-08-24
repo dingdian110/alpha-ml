@@ -6,6 +6,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--mode', choices=['master', 'daim213', 'gc'], default='gc')
 parser.add_argument('--rep', type=int, default=10)
 parser.add_argument('--dataset', type=str, default='pc4')
+parser.add_argument('--mth', type=str, default='0')
 parser.add_argument('--start_runid', type=int, default=0)
 args = parser.parse_args()
 
@@ -19,9 +20,10 @@ else:
     raise ValueError('Invalid mode: %s' % args.mode)
 
 
-def plot(dataset, rep_num, start_id):
+def plot(dataset, rep_num, start_id, mth_list):
     task_id = "exp4_runtime_0"
-    optimizer_algos = ['smbo', 'mono_smbo_4']
+    optimizer_algos = ['mono_smbo_4', 'smbo', 'tpe']
+    optimizer_algos = [optimizer_algos[i] for i in mth_list]
     exp_result = dict()
     tmp_d = dataset.split('_')[0]
 
@@ -34,7 +36,8 @@ def plot(dataset, rep_num, start_id):
             with open(project_folder + file_id, 'rb') as f:
                 test_data = pickle.load(f)
                 values = np.array(list(test_data.values()))
-            assert len(values) == rep_num
+            # assert len(values) == rep_num
+            print(len(values), values)
             exp_result[algo].extend(list(np.mean(values, axis=0)))
         except EOFError:
             pass
@@ -46,4 +49,4 @@ def plot(dataset, rep_num, start_id):
 
 
 if __name__ == "__main__":
-    plot(args.dataset, args.rep, args.start_runid)
+    plot(args.dataset, args.rep, args.start_runid, mth_list=[int(item) for item in args.mth.split(',')])

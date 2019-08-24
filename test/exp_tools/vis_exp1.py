@@ -19,10 +19,26 @@ else:
     raise ValueError('Invalid mode: %s' % args.mode)
 
 
+def generate_str(missing_flag, data_res):
+    max_val = np.max(data_res)
+    str_list = list()
+    for idx, val in enumerate(data_res):
+        if val == max_val:
+            str_list.append('$\\bm{%.2f}$' % (100 * val))
+        else:
+            str_list.append('%.2f' % (100 * val))
+    if len(missing_flag) > len(data_res):
+        for idx, flag in enumerate(missing_flag):
+            if flag:
+                str_list.insert(idx, 'x')
+    string = ' & '.join(str_list)
+    return string
+
+
 def plot(dataset, rep_num, start_id):
     task_id = 'exp_1_evaluation_500'
-    mth_list = ['avg_smac', 'cmab_ts_smac', 'smac',
-                'softmax_mab_1_1.0000_smac', 'ucb_mab_1_0.0000_smac', 'mm_bandit_3_smac']
+    mth_list = ['avg_smac', 'smac', 'ucb_mab_1_0.0000_smac', 'cmab_ts_smac',
+                'softmax_mab_1_1.0000_smac' , 'mm_bandit_3_smac']
     optimizer_algos = ['baseline_2', 'cmab_ts', 'smbo', 'rl_2_1', 'rl_3_0', 'mono_smbo_3_0']
     assert len(mth_list) == len(optimizer_algos)
     exp_result = dict()
@@ -58,9 +74,28 @@ def plot(dataset, rep_num, start_id):
             pass
 
     print('='*50)
-    for item, values in exp_result.items():
+    for mth in mth_list:
+        item = mth
+        values = exp_result[mth]
         print(item.ljust(30, ' '), ['%.2f' % (100*val) for val in values])
     print('='*50)
+
+    val_res, test_res = list(), list()
+    missing_flag = [False] * len(mth_list)
+
+    for mth in mth_list:
+        if len(exp_result[mth]) < 2:
+            missing_flag[mth] = True
+        else:
+            val1, val2 = exp_result[mth]
+            val_res.append(val1)
+            test_res.append(val2)
+
+    val_strings = generate_str(missing_flag, val_res)
+    test_strings = generate_str(missing_flag, test_res)
+    print(val_strings)
+    print(test_strings)
+    print('Latex code: ', '%s & %s & \n & %s \\\\' % (dataset.upper(), val_strings, test_strings))
 
 
 if __name__ == "__main__":
