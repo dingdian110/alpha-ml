@@ -73,7 +73,7 @@ def test_exp3_cost_aware():
 
         # optimizer_algos = ['cmab_ts', 'mono_smbo_3', 'mono_smbo_4', 'smbo', 'tpe']
         # optimizer_algos = ['mono_smbo_3', 'cmab_ts']
-        optimizer_algos = ['mono_smbo_4', 'smbo', 'tpe']
+        optimizer_algos = ['mono_smbo_4', 'smbo', 'cmab_ts', 'tpe']
         # Test each optimizer algorithm:
         runcount_dict = dict()
         tpe_runcount = 0.
