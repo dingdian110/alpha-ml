@@ -82,6 +82,9 @@ class CMAB_TS(BaseOptimizer):
                 self.configs_list.append(runhistory.ids_config[key[0]])
                 self.config_values.append(reward)
                 # Update the parameters in TS.
+                if np.isnan(reward) or reward < 0. or reward > 1.:
+                    reward = 0.
+
                 rand_r = np.random.binomial(n=1, p=reward)
                 self.ts_cnts[best_arm] += 1
                 self.ts_rewards[best_arm] += rand_r
