@@ -102,7 +102,7 @@ def test_exp4_runtime():
         runcount_dict = dict()
         tpe_runcount = 0.
 
-        optimizer_algos = ['cmab_ts', 'mono_smbo_4', 'smbo', 'tpe']
+        optimizer_algos = ['mono_smbo_4', 'smbo', 'cmab_ts', 'tpe']
         optimizer_algos = [optimizer_algos[item] for item in mth_ids]
         # optimizer_algos = ['mono_smbo_3_0']
 
