@@ -22,7 +22,7 @@ else:
 
 def plot(dataset, rep_num, start_id, mth_list):
     task_id = "exp4_runtime_0"
-    optimizer_algos = ['mono_smbo_4', 'smbo', 'tpe']
+    optimizer_algos = ['mono_smbo_4', 'smbo', 'cmab_ts', 'tpe']
     optimizer_algos = [optimizer_algos[i] for i in mth_list]
     exp_result = dict()
     tmp_d = dataset.split('_')[0]

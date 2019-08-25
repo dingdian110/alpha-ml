@@ -19,14 +19,22 @@ plt.rcParams["legend.facecolor"] = 'white'
 plt.rcParams["legend.edgecolor"] = 'black'
 plt.rc('legend', **{'fontsize': 12})
 
-data_folder = '/home/contact_ds3lab/testinstall/alpha-ml/data/'
-
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--rep', type=int, default=10)
+parser.add_argument('--mode', choices=['master', 'daim213', 'gc'], default='gc')
+parser.add_argument('--rep', type=int, default=5)
 parser.add_argument('--dataset', type=str, default='elevators')
 parser.add_argument('--mth', type=str, default='0,1')
 args = parser.parse_args()
+
+if args.mode == 'master':
+    project_folder = '/home/thomas/PycharmProjects/alpha-ml'
+elif args.mode == 'daim213':
+    project_folder = '/home/liyang/codes/alpha-ml'
+elif args.mode == 'gc':
+    project_folder = '/home/contact_ds3lab/testinstall/alpha-ml'
+else:
+    raise ValueError('Invalid mode: %s' % args.mode)
 
 
 def transform(data):
@@ -60,8 +68,8 @@ def plot(dataset, rep_num, mths):
     task_id = '%s_%d_0' % (task_id, b)
     color_list = ['purple', 'royalblue', 'green', 'red', 'brown', 'orange', 'yellowgreen']
     markers = ['s', '^', '2', 'o', 'v', 'p', '*']
-    mth_sets= ['mm_bandit_4_smac', 'smac', 'hyperopt']
-    dis_names = ['RB', 'SMAC', 'TPE']
+    mth_sets= ['mm_bandit_4_smac', 'smac']
+    dis_names = ['RB', 'SMAC']
     mth_list = [mth_sets[item] for item in mths]
     print(mth_list)
 
@@ -82,7 +90,7 @@ def plot(dataset, rep_num, mths):
         x = list(range(b+1))
         tmp_d = dataset.split('_')[0]
         for id in range(rep_num):
-            file_id = data_folder + '%s/%s_%s_%d_%s.data' % (tmp_d, dataset, task_id, id, mth)
+            file_id = project_folder + '/data/%s/%s_%s_%d_%s.data' % (tmp_d, dataset, task_id, id, mth)
             print(file_id)
             with open(file_id, 'rb') as f:
                 data = pickle.load(f)
@@ -108,7 +116,7 @@ def plot(dataset, rep_num, mths):
     ax.set_ylim(.8, .93)
 
     plt.savefig("./exp3_%s.pdf" % dataset)
-    # plt.show()
+    plt.show()
 
 
 if __name__ == "__main__":

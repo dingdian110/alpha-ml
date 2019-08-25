@@ -11,7 +11,7 @@ parser.add_argument('--rep', type=int, default=5)
 parser.add_argument('--run_count', type=int, default=500)
 parser.add_argument('--B', type=int, default=3600)
 parser.add_argument('--datasets', type=str, default='pc4')
-parser.add_argument('--mth', type=str, default='0,1,2')
+parser.add_argument('--mth', type=str, default='0,1,2,3')
 args = parser.parse_args()
 
 if args.mode == 'master':
@@ -53,13 +53,15 @@ def load_infos(dataset, task_id, run_count, id, mth):
 
 
 def load_runtime_infos(dataset, B, rep_num, task_id, run_count):
-    mths = ['mono_smbo', 'smbo']
+    mths = ['mono_smbo', 'smbo', 'cmab_ts']
     result = dict()
     for optimizer in mths:
         if optimizer == 'smbo':
             file_id = 'smac'
         elif optimizer == 'tpe':
             file_id = 'hyperopt'
+        elif optimizer == 'cmab_ts':
+            file_id = 'cmab_ts_smac'
         elif optimizer == 'mono_smbo':
             file_id = 'mm_bandit_4_smac'
         else:
@@ -100,7 +102,7 @@ def test_exp4_runtime():
         runcount_dict = dict()
         tpe_runcount = 0.
 
-        optimizer_algos = ['mono_smbo_4', 'smbo', 'tpe']
+        optimizer_algos = ['cmab_ts', 'mono_smbo_4', 'smbo', 'tpe']
         optimizer_algos = [optimizer_algos[item] for item in mth_ids]
         # optimizer_algos = ['mono_smbo_3_0']
 
@@ -157,6 +159,8 @@ def test_exp4_runtime():
                     file_id = 'smac'
                 elif optimizer == 'tpe':
                     file_id = 'hyperopt'
+                elif optimizer == 'cmab_ts':
+                    file_id = 'cmab_ts_smac'
                 elif optimizer == 'mono_smbo':
                     file_id = 'mm_bandit_%d_smac' % mode
                 else:
