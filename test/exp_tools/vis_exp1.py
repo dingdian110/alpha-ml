@@ -55,7 +55,7 @@ def plot(dataset, rep_num, start_id):
             perf_t = np.max(data['perfs'])
             print(mth, data['time_cost'][-1], perf_t)
             perfs.append(perf_t)
-        assert len(perfs) == rep_num
+        # assert len(perfs) == rep_num
         mean_perf = np.mean(perfs)
         print('='*10, mth, mean_perf)
         exp_result[mth].append(mean_perf)
@@ -68,7 +68,7 @@ def plot(dataset, rep_num, start_id):
             with open(project_folder + file_id, 'rb') as f:
                 test_data = pickle.load(f)
                 values = list(test_data.values())
-            assert len(values) == rep_num
+            # assert len(values) == rep_num
             exp_result[mth].append(np.mean(values))
         except EOFError:
             pass
