@@ -73,6 +73,9 @@ def test_exp1_evaluation():
             elif opt_algo.startswith('baseline'):
                 optimizer = 'baseline'
                 mode = 2
+            elif opt_algo.startswith('mono_tpe_smbo'):
+                optimizer = 'mono_tpe_smbo'
+                mode, eta = 3, 10
             elif opt_algo.startswith('rl'):
                 if len(opt_algo.split('_')) == 3:
                     _, mode, eta = opt_algo.split('_')
