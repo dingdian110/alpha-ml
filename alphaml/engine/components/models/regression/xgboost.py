@@ -83,8 +83,8 @@ class XGBoostRegressor(BaseRegressionModel):
         subsample = UniformFloatHyperparameter("subsample", 0.5, 1, default_value=1, q=0.05)
         gamma = UniformFloatHyperparameter("gamma", 0, 1, default_value=0, q=0.1)
         colsample_bytree = UniformFloatHyperparameter("colsample_bytree", 0.5, 1, default_value=1., q=0.05)
-        alpha = UniformFloatHyperparameter("alpha", 0, 10, default_value=0., q=1.)
-        lambda_t = UniformFloatHyperparameter("lambda_t", 1, 2, default_value=1, q=0.1)
+        alpha = UniformFloatHyperparameter("alpha", 1e-10, 10, log=True,default_value=1e-10)
+        lambda_t = UniformFloatHyperparameter("lambda_t", 1e-10, 10,log=True, default_value=1e-10)
         scale_pos_weight = CategoricalHyperparameter("scale_pos_weight", [0.01, 0.1, 1., 10, 100], default_value=1.)
 
         cs.add_hyperparameters(

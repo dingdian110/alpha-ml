@@ -103,8 +103,8 @@ class XGBoostClassifier(BaseClassificationModel):
                  'subsample': hp.uniform('xgb_subsample', 0.5, 1),
                  'gamma': hp.uniform('xgb_gamma', 0, 1),
                  'colsample_bytree': hp.uniform('xgb_colsample_bytree', 0.5, 1),
-                 'alpha': hp.uniform('xgb_alpha', 0, 10),
-                 'lambda_t': hp.uniform('xgb_lambda_t', 1, 2),
+                 'alpha': hp.loguniform('xgb_alpha', np.log(1e-10), np.log(10)),
+                 'lambda_t': hp.loguniform('xgb_lambda_t', np.log(1e-10), np.log(10)),
                  'scale_pos_weight': hp.choice('xgb_scale_pos_weight', [0.01, 0.1, 1, 10, 100])}
 
         init_trial = {'n_estimators': 200,

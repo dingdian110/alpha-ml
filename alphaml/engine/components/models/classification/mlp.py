@@ -10,7 +10,7 @@ from alphaml.engine.components.models.base_model import BaseClassificationModel,
 from alphaml.utils.constants import *
 
 
-class SGD(
+class MLP(
     IterativeComponentWithSampleWeight,
     BaseClassificationModel,
 ):
