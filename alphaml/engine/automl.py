@@ -8,12 +8,13 @@ from alphaml.engine.optimizer.smac_smbo import SMAC_SMBO
 from alphaml.engine.optimizer.ts_smbo import TS_SMBO
 from alphaml.engine.optimizer.nonstationary_mab_optimizer import TS_NON_SMBO
 from alphaml.engine.optimizer.monotone_mab_optimizer import MONO_MAB_SMBO
+from alphaml.engine.optimizer.monotone_mab_tpe_optimizer import MONO_MAB_TPE_SMBO
 from alphaml.engine.optimizer.cmab_optimizer import CMAB_TS
 from alphaml.engine.optimizer.baseline_optimizer import BASELINE
 from alphaml.engine.optimizer.sh_optimizer import SH_SMBO
 from alphaml.engine.optimizer.rl_optimizer import RL_SMBO
 from alphaml.engine.optimizer.mcmc_ts_optimizer import MCMC_TS_Optimizer
-from alphaml.engine.optimizer.hyperopt import Hyperopt
+from alphaml.engine.optimizer.tpe_smbo import TPE_SMBO
 from alphaml.engine.components.ensemble.bagging import Bagging
 from alphaml.engine.components.ensemble.blending import Blending
 from alphaml.engine.components.ensemble.stacking import Stacking
@@ -110,10 +111,18 @@ class AutoML(object):
             self.optimizer.run()
         elif self.optimizer_type == 'tpe':
             self.evaluator = HyperoptClassificationEvaluator()
-            task_type = 'hyperopt_' + task_type
+            task_type = 'tpe_' + task_type
             config_space = self.component_manager.get_hyperparameter_search_space(
                 task_type, self.include_models, self.exclude_models)
-            self.optimizer = Hyperopt(self.evaluator, config_space, data, self.seed, **kwargs)
+            self.optimizer = TPE_SMBO(self.evaluator, config_space, data, self.seed, **kwargs)
+            self.optimizer.run()
+        elif self.optimizer_type == 'mono_tpe_smbo':
+            # Create optimizer.
+            self.evaluator = HyperoptClassificationEvaluator()
+            task_type = 'tpe_' + task_type
+            config_space = self.component_manager.get_hyperparameter_search_space(
+                task_type, self.include_models, self.exclude_models)
+            self.optimizer = MONO_MAB_TPE_SMBO(self.evaluator, config_space, data, self.seed, **kwargs)
             self.optimizer.run()
         else:
             raise ValueError('UNSUPPORTED optimizer: %s' % self.optimizer)

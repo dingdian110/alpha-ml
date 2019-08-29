@@ -7,7 +7,7 @@ from hyperopt import hp, tpe, fmin, Trials, STATUS_OK, space_eval
 from alphaml.engine.optimizer.base_optimizer import BaseOptimizer
 
 
-class Hyperopt(BaseOptimizer):
+class TPE_SMBO(BaseOptimizer):
     def __init__(self, evaluator, config_space, data, seed, **kwargs):
         super().__init__(evaluator, config_space, data, kwargs['metric'], seed)
         self.task_name = kwargs['task_name'] if 'task_name' in kwargs else 'default'

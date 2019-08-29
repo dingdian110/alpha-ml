@@ -16,7 +16,7 @@ class ComponentsManager(object):
             from alphaml.engine.components.models.image_classification import _img_classifiers
             builtin_models = _img_classifiers.keys()
             builtin_estimators = _img_classifiers
-        elif 'hyperopt' in task_type:
+        elif 'tpe_' in task_type:
             from alphaml.engine.components.models.hyperopt_classification import _hyperopt_classifiers
             builtin_models = _hyperopt_classifiers
             builtin_estimators = _hyperopt_classifiers
