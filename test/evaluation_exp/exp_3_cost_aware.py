@@ -47,6 +47,28 @@ def load_infos(dataset, task_id, run_count, id, mth):
     return configs, perfs
 
 
+def load_runtime_infos(dataset, B, rep_num, task_id, run_count):
+    mths = ['mono_smbo', 'smbo', 'cmab_ts']
+    result = dict()
+    for optimizer in mths:
+        if optimizer == 'smbo':
+            file_id = 'smac'
+        elif optimizer == 'tpe':
+            file_id = 'hyperopt'
+        elif optimizer == 'cmab_ts':
+            file_id = 'cmab_ts_smac'
+        elif optimizer == 'mono_smbo':
+            file_id = 'mm_bandit_4_smac'
+        else:
+            raise ValueError('Invalid optimizer!')
+        result[optimizer] = list()
+        tmp_task_id = '%s_%d' % (task_id, B) if B > 0 else task_id
+        for run_id in range(rep_num):
+            tmp_configs, tmp_perfs = load_infos(dataset, tmp_task_id, run_count, run_id, file_id)
+            result[optimizer].append(len(tmp_configs))
+    return result
+
+
 def test_exp3_cost_aware():
     rep_num = args.rep
     run_count = args.run_count
@@ -72,8 +94,8 @@ def test_exp3_cost_aware():
         dm = DataManager(X_train, y_train)
 
         # optimizer_algos = ['cmab_ts', 'mono_smbo_3', 'mono_smbo_4', 'smbo', 'tpe']
-        # optimizer_algos = ['mono_smbo_3', 'cmab_ts']
-        optimizer_algos = ['mono_smbo_4', 'smbo', 'tpe']
+        # optimizer_algos = ['mono_smbo_4', 'smbo', 'cmab_ts', 'tpe']
+        optimizer_algos = ['cmab_ts', 'tpe']
         # Test each optimizer algorithm:
         runcount_dict = dict()
         tpe_runcount = 0.
@@ -82,11 +104,15 @@ def test_exp3_cost_aware():
             if opt_algo != 'tpe':
                 runcount_dict[opt_algo] = list()
             else:
+                if len(runcount_dict) == 0:
+                    # load from files.
+                    runcount_dict = load_runtime_infos(dataset, B, rep_num, task_id, run_count)
+                    print('Restore info from files', runcount_dict)
                 count_list = list()
                 for key in runcount_dict.keys():
                     count_list.append(np.mean(runcount_dict[key]))
                 assert len(count_list) > 0
-                tpe_runcount = int(np.min(count_list))
+                tpe_runcount = np.min(count_list)
                 print('='*50, tpe_runcount)
 
             result = dict()
@@ -123,6 +149,8 @@ def test_exp3_cost_aware():
                     file_id = 'smac'
                 elif optimizer == 'tpe':
                     file_id = 'hyperopt'
+                elif optimizer == 'cmab_ts':
+                    file_id = 'cmab_ts_smac'
                 elif optimizer == 'mono_smbo':
                     file_id = 'mm_bandit_%d_smac' % mode
                 else:
@@ -139,10 +167,10 @@ def test_exp3_cost_aware():
                 result[key_id] = [cash_test_acc]
                 print(result)
 
-            # Save the test result.
-            with open('data/%s/%s_test_result_%s_%s_%d_%d_%d.pkl' %
-                              (dataset_id, dataset, opt_algo, task_id, run_count, rep_num, start_id), 'wb') as f:
-                pickle.dump(result, f)
+                # Save the test result.
+                with open('data/%s/%s_test_result_%s_%s_%d_%d_%d.pkl' %
+                                  (dataset_id, dataset, opt_algo, task_id, run_count, rep_num, start_id), 'wb') as f:
+                    pickle.dump(result, f)
 
 
 if __name__ == "__main__":

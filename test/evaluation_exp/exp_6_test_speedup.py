@@ -8,10 +8,10 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--mode', choices=['master', 'daim213', 'gc'], default='master')
 parser.add_argument('--start_runid', type=int, default=0)
 parser.add_argument('--rep', type=int, default=10)
-parser.add_argument('--run_count', type=int, default=500)
+parser.add_argument('--run_count', type=int, default=5000)
 parser.add_argument('--B', type=int, default=30)
 parser.add_argument('--datasets', type=str, default='pc4')
-parser.add_argument('--mth', type=str, default='0,1,2,3,4,5')
+parser.add_argument('--mth', type=str, default='1,2')
 args = parser.parse_args()
 
 if args.mode == 'master':
@@ -37,7 +37,7 @@ def get_seeds(dataset, rep_num):
     return np.random.random_integers(10000, size=rep_num)
 
 
-def test_exp1_evaluation():
+def test_exp6_evaluation():
     rep_num = args.rep
     run_count = args.run_count
 
@@ -45,7 +45,7 @@ def test_exp1_evaluation():
     datasets = args.datasets.split(',')
     algo_ids = [int(id) for id in args.mth.split(',')]
     print(rep_num, run_count, datasets)
-    task_id = "exp_1_evaluation"
+    task_id = "exp_6_evaluation"
 
     for dataset in datasets:
         dataset_id = dataset.split('_')[0]
@@ -59,7 +59,7 @@ def test_exp1_evaluation():
                                                             stratify=y)
         dm = DataManager(X_train, y_train)
 
-        optimizer_algos = ['baseline_2', 'smbo', 'cmab_ts', 'rl_2_1', 'rl_3_0', 'mono_smbo_3_0', 'tpe']
+        optimizer_algos = ['smbo', 'tpe', 'cmab_ts', 'mono_smbo_3_0']
         optimizer_algos = [optimizer_algos[id] for id in algo_ids]
         # optimizer_algos = ['smbo']
         # Test each optimizer algorithm:
@@ -107,4 +107,4 @@ def test_exp1_evaluation():
 
 
 if __name__ == "__main__":
-    test_exp1_evaluation()
+    test_exp6_evaluation()

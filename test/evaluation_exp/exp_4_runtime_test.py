@@ -11,6 +11,7 @@ parser.add_argument('--rep', type=int, default=5)
 parser.add_argument('--run_count', type=int, default=500)
 parser.add_argument('--B', type=int, default=3600)
 parser.add_argument('--datasets', type=str, default='pc4')
+parser.add_argument('--mth', type=str, default='0,1,2,3')
 args = parser.parse_args()
 
 if args.mode == 'master':
@@ -51,9 +52,32 @@ def load_infos(dataset, task_id, run_count, id, mth):
     return configs, perfs
 
 
+def load_runtime_infos(dataset, B, rep_num, task_id, run_count):
+    mths = ['mono_smbo', 'smbo', 'cmab_ts']
+    result = dict()
+    for optimizer in mths:
+        if optimizer == 'smbo':
+            file_id = 'smac'
+        elif optimizer == 'tpe':
+            file_id = 'hyperopt'
+        elif optimizer == 'cmab_ts':
+            file_id = 'cmab_ts_smac'
+        elif optimizer == 'mono_smbo':
+            file_id = 'mm_bandit_4_smac'
+        else:
+            raise ValueError('Invalid optimizer!')
+        result[optimizer] = list()
+        tmp_task_id = '%s_%d' % (task_id, B) if B > 0 else task_id
+        for run_id in range(rep_num):
+            tmp_configs, tmp_perfs = load_infos(dataset, tmp_task_id, run_count, run_id, file_id)
+            result[optimizer].append(len(tmp_configs))
+    return result
+
+
 def test_exp4_runtime():
     rep_num = args.rep
     run_count = args.run_count
+    mth_ids = [int(item) for item in args.mth.split(',')]
     B = args.B
     if B > 0:
         run_count = 0
@@ -78,15 +102,19 @@ def test_exp4_runtime():
         runcount_dict = dict()
         tpe_runcount = 0.
 
-        optimizer_algos = ['mono_smbo_4', 'smbo', 'tpe']
+        optimizer_algos = ['mono_smbo_4', 'smbo', 'cmab_ts', 'tpe']
+        optimizer_algos = [optimizer_algos[item] for item in mth_ids]
         # optimizer_algos = ['mono_smbo_3_0']
-        # Test each optimizer algorithm:
-        assert optimizer_algos[-1] == 'tpe'
+
         for opt_algo in optimizer_algos:
             # if algo is tpe, we need to estimate its runcount in one hour.
             if opt_algo != 'tpe':
                 runcount_dict[opt_algo] = list()
             else:
+                if len(runcount_dict) == 0:
+                    # load from files.
+                    runcount_dict = load_runtime_infos(dataset, B, rep_num, task_id, run_count)
+                    print('Restore info from files', runcount_dict)
                 count_list = list()
                 for key in runcount_dict.keys():
                     count_list.append(np.mean(runcount_dict[key]))
@@ -131,6 +159,8 @@ def test_exp4_runtime():
                     file_id = 'smac'
                 elif optimizer == 'tpe':
                     file_id = 'hyperopt'
+                elif optimizer == 'cmab_ts':
+                    file_id = 'cmab_ts_smac'
                 elif optimizer == 'mono_smbo':
                     file_id = 'mm_bandit_%d_smac' % mode
                 else:
@@ -161,10 +191,10 @@ def test_exp4_runtime():
                 result[key_id] = [cash_test_acc, ens_val_acc, ens_test_acc]
                 print(result)
 
-            # Save the test result.
-            with open('data/%s/%s_test_result_%s_%s_%d_%d_%d.pkl' %
-                              (dataset_id, dataset, opt_algo, task_id, run_count, rep_num, start_id), 'wb') as f:
-                pickle.dump(result, f)
+                # Save the test result.
+                with open('data/%s/%s_test_result_%s_%s_%d_%d_%d.pkl' %
+                                  (dataset_id, dataset, opt_algo, task_id, run_count, rep_num, start_id), 'wb') as f:
+                    pickle.dump(result, f)
 
 
 if __name__ == "__main__":
