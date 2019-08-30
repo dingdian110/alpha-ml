@@ -9,7 +9,6 @@ parser.add_argument('--mode', choices=['master', 'daim213', 'gc'], default='mast
 parser.add_argument('--start_runid', type=int, default=0)
 parser.add_argument('--rep', type=int, default=10)
 parser.add_argument('--run_count', type=int, default=5000)
-parser.add_argument('--B', type=int, default=30)
 parser.add_argument('--datasets', type=str, default='pc4')
 parser.add_argument('--mth', type=str, default='1,2')
 args = parser.parse_args()
@@ -45,7 +44,7 @@ def test_exp6_evaluation():
     datasets = args.datasets.split(',')
     algo_ids = [int(id) for id in args.mth.split(',')]
     print(rep_num, run_count, datasets)
-    task_id = "exp_6_evaluation"
+    task_id = "exp_6_lsevaluation"
 
     for dataset in datasets:
         dataset_id = dataset.split('_')[0]

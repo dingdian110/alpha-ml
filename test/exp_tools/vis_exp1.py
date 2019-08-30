@@ -7,6 +7,7 @@ parser.add_argument('--mode', choices=['master', 'daim213', 'gc'], default='gc')
 parser.add_argument('--rep', type=int, default=10)
 parser.add_argument('--dataset', type=str, default='pc4')
 parser.add_argument('--start_runid', type=int, default=0)
+parser.add_argument('--mth', type=str, default='0')
 args = parser.parse_args()
 
 if args.mode == 'master':
@@ -36,13 +37,17 @@ def generate_str(missing_flag, data_res):
 
 
 def plot(dataset, rep_num, start_id):
+    algo_ids = [int(id) for id in args.mth.split(',')]
     task_id = 'exp_1_evaluation_500'
-    mth_list = ['avg_smac', 'smac', 'ucb_mab_1_0.0000_smac', 'cmab_ts_smac',
-                'softmax_mab_1_1.0000_smac' , 'mm_bandit_3_smac']
-    optimizer_algos = ['baseline_2', 'cmab_ts', 'smbo', 'rl_2_1', 'rl_3_0', 'mono_smbo_3_0']
-    assert len(mth_list) == len(optimizer_algos)
+    mth_list_set = ['avg_smac', 'smac', 'ucb_mab_1_0.0000_smac', 'cmab_ts_smac',
+                'softmax_mab_1_1.0000_smac', 'mm_bandit_3_smac', 'mm_bandit_3_tpe']
+    optimizer_algos = ['baseline_2', 'cmab_ts', 'smbo', 'rl_2_1', 'rl_3_0', 'mono_smbo_3_0', 'mono_tpe_smbo']
+    assert len(mth_list_set) == len(optimizer_algos)
+    mth_list = [mth_list_set[id] for id in algo_ids]
     exp_result = dict()
-    for idx, mth in enumerate(mth_list):
+    for idx, mth in enumerate(mth_list_set):
+        if not mth in mth_list:
+            continue
         exp_result[mth] = list()
         perfs = list()
         tmp_d = dataset.split('_')[0]
