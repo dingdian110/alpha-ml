@@ -40,8 +40,8 @@ def plot(dataset, rep_num, start_id):
     algo_ids = [int(id) for id in args.mth.split(',')]
     task_id = 'exp_1_evaluation_500'
     mth_list_set = ['avg_smac', 'smac', 'ucb_mab_1_0.0000_smac', 'cmab_ts_smac',
-                'softmax_mab_1_1.0000_smac', 'mm_bandit_3_smac', 'mm_bandit_3_tpe']
-    optimizer_algos = ['baseline_2', 'cmab_ts', 'smbo', 'rl_2_1', 'rl_3_0', 'mono_smbo_3_0', 'mono_tpe_smbo']
+                'softmax_mab_1_1.0000_smac', 'mm_bandit_3_smac', 'hyperopt', 'mm_bandit_3_tpe']
+    optimizer_algos = ['baseline_2', 'cmab_ts', 'smbo', 'rl_2_1', 'rl_3_0', 'mono_smbo_3_0', 'tpe', 'mono_tpe_smbo']
     assert len(mth_list_set) == len(optimizer_algos)
     mth_list = [mth_list_set[id] for id in algo_ids]
     exp_result = dict()
