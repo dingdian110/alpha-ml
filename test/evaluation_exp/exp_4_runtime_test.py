@@ -53,7 +53,7 @@ def load_infos(dataset, task_id, run_count, id, mth):
 
 
 def load_runtime_infos(dataset, B, rep_num, task_id, run_count):
-    mths = ['mono_smbo', 'smbo', 'cmab_ts']
+    mths = ['mono_smbo', 'smbo']
     result = dict()
     for optimizer in mths:
         if optimizer == 'smbo':
