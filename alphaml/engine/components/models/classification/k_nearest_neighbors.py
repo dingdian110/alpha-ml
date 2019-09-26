@@ -14,6 +14,7 @@ class KNearestNeighborsClassifier(BaseClassificationModel):
         self.p = p
         self.random_state = random_state
         self.n_jobs = 1
+        self.time_limit = None
 
     def fit(self, X, Y):
         import sklearn.neighbors

@@ -27,10 +27,10 @@ class EnsembleSelection(BaseEnsembleModel):
                     self.ensemble_models.append(estimator)
                     pred = self.get_predictions(estimator, dm.val_X)
                     predictions.append(pred)
-                    self._fit(predictions, dm.val_y)
+
                 except ValueError as err:
                     pass
-
+            self._fit(predictions, dm.val_y)
         elif self.model_type == 'dl':
             pass
 

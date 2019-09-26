@@ -26,6 +26,7 @@ class DecisionTree(BaseClassificationModel):
         self.random_state = random_state
         self.class_weight = class_weight
         self.estimator = None
+        self.time_limit = None
 
     def fit(self, X, y, sample_weight=None):
         from sklearn.tree import DecisionTreeClassifier

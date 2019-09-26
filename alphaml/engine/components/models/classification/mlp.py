@@ -1,4 +1,5 @@
 import numpy as np
+import time
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import UniformFloatHyperparameter, \
@@ -30,6 +31,8 @@ class MLP(
         self.random_state = random_state
         self.estimator = None
         self.fully_fit_ = False
+        self.time_limit = None
+        self.start_time = time.time()
 
     def iterative_fit(self, X, y, n_iter=2, refit=False, sample_weight=None):
         from sklearn.neural_network import MLPClassifier
@@ -47,7 +50,7 @@ class MLP(
         if self.estimator is None:
             self.fully_fit_ = False
             if self.learning_rate is None:
-                self.learning_rate="constant"
+                self.learning_rate = "constant"
             self.alpha = float(self.alpha)
             self.power_t = float(self.power_t) if self.power_t is not None \
                 else 0.5
