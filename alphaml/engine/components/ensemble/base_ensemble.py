@@ -72,12 +72,12 @@ class BaseEnsembleModel(object):
 
             self.config_list = [self.model_info[0][i] for i in index_list]
 
-        print(self.model_info)
-        for i in index_list:
-            print('------------------')
-            print(self.model_info[0][i], self.model_info[1][i])
-            # self.get_estimator(self.model_info[0][i], None, None, True)
-            print('------------------')
+        # print(self.model_info)
+        # for i in index_list:
+        #     print('------------------')
+        #     print(self.model_info[0][i], self.model_info[1][i])
+        #     # self.get_estimator(self.model_info[0][i], None, None, True)
+        #     print('------------------')
 
     def fit(self, dm):
         raise NotImplementedError
