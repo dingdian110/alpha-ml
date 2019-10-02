@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 
-from alphaml.engine.components.data_preprocessing.imputer import impute_df, impute_dm
+from alphaml.engine.components.feature_engineering_operator.imputer import impute_df, impute_dm
 from alphaml.engine.components.data_manager import DataManager
 
 

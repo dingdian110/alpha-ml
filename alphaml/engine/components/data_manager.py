@@ -3,7 +3,7 @@ import pandas as pd
 
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
-from alphaml.engine.components.data_preprocessing.imputer import impute_df
+from alphaml.engine.components.feature_engineering_operator.imputer import impute_df
 
 _COL_TYPE = ["Float", "Discrete", "Categorical", "Text", "One-Hot"]
 

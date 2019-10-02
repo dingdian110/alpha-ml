@@ -13,7 +13,7 @@ from keras.callbacks import ModelCheckpoint, EarlyStopping
 from ConfigSpace import ConfigurationSpace
 from ConfigSpace import UniformFloatHyperparameter, CategoricalHyperparameter, InCondition
 from alphaml.engine.components.models.base_model import BaseClassificationModel
-from alphaml.engine.components.data_preprocessing.image_preprocess import preprocess
+from alphaml.engine.components.feature_engineering_operator.image_preprocess import preprocess
 from alphaml.engine.components.data_manager import DataManager
 
 

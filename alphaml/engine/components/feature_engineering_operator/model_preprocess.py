@@ -1,5 +1,5 @@
 
-from alphaml.engine.components.data_preprocessing.encoder import *
+from alphaml.engine.components.feature_engineering_operator.encoder import *
 
 
 def preprocess_xgboost(dm):

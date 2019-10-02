@@ -15,7 +15,7 @@ class MLP(
     IterativeComponentWithSampleWeight,
     BaseClassificationModel,
 ):
-    def __init__(self, activation, solver, alpha, tol, learning_rate='constant', learning_rate_init=0.001,
+    def __init__(self, activation, solver, alpha, tol, hidden_size, learning_rate='constant', learning_rate_init=0.001,
                  power_t=0.5, momentum=0.9, nesterovs_momentum=True,
                  beta1=0.9, random_state=None):
         self.activation = activation
@@ -24,6 +24,7 @@ class MLP(
         self.learning_rate = learning_rate
         self.learning_rate_init = learning_rate_init
         self.tol = tol
+        self.hidden_size = hidden_size
         self.momentum = momentum
         self.nesterovs_momentum = nesterovs_momentum
         self.beta1 = beta1
@@ -56,7 +57,8 @@ class MLP(
                 else 0.5
             self.tol = float(self.tol)
 
-            self.estimator = MLPClassifier(activation=self.activation,
+            self.estimator = MLPClassifier(hidden_layer_sizes=(self.hidden_size, self.hidden_size),
+                                           activation=self.activation,
                                            solver=self.solver,
                                            alpha=self.alpha,
                                            learning_rate=self.learning_rate,
@@ -114,6 +116,7 @@ class MLP(
     def get_hyperparameter_search_space(dataset_properties=None):
         cs = ConfigurationSpace()
 
+        hidden_size = UniformIntegerHyperparameter("hidden_size", 100, 500, default_value=200)
         activation = CategoricalHyperparameter("activation", ["identity", "logistic", "tanh", "relu"],
                                                default_value="relu")
         solver = CategoricalHyperparameter("solver", ["sgd", "adam"], default_value="adam")
@@ -137,10 +140,10 @@ class MLP(
         power_t = UniformFloatHyperparameter("power_t", 1e-5, 1, log=True,
                                              default_value=0.5)
         cs.add_hyperparameters(
-            [activation, solver, alpha, learning_rate, learning_rate_init, tol, momentum, nesterovs_momentum, beta1,
+            [hidden_size, activation, solver, alpha, learning_rate, learning_rate_init, tol, momentum,
+             nesterovs_momentum, beta1,
              power_t])
 
-        # TODO add passive/aggressive here, although not properly documented?
         learning_rate_condition = EqualsCondition(learning_rate, solver, "sgd")
         momentum_condition = EqualsCondition(momentum, solver, "sgd")
         nesterovs_momentum_condition = EqualsCondition(nesterovs_momentum, solver, "sgd")

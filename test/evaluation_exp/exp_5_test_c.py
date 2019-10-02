@@ -28,7 +28,7 @@ from sklearn.model_selection import train_test_split
 
 
 def evaluate_c():
-    rep_num = 20
+    rep_num = 10
     run_count = 500
     start_id = args.start_runid
     datasets = args.datasets.split(',')
@@ -52,7 +52,7 @@ def evaluate_c():
             dm = DataManager(X_train, y_train)
 
             # Test each optimizer algorithm:
-            for p in [1, 3, 5, 7, 9, 10, 15, 20]:
+            for p in [1, 4, 10, 14, 16, 20]:
                 task_name = dataset + '_%s_%d_%d_%d' % (task_id, run_count, run_id, p)
                 mode = 3
                 optimizer = 'mono_smbo'

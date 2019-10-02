@@ -32,7 +32,7 @@ from alphaml.utils.rand import get_seeds
 def evaluate_k():
     algo_list = ['xgboost', 'liblinear_svc', 'gradient_boosting', 'decision_tree', 'passive_aggressive', 'qda',
                  'random_forest', 'sgd', 'extra_trees', 'lda', 'gaussian_nb', 'libsvm_svc',
-                 'logistic_regression', 'adaboost', 'k_nearest_neighbors', 'mlp']
+                 'logistic_regression', 'adaboost', 'k_nearest_neighbors']
 
     rep_num = args.rep
     run_count = args.run_count
@@ -62,7 +62,7 @@ def evaluate_k():
                 seed = seeds[run_id]
 
                 # Test each optimizer algorithm:
-                for n_est in [16, 12, 8, 4, 2, 1]:
+                for n_est in [15, 12, 8, 4, 2, 1]:
                     algos = algo_list[:n_est]
                     task_name = dataset + '_%s_%d_%d_%d' % (task_id, run_count, run_id, n_est)
                     mode, param = 3, None

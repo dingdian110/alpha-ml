@@ -11,7 +11,6 @@ parser.add_argument('--rep', type=int, default=10)
 parser.add_argument('--run_count', type=int, default=500)
 parser.add_argument('--B', type=int, default=30)
 parser.add_argument('--datasets', type=str, default='pc4')
-parser.add_argument('--mth', type=str, default='0,1,2,3,4,5')
 args = parser.parse_args()
 
 if args.mode == 'master':
@@ -43,7 +42,6 @@ def test_exp1_evaluation():
 
     start_id = args.start_runid
     datasets = args.datasets.split(',')
-    algo_ids = [int(id) for id in args.mth.split(',')]
     print(rep_num, run_count, datasets)
     task_id = "exp_1_evaluation"
 
@@ -59,8 +57,8 @@ def test_exp1_evaluation():
                                                             stratify=y)
         dm = DataManager(X_train, y_train)
 
-        optimizer_algos = ['baseline_2', 'smbo', 'cmab_ts', 'rl_2_1', 'rl_3_0', 'mono_smbo_3_0', 'tpe', 'mono_tpe_smbo']
-        optimizer_algos = [optimizer_algos[id] for id in algo_ids]
+        # optimizer_algos = ['baseline_2', 'smbo', 'cmab_ts', 'rl_2_1', 'rl_3_0', 'mono_smbo_3_0', 'tpe']
+        optimizer_algos = ['baseline_2', 'smbo', 'cmab_ts', 'rl_2_1', 'rl_3_0', 'mono_smbo_3_0']
         # optimizer_algos = ['smbo']
         # Test each optimizer algorithm:
         for opt_algo in optimizer_algos:
@@ -73,9 +71,6 @@ def test_exp1_evaluation():
             elif opt_algo.startswith('baseline'):
                 optimizer = 'baseline'
                 mode = 2
-            elif opt_algo.startswith('mono_tpe_smbo'):
-                optimizer = 'mono_tpe_smbo'
-                mode, eta = 3, 10
             elif opt_algo.startswith('rl'):
                 if len(opt_algo.split('_')) == 3:
                     _, mode, eta = opt_algo.split('_')
@@ -103,10 +98,10 @@ def test_exp1_evaluation():
                 result[key_id] = [cash_test_acc]
                 print(result)
 
-                # Save the test result.
-                with open('data/%s/%s_test_result_%s_%s_%d_%d_%d.pkl' %
-                                  (dataset_id, dataset, opt_algo, task_id, run_count, rep_num, start_id), 'wb') as f:
-                    pickle.dump(result, f)
+            # Save the test result.
+            with open('data/%s/%s_test_result_%s_%s_%d_%d_%d.pkl' %
+                              (dataset_id, dataset, opt_algo, task_id, run_count, rep_num, start_id), 'wb') as f:
+                pickle.dump(result, f)
 
 
 if __name__ == "__main__":
