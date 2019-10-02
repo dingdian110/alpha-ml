@@ -6,10 +6,13 @@ from alphaml.utils.save_ease import save_ease
 import os
 import pickle as pkl
 import functools
+import math
 
 CLASSIFICATION = 1
 REGRESSION = 2
 HYPEROPT_CLASSIFICATION = 3
+
+FAILED = -2147483646.0
 
 
 class BaseEnsembleModel(object):
@@ -37,7 +40,6 @@ class BaseEnsembleModel(object):
         # Determine the best basic models (the best for each algorithm) from models_infos.
         index_list = []
         model_len = len(self.model_info[1])
-        top_k = 2
 
         def cmp(x, y):
             if self.model_info[1][x] > self.model_info[1][y]:
@@ -50,18 +52,21 @@ class BaseEnsembleModel(object):
         try:
             # SMAC
             estimator_set = set([self.model_info[0][i]['estimator'] for i in range(model_len)])
+            top_k = math.ceil(ensemble_size / len(estimator_set))
             # Get the estimator with the best performance for each algorithm
             for estimator in estimator_set:
                 id_list = []
                 for i in range(model_len):
                     if self.model_info[0][i]['estimator'] == estimator:
-                        id_list.append(i)
+                        if self.model_info[1][i] != FAILED:
+                            id_list.append(i)
                 sort_list = sorted(id_list, key=functools.cmp_to_key(cmp))
                 index_list.extend(sort_list[:top_k])
             self.config_list = [self.model_info[0][i] for i in index_list]
         except:
             # Hyperopt
             estimator_set = set(self.model_info[0][i]['estimator'][0] for i in range(model_len))
+            top_k = math.ceil(model_len / len(estimator_set))
             for estimator in estimator_set:
                 id_list = []
                 for i in range(model_len):
@@ -73,11 +78,11 @@ class BaseEnsembleModel(object):
             self.config_list = [self.model_info[0][i] for i in index_list]
 
         # print(self.model_info)
-        # for i in index_list:
-        #     print('------------------')
-        #     print(self.model_info[0][i], self.model_info[1][i])
-        #     # self.get_estimator(self.model_info[0][i], None, None, True)
-        #     print('------------------')
+        for i in index_list:
+            print('------------------')
+            print(self.model_info[0][i], self.model_info[1][i])
+            # self.get_estimator(self.model_info[0][i], None, None, True)
+            print('------------------')
 
     def fit(self, dm):
         raise NotImplementedError

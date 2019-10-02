@@ -26,11 +26,11 @@ def test_cash_module():
             y_train.append(int(sheet.cell_value(i, 0)))
 
         dm = DataManager(X_train, y_train, val_size=0.33, random_state=random.randint(1, 255))
-        cls = Classifier(exclude_models=['xgboost'],
+        cls = Classifier(include_models=['liblinear_svc','xgboost','random_forest','logistic_regression','mlp'],
                          optimizer='baseline',
                          ensemble_method='bagging',
-                         ensemble_size=10,
-                         ).fit(dm, metric='auc', update_mode=2, runcount=50)
+                         ensemble_size=15,
+                         ).fit(dm, metric='auc', update_mode=2, runcount=300)
 
         sheet = xlrd.open_workbook("lyqtestdata.xlsx")
         sheet = sheet.sheet_by_index(0)
@@ -41,6 +41,7 @@ def test_cash_module():
             X_test.append(sheet.row_values(i, start_colx=1))
             y_test.append(int(sheet.cell_value(i, 0)))
         pred = cls.predict(X_test)
+        print(pred)
         result.append(roc_auc_score(y_test, pred))
         print(result)
 
