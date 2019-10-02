@@ -1,8 +1,10 @@
 import warnings
 from sklearn.preprocessing import LabelEncoder
 import sys
+
 warnings.filterwarnings("ignore")
 sys.path.append("/home/daim_gpu/sy/AlphaML")
+
 
 def test_cash_module():
     from alphaml.engine.components.data_manager import DataManager
@@ -12,7 +14,7 @@ def test_cash_module():
     import random
     from sklearn.metrics import roc_auc_score
     result = []
-    for i in range(10):
+    for i in range(1):
         import xlrd
         sheet = xlrd.open_workbook("lyqdata.xlsx")
         sheet = sheet.sheet_by_index(0)
@@ -24,11 +26,11 @@ def test_cash_module():
             y_train.append(int(sheet.cell_value(i, 0)))
 
         dm = DataManager(X_train, y_train, val_size=0.33, random_state=random.randint(1, 255))
-        cls = Classifier(#exclude_models=['xgboost', 'gradient_boosting'],
-                         optimizer='mono_smbo',
-                         ensemble_method='ensemble_selection',
-                         ensemble_size=50,
-                         ).fit(dm, metric='auc', runcount=250)
+        cls = Classifier(exclude_models=['xgboost'],
+                         optimizer='baseline',
+                         ensemble_method='bagging',
+                         ensemble_size=10,
+                         ).fit(dm, metric='auc', update_mode=2, runcount=50)
 
         sheet = xlrd.open_workbook("lyqtestdata.xlsx")
         sheet = sheet.sheet_by_index(0)

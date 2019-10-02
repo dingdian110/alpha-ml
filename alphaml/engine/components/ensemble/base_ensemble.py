@@ -5,6 +5,7 @@ from alphaml.utils.save_ease import save_ease
 
 import os
 import pickle as pkl
+import functools
 
 CLASSIFICATION = 1
 REGRESSION = 2
@@ -36,38 +37,47 @@ class BaseEnsembleModel(object):
         # Determine the best basic models (the best for each algorithm) from models_infos.
         index_list = []
         model_len = len(self.model_info[1])
+        top_k = 2
+
+        def cmp(x, y):
+            if self.model_info[1][x] > self.model_info[1][y]:
+                return -1
+            elif self.model_info[1][x] == self.model_info[1][y]:
+                return 0
+            else:
+                return 1
+
         try:
             # SMAC
             estimator_set = set([self.model_info[0][i]['estimator'] for i in range(model_len)])
             # Get the estimator with the best performance for each algorithm
             for estimator in estimator_set:
-                best_perf = -float("Inf")
-                best_id = -1
+                id_list = []
                 for i in range(model_len):
                     if self.model_info[0][i]['estimator'] == estimator:
-                        if self.model_info[1][i] > best_perf:
-                            best_perf = self.model_info[1][i]
-                            best_id = i
-                index_list.append(best_id)
+                        id_list.append(i)
+                sort_list = sorted(id_list, key=functools.cmp_to_key(cmp))
+                index_list.extend(sort_list[:top_k])
+            self.config_list = [self.model_info[0][i] for i in index_list]
         except:
             # Hyperopt
             estimator_set = set(self.model_info[0][i]['estimator'][0] for i in range(model_len))
             for estimator in estimator_set:
-                best_perf = -float("Inf")
-                best_id = -1
+                id_list = []
                 for i in range(model_len):
                     if self.model_info[0][i]['estimator'][0] == estimator:
-                        if self.model_info[1][i] > best_perf:
-                            best_perf = self.model_info[1][i]
-                            best_id = i
-                index_list.append(best_id)
+                        id_list.append(i)
+                sort_list = sorted(id_list, key=functools.cmp_to_key(cmp))
+                index_list.extend(sort_list[:top_k])
 
-        self.config_list = [self.model_info[0][i] for i in index_list]
-        # for i in index_list:
-        #     print('------------------')
-        #     print(self.model_info[0][i], self.model_info[1][i])
-        #     self.get_estimator(self.model_info[0][i], None, None, True)
-        #     print('------------------')
+            self.config_list = [self.model_info[0][i] for i in index_list]
+
+        print(self.model_info)
+        for i in index_list:
+            print('------------------')
+            print(self.model_info[0][i], self.model_info[1][i])
+            # self.get_estimator(self.model_info[0][i], None, None, True)
+            print('------------------')
 
     def fit(self, dm):
         raise NotImplementedError
