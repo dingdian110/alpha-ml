@@ -112,7 +112,7 @@ class BaseEnsembleModel(object):
             print("Estimator retrained.")
         return estimator
 
-    def get_predictions(self, estimator, X):
+    def get_proba_predictions(self, estimator, X):
         if self.task_type == CLASSIFICATION or HYPEROPT_CLASSIFICATION:
             from sklearn.metrics import roc_auc_score
             if self.metric == roc_auc_score:

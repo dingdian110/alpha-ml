@@ -40,7 +40,7 @@ class Blending(BaseEnsembleModel):
             for i, config in enumerate(self.config_list):
                 estimator = self.get_estimator(config, x_p1, y_p1)
                 self.ensemble_models.append(estimator)
-                pred = self.get_predictions(estimator, x_p2)
+                pred = self.get_proba_predictions(estimator, x_p2)
                 if self.task_type == CLASSIFICATION:
                     from sklearn.metrics import roc_auc_score
                     if self.metric == roc_auc_score:
@@ -84,7 +84,7 @@ class Blending(BaseEnsembleModel):
         # Predict the labels via blending
         feature_p2 = None
         for i, model in enumerate(self.ensemble_models):
-            pred = self.get_predictions(model, X)
+            pred = self.get_proba_predictions(model, X)
             if self.task_type == CLASSIFICATION:
                 n_dim = np.array(pred).shape[1]
                 if n_dim == 2:
