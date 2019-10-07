@@ -62,7 +62,7 @@ class MLP(
                 else 0.5
             self.tol = float(self.tol)
 
-            self.estimator = MLPClassifier(hidden_layer_sizes=(self.hidden_size, self.hidden_size,),
+            self.estimator = MLPClassifier(hidden_layer_sizes=(self.hidden_size, self.hidden_size),
                                            activation=self.activation,
                                            solver=self.solver,
                                            alpha=self.alpha,
@@ -74,15 +74,20 @@ class MLP(
                                            tol=self.tol,
                                            warm_start=True,
                                            momentum=self.momentum,
+                                           n_iter_no_change=50,
                                            nesterovs_momentum=self.nesterovs_momentum,
                                            beta_1=self.beta1)
-
+            self.estimator.fit(X, y)
         else:
             self.estimator.max_iter += n_iter
-            self.estimator.max_iter = min(self.estimator.max_iter, 4096)
-        self.estimator.fit(X, y)
+            self.estimator.max_iter = min(self.estimator.max_iter, 2048)
+            for i in range(n_iter):
+                self.estimator.fit(X, y)
+                if self.estimator._no_improvement_count > self.estimator.n_iter_no_change:
+                    self.fully_fit_ = True
+                    break
 
-        if self.estimator.max_iter >= 4096 or n_iter > self.estimator.n_iter_:
+        if self.estimator.max_iter >= 2048:
             self.fully_fit_ = True
 
         return self
