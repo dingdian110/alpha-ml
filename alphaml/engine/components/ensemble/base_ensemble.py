@@ -96,10 +96,11 @@ class BaseEnsembleModel(object):
         estimator_name = config['estimator']
         if isinstance(estimator_name, tuple):
             estimator_name = estimator_name[0]
+        print("Estimator path:", save_path)
         if if_load and os.path.exists(save_path) and estimator_name != 'xgboost':
             with open(save_path, 'rb') as f:
                 estimator = pkl.load(f)
-                print("Estimator loaded from", save_path)
+                # print("Estimator loaded from", save_path)
         else:
             if self.task_type == CLASSIFICATION:
                 evaluator = BaseClassificationEvaluator()
@@ -109,7 +110,7 @@ class BaseEnsembleModel(object):
                 evaluator = HyperoptClassificationEvaluator()
             _, estimator = evaluator.set_config(config)
             estimator.fit(x, y)
-            print("Estimator retrained.")
+            # print("Estimator retrained.")
         return estimator
 
     def get_proba_predictions(self, estimator, X):
