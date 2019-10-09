@@ -29,7 +29,7 @@ def test_cash_module():
         cls = Classifier(include_models=['liblinear_svc','xgboost','random_forest','logistic_regression','mlp'],
                          optimizer='baseline',
                          ensemble_method='bagging',
-                         ensemble_size=15,
+                         ensemble_size=10,
                          ).fit(dm, metric='auc', update_mode=2, runcount=300)
 
         sheet = xlrd.open_workbook("lyqtestdata.xlsx")

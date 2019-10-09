@@ -81,7 +81,7 @@ class BaseEnsembleModel(object):
         for i in index_list:
             print('------------------')
             print(self.model_info[0][i], self.model_info[1][i])
-            # self.get_estimator(self.model_info[0][i], None, None, True)
+            self.get_estimator(self.model_info[0][i], None, None, if_show=True)
             print('------------------')
 
     def fit(self, dm):
@@ -91,12 +91,14 @@ class BaseEnsembleModel(object):
         raise NotImplementedError
 
     @save_ease(save_dir='./data/save_models')
-    def get_estimator(self, config, x, y, if_load=False, **kwargs):
+    def get_estimator(self, config, x, y, if_load=False, if_show=False, **kwargs):
         save_path = kwargs['save_path']
         estimator_name = config['estimator']
         if isinstance(estimator_name, tuple):
             estimator_name = estimator_name[0]
-        print("Estimator path:", save_path)
+        if if_show:
+            print("Estimator path:", save_path)
+            return
         if if_load and os.path.exists(save_path) and estimator_name != 'xgboost':
             with open(save_path, 'rb') as f:
                 estimator = pkl.load(f)
