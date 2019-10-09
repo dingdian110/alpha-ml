@@ -1,16 +1,26 @@
 import warnings
 from sklearn.preprocessing import LabelEncoder
 import sys
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--run_count', type=int, default=300)
+parser.add_argument('--ensemble_size', type=int, default=10)
+args = parser.parse_args()
 
 warnings.filterwarnings("ignore")
 sys.path.append("/home/daim_gpu/sy/AlphaML")
+
+'''
+Available models:
+adaboost, decision_tree, extra_trees, gaussian_nb, gradient_boosting, k_nearest_neighbors, lda, liblinear_svc,
+libsvm_svc, logistic_regression, mlp, passive_aggressive, qda, random_forest, sgd, xgboost
+'''
 
 
 def test_cash_module():
     from alphaml.engine.components.data_manager import DataManager
     from alphaml.estimators.classifier import Classifier
-    from alphaml.datasets.cls_dataset.dataset_loader import load_data
-    from sklearn.model_selection import train_test_split
     import random
     from sklearn.metrics import roc_auc_score
     result = []
@@ -26,11 +36,11 @@ def test_cash_module():
             y_train.append(int(sheet.cell_value(i, 0)))
 
         dm = DataManager(X_train, y_train, val_size=0.33, random_state=random.randint(1, 255))
-        cls = Classifier(include_models=['liblinear_svc','xgboost','random_forest','logistic_regression','mlp'],
+        cls = Classifier(include_models=['liblinear_svc', 'xgboost', 'random_forest', 'logistic_regression', 'mlp'],
                          optimizer='baseline',
                          ensemble_method='bagging',
-                         ensemble_size=10,
-                         ).fit(dm, metric='auc', update_mode=2, runcount=300)
+                         ensemble_size=args.ensemble_size,
+                         ).fit(dm, metric='auc', update_mode=2, runcount=args.run_count)
 
         sheet = xlrd.open_workbook("lyqtestdata.xlsx")
         sheet = sheet.sheet_by_index(0)
