@@ -1,42 +1,42 @@
 import numpy as np
 import pandas as pd
 
-from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 from alphaml.engine.components.data_preprocessing.imputer import impute_df
 
 _COL_TYPE = ["Float", "Discrete", "Categorical", "Text", "One-Hot"]
 
 
-class DataManager(object):
+class Transformer(object):
+    def __init__(self, idx, transformer):
+        self.col_index = idx
+        self.transformer = transformer
 
-    def __init__(self, train_X=None, train_y=None, val_X=None, val_y=None, val_size=0.2, stratify=True, spilt=True,
-                 random_state=42):
-        self.train_X = np.array(train_X)
-        self.train_y = np.array(train_y)
-        self.val_X = val_X
-        self.val_y = val_y
-        self.split_size = val_size
-        self.random_seed = random_state
-        self.stratify = stratify
+
+class DataManager(object):
+    """
+    This class implements the wrapper for data used in the ML task.
+
+    It finishes the following preprocesses:
+    1) detect the type of each feature (numerical, categorical, textual, ...)
+    2) process the raw features:
+        e.g, one-hot the categorical features; impute the missing values;
+             encode the textual feature.
+       the `info` will record the transformer objects (e.g., label encoder, one-hot encoder)
+       during these processing.
+       when processing the test data, such objects will be used again.
+    """
+    def __init__(self, X, y):
+        self.info = dict()
+        self.info['task_type'] = None
+        self.info['preprocess_transforms'] = list()
+        self.X_train = X
+        self.y_train = y
+
         self.feature_types = None
 
-        if spilt and train_X is not None and train_y is not None and (self.val_X is None or self.val_y is None):
-            self.split(val_size, random_state)
-
-        self.test_X = None
-        self.test_y = None
-
-    def split(self, val_size=0.2, random_state=42, stratify=True):
-        assert self.train_X is not None and self.train_y is not None
-
-        # Split input into train and val subsets.
-        if self.stratify and stratify:
-            self.train_X, self.val_X, self.train_y, self.val_y = train_test_split(
-                self.train_X, self.train_y, test_size=val_size, random_state=random_state, stratify=self.train_y)
-        else:
-            self.train_X, self.val_X, self.train_y, self.val_y = train_test_split(
-                self.train_X, self.train_y, test_size=val_size, random_state=random_state)
+        self.X_test = None
+        self.y_test = None
 
     def set_col_type(self, df, label_col):
         self.feature_types = []
@@ -63,9 +63,8 @@ class DataManager(object):
         swap_data = data[:, -1]
         data[:, -1] = data[:, label_col]
         data[:, label_col] = swap_data
-        self.train_X = data[:, :-1]
-        self.train_y = LabelEncoder().fit_transform(data[:, -1])
-        self.split(self.split_size, self.random_seed)
+        self.X_train = data[:, :-1]
+        self.y_train = LabelEncoder().fit_transform(data[:, -1])
 
     def load_test_csv(self, file_location, keep_default_na=True, na_values=None):
         df = impute_df(pd.read_csv(file_location, keep_default_na=keep_default_na, na_values=na_values))
@@ -80,17 +79,8 @@ class DataManager(object):
     def load_test_libsvm(self, file_location):
         pass
 
-    def set_testX(self, test_X):
-        self.test_X = test_X
+    def set_testX(self, X_test):
+        self.X_test = X_test
 
-    def set_testy(self, test_y):
-        self.test_y = test_y
-
-    def get_val(self):
-        return self.val_X, self.val_y
-
-    def get_train(self):
-        return self.train_X, self.train_y
-
-    def get_test(self):
-        return self.test_X, self.test_y
+    def set_testy(self, y_test):
+        self.y_test = y_test
