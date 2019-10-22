@@ -81,13 +81,15 @@ class BaseEnsembleModel(object):
                 sort_list = sorted(id_list, key=functools.cmp_to_key(cmp))
                 index_list.extend(sort_list[:top_k])
 
-        self.config_list=[]
+        self.config_list = []
         print('------------------')
         for i in index_list:
+            print(self.model_info[0][i])
+            print("Valid performance:", self.model_info[1][i])
             if (best_performance - self.model_info[1][i]) / best_performance < 0.15:
                 self.config_list.append(self.model_info[0][i])
-                print(self.model_info[0][i])
-                print("Valid performance:", self.model_info[1][i])
+                # print(self.model_info[0][i])
+                # print("Valid performance:", self.model_info[1][i])
                 self.get_estimator(self.model_info[0][i], None, None, if_show=True)
         print('------------------')
 
