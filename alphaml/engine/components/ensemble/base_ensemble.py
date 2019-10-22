@@ -49,6 +49,7 @@ class BaseEnsembleModel(object):
             else:
                 return 1
 
+        best_performance = -1
         try:
             # SMAC
             estimator_set = set([self.model_info[0][i]['estimator'] for i in range(model_len)])
@@ -59,35 +60,44 @@ class BaseEnsembleModel(object):
                 for i in range(model_len):
                     if self.model_info[0][i]['estimator'] == estimator:
                         if self.model_info[1][i] != FAILED:
+                            if best_performance < self.model_info[1][i]:
+                                best_performance = self.model_info[1][i]
                             id_list.append(i)
                 sort_list = sorted(id_list, key=functools.cmp_to_key(cmp))
                 index_list.extend(sort_list[:top_k])
-            self.config_list = [self.model_info[0][i] for i in index_list]
+
         except:
             # Hyperopt
             estimator_set = set(self.model_info[0][i]['estimator'][0] for i in range(model_len))
-            top_k = math.ceil(model_len / len(estimator_set))
+            top_k = math.ceil(ensemble_size / len(estimator_set))
             for estimator in estimator_set:
                 id_list = []
                 for i in range(model_len):
                     if self.model_info[0][i]['estimator'][0] == estimator:
-                        id_list.append(i)
+                        if self.model_info[1][i] != FAILED:
+                            if best_performance < self.model_info[1][i]:
+                                best_performance = self.model_info[1][i]
+                            id_list.append(i)
                 sort_list = sorted(id_list, key=functools.cmp_to_key(cmp))
                 index_list.extend(sort_list[:top_k])
 
-            self.config_list = [self.model_info[0][i] for i in index_list]
-
-        # print(self.model_info)
+        self.config_list=[]
+        print('------------------')
         for i in index_list:
-            print('------------------')
-            print(self.model_info[0][i], self.model_info[1][i])
-            self.get_estimator(self.model_info[0][i], None, None, if_show=True)
-            print('------------------')
+            if (best_performance - self.model_info[1][i]) / best_performance < 0.15:
+                self.config_list.append(self.model_info[0][i])
+                print(self.model_info[0][i])
+                print("Valid performance:", self.model_info[1][i])
+                self.get_estimator(self.model_info[0][i], None, None, if_show=True)
+        print('------------------')
 
     def fit(self, dm):
         raise NotImplementedError
 
     def predict(self, X):
+        raise NotImplementedError
+
+    def predict_each(self, X):
         raise NotImplementedError
 
     @save_ease(save_dir='./data/save_models')
@@ -98,7 +108,7 @@ class BaseEnsembleModel(object):
             estimator_name = estimator_name[0]
         if if_show:
             print("Estimator path:", save_path)
-            return
+            return None
         if if_load and os.path.exists(save_path) and estimator_name != 'xgboost':
             with open(save_path, 'rb') as f:
                 estimator = pkl.load(f)
