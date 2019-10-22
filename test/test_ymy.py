@@ -5,7 +5,7 @@ import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--run_count', type=int, default=300)
-parser.add_argument('--ensemble_size', type=int, default=10)
+parser.add_argument('--ensemble_size', type=int, default=12)
 args = parser.parse_args()
 
 warnings.filterwarnings("ignore")
@@ -36,11 +36,12 @@ def test_cash_module():
             y_train.append(int(sheet.cell_value(i, 0)))
 
         dm = DataManager(X_train, y_train, val_size=0.33, random_state=random.randint(1, 255))
-        cls = Classifier(include_models=['liblinear_svc', 'xgboost', 'random_forest', 'logistic_regression', 'mlp'],
-                         optimizer='baseline',
-                         ensemble_method='bagging',
-                         ensemble_size=args.ensemble_size,
-                         ).fit(dm, metric='auc', update_mode=2, runcount=args.run_count)
+        cls = Classifier(
+            include_models=['liblinear_svc', 'libsvm_svc', 'xgboost', 'random_forest', 'logistic_regression', 'mlp'],
+            optimizer='baseline',
+            ensemble_method='bagging',
+            ensemble_size=args.ensemble_size,
+            ).fit(dm, metric='auc', update_mode=2, runcount=args.run_count)
 
         sheet = xlrd.open_workbook("lyqtestdata.xlsx")
         sheet = sheet.sheet_by_index(0)
@@ -50,6 +51,7 @@ def test_cash_module():
         for i in range(1, nrows):
             X_test.append(sheet.row_values(i, start_colx=1))
             y_test.append(int(sheet.cell_value(i, 0)))
+        
         pred = cls.predict(X_test)
         print(pred)
         result.append(roc_auc_score(y_test, pred))
