@@ -2,7 +2,7 @@ import os
 import pandas as pd
 
 from alphaml.engine.components.data_manager import DataManager
-from alphaml.engine.components.feature_engineering_operator.encoder import one_hot
+from alphaml.engine.components.data_preprocessing.encoder import one_hot
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
 

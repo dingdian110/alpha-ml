@@ -8,7 +8,7 @@ import numpy as np
 import os
 import warnings
 
-from alphaml.engine.components.feature_engineering_operator.unary import *
+from alphaml.engine.components.data_preprocessing.unary import *
 
 warnings.filterwarnings("ignore")
 

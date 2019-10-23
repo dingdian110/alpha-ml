@@ -1,7 +1,7 @@
 import numpy as np
 
 from alphaml.engine.components.data_manager import DataManager
-from alphaml.engine.components.feature_engineering_operator.encoder import one_hot, bucketizer, categorical_indexer
+from alphaml.engine.components.data_preprocessing.encoder import one_hot, bucketizer, categorical_indexer
 
 
 def test_one_hot():

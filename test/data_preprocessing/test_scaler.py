@@ -1,7 +1,7 @@
 import numpy as np
 
 from alphaml.engine.components.data_manager import DataManager
-from alphaml.engine.components.feature_engineering_operator.scaler import standard_scale, minmax_scale, maxabs_scale, normalize
+from alphaml.engine.components.data_preprocessing.scaler import standard_scale, minmax_scale, maxabs_scale, normalize
 
 
 def test_standard(dm):
