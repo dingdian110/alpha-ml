@@ -4,7 +4,7 @@ import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 from alphaml.engine.components.data_preprocessing.imputer import impute_df
 
-_COL_TYPE = ["Float", "Discrete", "Categorical", "Text", "One-Hot"]
+_COL_TYPE = ["Discrete", "Numerical", "Categorical", "One-Hot"]
 
 
 class Transformer(object):
@@ -26,61 +26,56 @@ class DataManager(object):
        during these processing.
        when processing the test data, such objects will be used again.
     """
-    def __init__(self, X, y):
+
+    # X,y should be None if using DataManager().load_csv(...)
+    def __init__(self, X=None, y=None):
         self.info = dict()
         self.info['task_type'] = None
         self.info['preprocess_transforms'] = list()
-        self.X_train = X
-        self.y_train = y
+        self.info['feature_type'] = list()
+        self.train_X = np.array(X)
+        self.train_y = np.array(y)
 
-        self.feature_types = None
+        if X is not None and y is not None:
+            self.set_col_type(self.train_X, None)
 
-        self.X_test = None
-        self.y_test = None
+        self.test_X = None
+        self.test_y = None
 
-    def set_col_type(self, df, label_col):
-        self.feature_types = []
-        for col in list(df.columns):
-            if label_col is not None and col == label_col:
+    def set_col_type(self, data, label_col):
+        col_num = data.shape[1]
+        for col_id in range(col_num):
+            if label_col is not None and (col_id == label_col or col_id - label_col == col_num):
                 continue
-            dtype = df[col].dtype
-            if dtype in [np.int, np.int16, np.int32, np.int64]:
-                self.feature_types.append("Discrete")
-            elif dtype in [np.float, np.float16, np.float32, np.float64, np.float128, np.double]:
-                self.feature_types.append("Float")
-            elif dtype in [np.str, np.str_, np.string_, np.object]:
-                self.feature_types.append("Categorical")
-            else:
-                raise TypeError("Unknown data type:", dtype)
+            col = data[:, col_id]
+            try:
+                col_f = col.astype(np.float64)
+                col_i = col_f.astype(np.int32)
+                if all(col_f == col_i) is True:
+                    self.info['feature_type'].append("Discrete")
+                else:
+                    self.info['feature_type'].append("Numerical")
+            except:
+                self.info['feature_type'].append("Categorical")
 
     def load_train_csv(self, file_location, label_col=-1, keep_default_na=True, na_values=None):
         df = impute_df(pd.read_csv(file_location, keep_default_na=keep_default_na, na_values=na_values))
-        # set the feature types
-        if self.feature_types is None:
-            self.set_col_type(df, df.columns[label_col])
         data = df.values
-
+        # set the feature types
+        if not self.info['feature_type']:
+            self.set_col_type(data, label_col)
         swap_data = data[:, -1]
         data[:, -1] = data[:, label_col]
         data[:, label_col] = swap_data
-        self.X_train = data[:, :-1]
-        self.y_train = LabelEncoder().fit_transform(data[:, -1])
+        self.train_X = data[:, :-1]
+        self.train_y = LabelEncoder().fit_transform(data[:, -1])
 
     def load_test_csv(self, file_location, keep_default_na=True, na_values=None):
         df = impute_df(pd.read_csv(file_location, keep_default_na=keep_default_na, na_values=na_values))
-        # set the feature types
-        if self.feature_types is None:
-            self.set_col_type(df, None)
         self.test_X = df.values
 
-    def load_train_libsvm(self, file_location):
-        pass
-
-    def load_test_libsvm(self, file_location):
-        pass
-
     def set_testX(self, X_test):
-        self.X_test = X_test
+        self.test_X = X_test
 
     def set_testy(self, y_test):
-        self.y_test = y_test
+        self.test_y = y_test

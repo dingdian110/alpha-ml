@@ -15,13 +15,13 @@ def impute_categorical(col):
 
 
 def impute_float(col) -> pd.Series:
-    mean_val = col.mean()
-    return col.fillna(mean_val)
+    median_val = int(col.median())
+    return col.fillna(median_val)
 
 
 def impute_discrete(col) -> pd.Series:
-    mean_val = int(col.mean())
-    return col.fillna(mean_val)
+    median_val = int(col.median())
+    return col.fillna(median_val)
 
 
 def impute_col(col, datatype) -> pd.Series:
@@ -38,6 +38,7 @@ def impute_col(col, datatype) -> pd.Series:
 def impute_df(df) -> pd.DataFrame:
     for col in list(df.columns):
         dtype = df[col].dtype
+        # If a column has NAN, it will be considered as 'float' though it only contains integers
         if dtype in [np.int, np.int16, np.int32, np.int64]:
             df[col] = impute_col(df[col], "discrete")
         elif dtype in [np.float, np.float16, np.float32, np.float64, np.float128, np.double]:
