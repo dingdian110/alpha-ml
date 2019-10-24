@@ -40,20 +40,30 @@ class Blending(BaseEnsembleModel):
             for i, config in enumerate(self.config_list):
                 estimator = self.get_estimator(config, x_p1, y_p1)
                 self.ensemble_models.append(estimator)
-                pred = self.get_predictions(estimator, x_p2)
+                pred = self.get_proba_predictions(estimator, x_p2)
                 if self.task_type == CLASSIFICATION:
-                    n_dim = np.array(pred).shape[1]
-                    if n_dim == 2:
-                        # Binary classificaion
-                        n_dim = 1
-                    # Initialize training matrix for phase 2
-                    if feature_p2 is None:
-                        num_samples = len(x_p2)
-                        feature_p2 = np.zeros((num_samples, self.ensemble_size * n_dim))
-                    if n_dim == 1:
-                        feature_p2[:, i * n_dim:(i + 1) * n_dim] = pred[:, 1:2]
-                    else:
+                    from sklearn.metrics import roc_auc_score
+                    if self.metric == roc_auc_score:
+                        shape = np.array(pred).shape
+                        n_dim = shape[1]
+                        # Initialize training matrix for phase 2
+                        if feature_p2 is None:
+                            num_samples = len(x_p2)
+                            feature_p2 = np.zeros((num_samples, self.ensemble_size * n_dim))
                         feature_p2[:, i * n_dim:(i + 1) * n_dim] = pred
+                    else:
+                        n_dim = np.array(pred).shape[1]
+                        if n_dim == 2:
+                            # Binary classificaion
+                            n_dim = 1
+                        # Initialize training matrix for phase 2
+                        if feature_p2 is None:
+                            num_samples = len(x_p2)
+                            feature_p2 = np.zeros((num_samples, self.ensemble_size * n_dim))
+                        if n_dim == 1:
+                            feature_p2[:, i * n_dim:(i + 1) * n_dim] = pred[:, 1:2]
+                        else:
+                            feature_p2[:, i * n_dim:(i + 1) * n_dim] = pred
 
                 elif self.task_type == REGRESSION:
                     shape = np.array(pred).shape
@@ -74,7 +84,7 @@ class Blending(BaseEnsembleModel):
         # Predict the labels via blending
         feature_p2 = None
         for i, model in enumerate(self.ensemble_models):
-            pred = self.get_predictions(model, X)
+            pred = self.get_proba_predictions(model, X)
             if self.task_type == CLASSIFICATION:
                 n_dim = np.array(pred).shape[1]
                 if n_dim == 2:
@@ -98,5 +108,9 @@ class Blending(BaseEnsembleModel):
                     feature_p2 = np.zeros((num_samples, self.ensemble_size * n_dim))
                 feature_p2[:, i * n_dim:(i + 1) * n_dim] = pred
         # Get predictions from meta-learner
-        final_pred = self.meta_learner.predict(feature_p2)
+        from sklearn.metrics import roc_auc_score
+        if self.metric == roc_auc_score:
+            final_pred = self.meta_learner.predict_proba(feature_p2)
+        else:
+            final_pred = self.meta_learner.predict(feature_p2)
         return final_pred

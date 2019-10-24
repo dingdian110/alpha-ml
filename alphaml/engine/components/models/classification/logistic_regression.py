@@ -14,6 +14,7 @@ class Logistic_Regression(BaseClassificationModel):
         self.solver = solver
         self.max_iter = max_iter
         self.estimator = None
+        self.time_limit = None
 
     def fit(self, X, Y):
         from sklearn.linear_model import LogisticRegression

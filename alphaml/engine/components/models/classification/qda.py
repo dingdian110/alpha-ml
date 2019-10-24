@@ -16,6 +16,7 @@ class QDA(BaseClassificationModel):
             self.reg_param = None
         self.estimator = None
         self.tol = None
+        self.time_limit = None
 
     def fit(self, X, Y):
         import sklearn.discriminant_analysis

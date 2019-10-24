@@ -1,4 +1,5 @@
 import numpy as np
+import time
 
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import UniformFloatHyperparameter, \
@@ -22,6 +23,8 @@ class PassiveAggressive(
         self.loss = loss
         self.random_state = random_state
         self.estimator = None
+        self.time_limit = None
+        self.start_time = time.time()
 
     def iterative_fit(self, X, y, n_iter=2, refit=False, sample_weight=None):
         from sklearn.linear_model.passive_aggressive import \

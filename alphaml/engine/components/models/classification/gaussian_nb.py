@@ -13,6 +13,7 @@ class GaussianNB(IterativeComponent, BaseClassificationModel):
         self.random_state = random_state
         self.verbose = int(verbose)
         self.estimator = None
+        self.time_limit = None
 
     def iterative_fit(self, X, y, n_iter=1, refit=False):
         import sklearn.naive_bayes

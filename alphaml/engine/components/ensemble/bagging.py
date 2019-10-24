@@ -27,16 +27,28 @@ class Bagging(BaseEnsembleModel):
         model_pred_list = []
         final_pred = []
         # Get predictions from each model
+        from sklearn.metrics import roc_auc_score
         for model in self.ensemble_models:
-            pred = model.predict(X)
+            pred = self.get_proba_predictions(model, X)
             num_outputs = len(pred)
             model_pred_list.append(pred)
+
         if self.task_type == CLASSIFICATION:
-            # Find predictions in majority
-            for i in range(num_outputs):
-                sample_pred_list = [model_pred[i] for model_pred in model_pred_list]
-                num_majority = get_most(sample_pred_list)
-                final_pred.append(num_majority)
+            if self.metric == roc_auc_score:
+                # Calculate the average of predictions
+                for i in range(num_outputs):
+                    sample_pred_list = [model_pred[i] for model_pred in model_pred_list]
+                    pred_average = reduce(lambda x, y: x + y, sample_pred_list) / len(sample_pred_list)
+                    final_pred.append(pred_average)
+            else:
+                # Find predictions in majority
+                for i in range(num_outputs):
+                    sample_pred_list = [model_pred[i] for model_pred in model_pred_list]
+                    sample_pred_list = np.array(sample_pred_list)
+                    sample_pred_list = list(np.argmax(sample_pred_list, axis=-1))
+                    num_majority = get_most(sample_pred_list)
+                    final_pred.append(num_majority)
+
         elif self.task_type == REGRESSION:
             # Calculate the average of predictions
             for i in range(num_outputs):

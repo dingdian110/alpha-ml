@@ -9,9 +9,10 @@ class MLP(
     IterativeComponentWithSampleWeight,
     BaseClassificationModel,
 ):
-    def __init__(self, activation, solver, alpha, tol, learning_rate='constant', learning_rate_init=0.001,
+    def __init__(self, activation, solver, alpha, tol, hidden_size, learning_rate='constant', learning_rate_init=0.001,
                  power_t=0.5, momentum=0.9, nesterovs_momentum=True,
                  beta1=0.9, random_state=None):
+        self.hidden_size = hidden_size
         self.activation = activation
         self.solver = solver
         self.alpha = alpha
@@ -61,7 +62,8 @@ class MLP(
                 else 0.5
             self.tol = float(self.tol)
 
-            self.estimator = MLPClassifier(activation=self.activation,
+            self.estimator = MLPClassifier(hidden_layer_sizes=(self.hidden_size, self.hidden_size),
+                                           activation=self.activation,
                                            solver=self.solver,
                                            alpha=self.alpha,
                                            learning_rate=self.learning_rate,
@@ -72,15 +74,20 @@ class MLP(
                                            tol=self.tol,
                                            warm_start=True,
                                            momentum=self.momentum,
+                                           n_iter_no_change=50,
                                            nesterovs_momentum=self.nesterovs_momentum,
                                            beta_1=self.beta1)
-
+            self.estimator.fit(X, y)
         else:
             self.estimator.max_iter += n_iter
-            self.estimator.max_iter = min(self.estimator.max_iter, 4096)
-        self.estimator.fit(X, y)
+            self.estimator.max_iter = min(self.estimator.max_iter, 2048)
+            for i in range(n_iter):
+                self.estimator.fit(X, y)
+                if self.estimator._no_improvement_count > self.estimator.n_iter_no_change:
+                    self.fully_fit_ = True
+                    break
 
-        if self.estimator.max_iter >= 4096 or n_iter > self.estimator.n_iter_:
+        if self.estimator.max_iter >= 2048:
             self.fully_fit_ = True
 
         return self
@@ -117,7 +124,8 @@ class MLP(
 
     @staticmethod
     def get_hyperparameter_search_space(dataset_properties=None):
-        space = {'activation': hp.choice('mlp_activation', ["identity", "logistic", "tanh", "relu"]),
+        space = {'hidden_size': hp.randint("mlp_hidden_size", 450) + 50,
+                 'activation': hp.choice('mlp_activation', ["identity", "logistic", "tanh", "relu"]),
                  'solver': hp.choice('mlp_solver',
                                      [("sgd", {'learning_rate': hp.choice('mlp_learning_rate', [("adaptive", {}),
                                                                                                 ("constant", {}),

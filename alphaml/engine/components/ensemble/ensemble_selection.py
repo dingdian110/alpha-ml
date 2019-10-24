@@ -25,12 +25,12 @@ class EnsembleSelection(BaseEnsembleModel):
                 try:
                     estimator = self.get_estimator(config, dm.train_X, dm.train_y, if_load=True)
                     self.ensemble_models.append(estimator)
-                    pred = self.get_predictions(estimator, dm.val_X)
+                    pred = self.get_proba_predictions(estimator, dm.val_X)
                     predictions.append(pred)
-                    self._fit(predictions, dm.val_y)
+
                 except ValueError as err:
                     pass
-
+            self._fit(predictions, dm.val_y)
         elif self.model_type == 'dl':
             pass
 
@@ -175,7 +175,7 @@ class EnsembleSelection(BaseEnsembleModel):
     def predict(self, X):
         predictions = []
         for estimator in self.ensemble_models:
-            pred = self.get_predictions(estimator, X)
+            pred = self.get_proba_predictions(estimator, X)
             predictions.append(pred)
         predictions = np.asarray(predictions)
 

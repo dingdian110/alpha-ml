@@ -1,4 +1,5 @@
 import numpy as np
+import time
 import sklearn.ensemble
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import UniformFloatHyperparameter, \
@@ -24,7 +25,7 @@ class GradientBoostingClassifier(IterativeComponentWithSampleWeight, BaseClassif
         self.min_samples_leaf = min_samples_leaf
         self.min_weight_fraction_leaf = min_weight_fraction_leaf
         self.max_depth = max_depth
-        self.criterion=criterion
+        self.criterion = criterion
         self.max_features = max_features
         self.max_leaf_nodes = max_leaf_nodes
         self.min_impurity_decrease = min_impurity_decrease
@@ -32,6 +33,8 @@ class GradientBoostingClassifier(IterativeComponentWithSampleWeight, BaseClassif
         self.verbose = verbose
         self.estimator = None
         self.fully_fit_ = False
+        self.time_limit = None
+        self.start_time = time.time()
 
     def iterative_fit(self, X, y, sample_weight=None, n_iter=1, refit=False):
 
@@ -137,9 +140,9 @@ class GradientBoostingClassifier(IterativeComponentWithSampleWeight, BaseClassif
             name="min_samples_leaf", lower=1, upper=20, default_value=1)
         min_weight_fraction_leaf = UnParametrizedHyperparameter("min_weight_fraction_leaf", 0.)
         subsample = UniformFloatHyperparameter(
-                name="subsample", lower=0.1, upper=1.0, default_value=1.0)
+            name="subsample", lower=0.1, upper=1.0, default_value=1.0)
         max_features = UniformFloatHyperparameter(
-            "max_features", 0.1, 1.0 , default_value=1)
+            "max_features", 0.1, 1.0, default_value=1)
         max_leaf_nodes = UnParametrizedHyperparameter(
             name="max_leaf_nodes", value="None")
         min_impurity_decrease = UnParametrizedHyperparameter(

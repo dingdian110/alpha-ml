@@ -43,7 +43,7 @@ class Stacking(BaseEnsembleModel):
                     estimator = self.get_estimator(config, x_p1, y_p1)
                     # The final list will contain self.kfold * self.ensemble_size models
                     self.ensemble_models.append(estimator)
-                    pred = self.get_predictions(estimator, x_p2)
+                    pred = self.get_proba_predictions(estimator, x_p2)
                     if self.task_type == CLASSIFICATION:
                         n_dim = np.array(pred).shape[1]
                         if n_dim == 2:
@@ -75,24 +75,38 @@ class Stacking(BaseEnsembleModel):
         # Predict the labels via stacking
         feature_p2 = None
         for i, model in enumerate(self.ensemble_models):
-            pred = self.get_predictions(model, X)
+            pred = self.get_proba_predictions(model, X)
             if self.task_type == CLASSIFICATION:
-                n_dim = np.array(pred).shape[1]
-                if n_dim == 2:
-                    n_dim = 1
-                if feature_p2 is None:
-                    num_samples = len(X)
-                    feature_p2 = np.zeros((num_samples, self.ensemble_size * n_dim))
-                index = i % self.kfold
-                # Get average predictions
-                if n_dim == 1:
-                    feature_p2[:, index * n_dim:(index + 1) * n_dim] = feature_p2[:,
-                                                                       index * n_dim:(index + 1) * n_dim] + \
-                                                                       pred[:, 1:2] / self.kfold
-                else:
+                from sklearn.metrics import roc_auc_score
+                if self.metric == roc_auc_score:
+                    shape = np.array(pred).shape
+                    n_dim = shape[1]
+                    # Initialize training matrix for phase 2
+                    if feature_p2 is None:
+                        num_samples = len(X)
+                        feature_p2 = np.zeros((num_samples, self.ensemble_size * n_dim))
+                    index = i % self.kfold
+                    # Get average predictions
                     feature_p2[:, index * n_dim:(index + 1) * n_dim] = feature_p2[:,
                                                                        index * n_dim:(index + 1) * n_dim] + \
                                                                        pred / self.kfold
+                else:
+                    n_dim = np.array(pred).shape[1]
+                    if n_dim == 2:
+                        n_dim = 1
+                    if feature_p2 is None:
+                        num_samples = len(X)
+                        feature_p2 = np.zeros((num_samples, self.ensemble_size * n_dim))
+                    index = i % self.kfold
+                    # Get average predictions
+                    if n_dim == 1:
+                        feature_p2[:, index * n_dim:(index + 1) * n_dim] = feature_p2[:,
+                                                                           index * n_dim:(index + 1) * n_dim] + \
+                                                                           pred[:, 1:2] / self.kfold
+                    else:
+                        feature_p2[:, index * n_dim:(index + 1) * n_dim] = feature_p2[:,
+                                                                           index * n_dim:(index + 1) * n_dim] + \
+                                                                           pred / self.kfold
             elif self.task_type == REGRESSION:
                 shape = np.array(pred).shape
                 n_dim = shape[1]
@@ -106,5 +120,9 @@ class Stacking(BaseEnsembleModel):
                                                                    index * n_dim:(index + 1) * n_dim] + \
                                                                    pred / self.kfold
         # Get predictions from meta-learner
-        final_pred = self.meta_learner.predict(feature_p2)
+        from sklearn.metrics import roc_auc_score
+        if self.metric == roc_auc_score:
+            final_pred = self.meta_learner.predict_proba(feature_p2)
+        else:
+            final_pred = self.meta_learner.predict(feature_p2)
         return final_pred

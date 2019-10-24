@@ -6,6 +6,7 @@ from litesmac.scenario.scenario import Scenario
 from litesmac.facade.smac_facade import SMAC
 from alphaml.engine.optimizer.base_optimizer import BaseOptimizer
 from alphaml.utils.constants import MAX_INT
+from tqdm import tqdm
 
 
 class MONO_MAB_SMBO(BaseOptimizer):
@@ -34,7 +35,9 @@ class MONO_MAB_SMBO(BaseOptimizer):
         self.config_values = list()
         # Runtime estimate for each arm.
         self.runtime_est = dict()
-
+        self.bar = tqdm(range(self.iter_num),
+                        bar_format='{desc} |{bar}| {percentage:3.0f}% [{elapsed}<{remaining}, {rate_fmt}{postfix}]')
+        # self.bar = tqdm(range(self.iter_num))
         for estimator in self.estimator_arms:
             # Scenario object
             config_space = self.config_space[estimator]
@@ -95,12 +98,26 @@ class MONO_MAB_SMBO(BaseOptimizer):
                 time_point = time.time() - self.start_time
                 tmp_list = list()
                 tmp_list.append(time_point)
-                for key in reversed(runkeys[self.cnts[arm]+1:]):
+                for key in reversed(runkeys[self.cnts[arm] + 1:]):
                     time_point -= runhistory.data[key][1]
                     tmp_list.append(time_point)
                 self.timing_list.extend(reversed(tmp_list))
 
-                iter_num += (len(runkeys) - self.cnts[arm])
+                iter_run = len(runkeys) - self.cnts[arm]
+                prev_num = iter_num
+                iter_num += iter_run
+
+                # Update progress bar
+                if iter_num >= self.iter_num:
+                    if prev_num >= self.iter_num:
+                        update_iter = 0
+                    else:
+                        update_iter = self.iter_num - 1 - prev_num
+                else:
+                    update_iter = iter_run
+                self.bar.set_description("%s evaluated" % arm)
+                self.bar.update(update_iter)
+
                 self.cnts[arm] = len(runhistory.data.keys())
 
                 if self.mode == 4:
@@ -121,9 +138,9 @@ class MONO_MAB_SMBO(BaseOptimizer):
                     if self.mode == 1:
                         F = sum(acc_reward)
                         pred = sum([min(1., acc_reward[-1] + estimated_slope * (t - tmp_iter))
-                                    for t in range(tmp_iter+1, T)])
+                                    for t in range(tmp_iter + 1, T)])
                         p.append(F + pred)
-                        q.append(F + acc_reward[-1]*(T - tmp_iter))
+                        q.append(F + acc_reward[-1] * (T - tmp_iter))
                     elif self.mode == 2:
                         p.append(min(1., acc_reward[-1] + estimated_slope * (T - tmp_iter)))
                         q.append(acc_reward[-1])
@@ -154,6 +171,8 @@ class MONO_MAB_SMBO(BaseOptimizer):
             arm_set = [item for index, item in enumerate(arm_set) if not flags[index]]
 
             if iter_num >= self.iter_num or es_flag:
+                self.bar.update(1)
+                self.bar.close()
                 break
 
             # Check the budget.

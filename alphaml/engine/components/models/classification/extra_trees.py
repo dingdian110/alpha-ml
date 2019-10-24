@@ -28,6 +28,7 @@ class ExtraTreesClassifier(IterativeComponentWithSampleWeight, BaseClassificatio
         self.random_state = random_state
 
         self.estimator = None
+        self.time_limit = None
 
     def fit(self, X, y, sample_weight=None):
         from sklearn.ensemble import ExtraTreesClassifier

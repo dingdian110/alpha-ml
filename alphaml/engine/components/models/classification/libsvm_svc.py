@@ -23,6 +23,7 @@ class LibSVM_SVC(BaseClassificationModel):
         self.max_iter = max_iter
         self.random_state = random_state
         self.estimator = None
+        self.time_limit = None
 
     def fit(self, X, Y):
         import sklearn.svm

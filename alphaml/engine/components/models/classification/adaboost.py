@@ -16,6 +16,7 @@ class AdaboostClassifier(BaseClassificationModel):
         self.random_state = random_state
         self.max_depth = max_depth
         self.estimator = None
+        self.time_limit = None
 
     def fit(self, X, Y, sample_weight=None):
         import sklearn.tree

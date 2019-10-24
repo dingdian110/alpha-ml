@@ -9,7 +9,7 @@ parser.add_argument('--mode', choices=['master', 'daim213', 'gc'], default='mast
 parser.add_argument('--start_runid', type=int, default=0)
 parser.add_argument('--rep', type=int, default=10)
 parser.add_argument('--run_count', type=int, default=500)
-parser.add_argument('--B', type=int, default=3600)
+parser.add_argument('--B', type=int, default=30)
 parser.add_argument('--datasets', type=str, default='pc4')
 args = parser.parse_args()
 
@@ -34,39 +34,6 @@ def get_seeds(dataset, rep_num):
     dataset_id = int(''.join([str(ord(c)) for c in dataset[:6] if c.isalpha()])) % 100000
     np.random.seed(dataset_id)
     return np.random.random_integers(10000, size=rep_num)
-
-
-def load_infos(dataset, task_id, run_count, id, mth):
-    data_folder = project_folder + '/data/'
-    tmp_d = dataset.split('_')[0]
-    file_id = data_folder + '%s/%s_%s_%d_%d_%s.data' % (tmp_d, dataset, task_id, run_count, id, mth)
-    with open(file_id, 'rb') as f:
-        data = pickle.load(f)
-    configs, perfs = data['configs'], data['perfs']
-    assert len(configs) == len(perfs)
-    return configs, perfs
-
-
-def load_runtime_infos(dataset, B, rep_num, task_id, run_count):
-    mths = ['mono_smbo', 'smbo', 'cmab_ts']
-    result = dict()
-    for optimizer in mths:
-        if optimizer == 'smbo':
-            file_id = 'smac'
-        elif optimizer == 'tpe':
-            file_id = 'hyperopt'
-        elif optimizer == 'cmab_ts':
-            file_id = 'cmab_ts_smac'
-        elif optimizer == 'mono_smbo':
-            file_id = 'mm_bandit_4_smac'
-        else:
-            raise ValueError('Invalid optimizer!')
-        result[optimizer] = list()
-        tmp_task_id = '%s_%d' % (task_id, B) if B > 0 else task_id
-        for run_id in range(rep_num):
-            tmp_configs, tmp_perfs = load_infos(dataset, tmp_task_id, run_count, run_id, file_id)
-            result[optimizer].append(len(tmp_configs))
-    return result
 
 
 def test_exp3_cost_aware():
@@ -94,27 +61,9 @@ def test_exp3_cost_aware():
         dm = DataManager(X_train, y_train)
 
         # optimizer_algos = ['cmab_ts', 'mono_smbo_3', 'mono_smbo_4', 'smbo', 'tpe']
-        # optimizer_algos = ['mono_smbo_4', 'smbo', 'cmab_ts', 'tpe']
-        optimizer_algos = ['cmab_ts', 'tpe']
+        optimizer_algos = ['cmab_ts']
         # Test each optimizer algorithm:
-        runcount_dict = dict()
-        tpe_runcount = 0.
-
         for opt_algo in optimizer_algos:
-            if opt_algo != 'tpe':
-                runcount_dict[opt_algo] = list()
-            else:
-                if len(runcount_dict) == 0:
-                    # load from files.
-                    runcount_dict = load_runtime_infos(dataset, B, rep_num, task_id, run_count)
-                    print('Restore info from files', runcount_dict)
-                count_list = list()
-                for key in runcount_dict.keys():
-                    count_list.append(np.mean(runcount_dict[key]))
-                assert len(count_list) > 0
-                tpe_runcount = np.min(count_list)
-                print('='*50, tpe_runcount)
-
             result = dict()
             mode, eta = None, None
             # Parse the parameters for each optimizer.
@@ -138,28 +87,10 @@ def test_exp3_cost_aware():
                     task_name = dataset + '_%s_%d_%d' % (task_id, run_count, run_id)
                 seed = seeds[run_id]
 
-                runcount_const = run_count if opt_algo != 'tpe' else tpe_runcount
                 # Construct the AutoML classifier.
                 cls = Classifier(optimizer=optimizer, seed=seed).fit(
-                    dm, metric='accuracy', runcount=runcount_const, runtime=B,
+                    dm, metric='accuracy', runcount=run_count, runtime=B,
                     task_name=task_name, update_mode=mode, param=eta)
-
-                # Load CASH intermediate infos.
-                if optimizer == 'smbo':
-                    file_id = 'smac'
-                elif optimizer == 'tpe':
-                    file_id = 'hyperopt'
-                elif optimizer == 'cmab_ts':
-                    file_id = 'cmab_ts_smac'
-                elif optimizer == 'mono_smbo':
-                    file_id = 'mm_bandit_%d_smac' % mode
-                else:
-                    raise ValueError('Invalid optimizer!')
-
-                tmp_task_id = '%s_%d' % (task_id, B) if B > 0 else task_id
-                tmp_configs, tmp_perfs = load_infos(dataset, tmp_task_id, run_count, run_id, file_id)
-                if opt_algo != 'tpe':
-                    runcount_dict[opt_algo].append(len(tmp_configs))
 
                 # Test the CASH performance on test set.
                 cash_test_acc = cls.score(X_test, y_test)
@@ -167,10 +98,10 @@ def test_exp3_cost_aware():
                 result[key_id] = [cash_test_acc]
                 print(result)
 
-                # Save the test result.
-                with open('data/%s/%s_test_result_%s_%s_%d_%d_%d.pkl' %
-                                  (dataset_id, dataset, opt_algo, task_id, run_count, rep_num, start_id), 'wb') as f:
-                    pickle.dump(result, f)
+            # Save the test result.
+            with open('data/%s/%s_test_result_%s_%s_%d_%d_%d.pkl' %
+                              (dataset_id, dataset, opt_algo, task_id, run_count, rep_num, start_id), 'wb') as f:
+                pickle.dump(result, f)
 
 
 if __name__ == "__main__":

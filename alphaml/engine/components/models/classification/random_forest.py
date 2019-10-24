@@ -1,3 +1,5 @@
+import time
+
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import UniformFloatHyperparameter, \
     UniformIntegerHyperparameter, CategoricalHyperparameter, \
@@ -32,6 +34,8 @@ class RandomForest(
         self.n_jobs = n_jobs
         self.class_weight = class_weight
         self.estimator = None
+        self.time_limit = None
+        self.start_time = time.time()
 
     def iterative_fit(self, X, y, sample_weight=None, n_iter=1, refit=False):
         from sklearn.ensemble import RandomForestClassifier
@@ -132,7 +136,7 @@ class RandomForest(
         # corresponds with Geurts' heuristic.
         max_features = UniformFloatHyperparameter(
             "max_features", 0., 1., default_value=0.5)
-        
+
         max_depth = UnParametrizedHyperparameter("max_depth", "None")
         min_samples_split = UniformIntegerHyperparameter(
             "min_samples_split", 2, 20, default_value=2)
