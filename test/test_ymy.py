@@ -35,10 +35,10 @@ def test_cash_module():
             X_train.append(sheet.row_values(i, start_colx=1))
             y_train.append(int(sheet.cell_value(i, 0)))
 
-        dm = DataManager(X_train, y_train, val_size=0.33, random_state=random.randint(1, 255))
+        dm = DataManager(X_train, y_train)
         cls = Classifier(
             include_models=['liblinear_svc', 'libsvm_svc', 'xgboost', 'random_forest', 'logistic_regression', 'mlp'],
-            optimizer='baseline',
+            optimizer='smbo',
             ensemble_method='bagging',
             ensemble_size=args.ensemble_size,
             ).fit(dm, metric='auc', update_mode=2, runcount=args.run_count)
