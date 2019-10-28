@@ -7,6 +7,7 @@ import os
 import pickle as pkl
 import functools
 import math
+import logging
 
 CLASSIFICATION = 1
 REGRESSION = 2
@@ -21,6 +22,7 @@ class BaseEnsembleModel(object):
         self.model_type = model_type
         self.metric = metric
         self.ensemble_models = list()
+        self.logger = logging.getLogger()
         if task_type in ['binary', 'multiclass', 'img_binary', 'img_multiclass', 'img_multilabel-indicator']:
             self.task_type = CLASSIFICATION
         elif task_type in ['continuous']:
@@ -81,15 +83,15 @@ class BaseEnsembleModel(object):
                 sort_list = sorted(id_list, key=functools.cmp_to_key(cmp))
                 index_list.extend(sort_list[:top_k])
 
-        self.config_list=[]
-        print('------------------')
+        self.config_list = []
         for i in index_list:
             if (best_performance - self.model_info[1][i]) / best_performance < 0.15:
+                self.logger.info('------------------')
                 self.config_list.append(self.model_info[0][i])
-                print(self.model_info[0][i])
-                print("Valid performance:", self.model_info[1][i])
+                self.logger.info(str(self.model_info[0][i]))
+                self.logger.info("Valid performance: " + str(self.model_info[1][i]))
                 self.get_estimator(self.model_info[0][i], None, None, if_show=True)
-        print('------------------')
+                self.logger.info('------------------')
 
     def fit(self, dm):
         raise NotImplementedError
@@ -107,13 +109,14 @@ class BaseEnsembleModel(object):
         if isinstance(estimator_name, tuple):
             estimator_name = estimator_name[0]
         if if_show:
-            print("Estimator path:", save_path)
+            self.logger.info("Estimator path: " + save_path)
             return None
         if if_load and os.path.exists(save_path) and estimator_name != 'xgboost':
             with open(save_path, 'rb') as f:
                 estimator = pkl.load(f)
                 # print("Estimator loaded from", save_path)
         else:
+            save_path = kwargs['save_path']
             if self.task_type == CLASSIFICATION:
                 evaluator = BaseClassificationEvaluator()
             elif self.task_type == REGRESSION:
@@ -122,7 +125,9 @@ class BaseEnsembleModel(object):
                 evaluator = HyperoptClassificationEvaluator()
             _, estimator = evaluator.set_config(config)
             estimator.fit(x, y)
-            # print("Estimator retrained.")
+            with open(save_path, 'wb') as f:
+                pkl.dump(estimator, f)
+                self.logger.info("Estimator retrained!")
         return estimator
 
     def get_proba_predictions(self, estimator, X):
