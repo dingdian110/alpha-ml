@@ -29,6 +29,13 @@ class Stacking(BaseEnsembleModel):
                 self.meta_learner = XGBRegressor(max_depth=4, learning_rate=0.05, n_estimators=70)
 
     def fit(self, dm: DataManager):
+        x, y = dm.train_X, dm.train_y
+        if dm.val_X is not None:
+            y = list(y)
+            y.extend(list(dm.val_y))
+            y = np.array(y)
+            x = np.vstack((dm.train_X, dm.val_X))
+
         # Split training data for phase 1 and phase 2
         if self.task_type == CLASSIFICATION:
             kf = StratifiedKFold(n_splits=self.kfold)
@@ -38,8 +45,8 @@ class Stacking(BaseEnsembleModel):
         if self.model_type == 'ml':
             # Train basic models using a part of training data
             for i, config in enumerate(self.config_list):
-                for j, (train, test) in enumerate(kf.split(dm.train_X, dm.train_y)):
-                    x_p1, x_p2, y_p1, _ = dm.train_X[train], dm.train_X[test], dm.train_y[train], dm.train_y[test]
+                for j, (train, test) in enumerate(kf.split(x, y)):
+                    x_p1, x_p2, y_p1, _ = x[train], x[test], y[train], y[test]
                     estimator = self.get_estimator(config, x_p1, y_p1)
                     # The final list will contain self.kfold * self.ensemble_size models
                     self.ensemble_models.append(estimator)
@@ -66,7 +73,7 @@ class Stacking(BaseEnsembleModel):
                             feature_p2 = np.zeros((num_samples, self.ensemble_size * n_dim))
                         feature_p2[test, i * n_dim:(i + 1) * n_dim] = pred
             # Train model for stacking using the other part of training data
-            self.meta_learner.fit(feature_p2, dm.train_y)
+            self.meta_learner.fit(feature_p2, y)
         elif self.model_type == 'dl':
             pass
         return self

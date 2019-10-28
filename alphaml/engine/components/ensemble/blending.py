@@ -29,11 +29,18 @@ class Blending(BaseEnsembleModel):
                 self.meta_learner = XGBRegressor(max_depth=4, learning_rate=0.05, n_estimators=70)
 
     def fit(self, dm: DataManager):
+        x, y = dm.train_X, dm.train_y
+        if dm.val_X is not None:
+            y = list(y)
+            y.extend(list(dm.val_y))
+            y = np.array(y)
+            x = np.vstack((dm.train_X, dm.val_X))
+
         # Split training data for phase 1 and phase 2
         if self.task_type == CLASSIFICATION:
-            x_p1, x_p2, y_p1, y_p2 = train_test_split(dm.train_X, dm.train_y, test_size=0.2, stratify=dm.train_y)
+            x_p1, x_p2, y_p1, y_p2 = train_test_split(x, y, test_size=0.2, stratify=dm.train_y)
         elif self.task_type == REGRESSION:
-            x_p1, x_p2, y_p1, y_p2 = train_test_split(dm.train_X, dm.train_y, test_size=0.2)
+            x_p1, x_p2, y_p1, y_p2 = train_test_split(x, y, test_size=0.2)
         feature_p2 = None
         if self.model_type == 'ml':
             # Train basic models using a part of training data
