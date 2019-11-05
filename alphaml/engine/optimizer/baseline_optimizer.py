@@ -7,6 +7,7 @@ from litesmac.scenario.scenario import Scenario
 from litesmac.facade.smac_facade import SMAC
 from alphaml.engine.optimizer.base_optimizer import BaseOptimizer
 from alphaml.engine.components.models.classification import _classifiers
+from alphaml.engine.components.components_manager import ComponentsManager
 
 
 class BASELINE(BaseOptimizer):
@@ -16,6 +17,7 @@ class BASELINE(BaseOptimizer):
         self.iter_num = int(1e10) if ('runcount' not in kwargs or kwargs['runcount'] is None) else kwargs['runcount']
         self.estimator_arms = list(self.config_space.keys())
         self.task_name = kwargs['task_name'] if 'task_name' in kwargs else 'default'
+        self.task_type = kwargs['task_type'] if 'task_type' in kwargs else 'default'
         # update_mode = 1: the random search of an algorithm.
         # update_mode = 2: assign each algorthm with T/N budgets.
         self.update_mode = kwargs['update_mode'] if 'update_mode' in kwargs else 1
@@ -28,7 +30,7 @@ class BASELINE(BaseOptimizer):
 
         for estimator in self.estimator_arms:
             # Scenario object
-            config_space = _classifiers[estimator].get_hyperparameter_search_space()
+            config_space = ComponentsManager().get_hyperparameter_search_space(self.task_type)[estimator]
             estimator_hp = CategoricalHyperparameter("estimator", [estimator], default_value=estimator)
             config_space.add_hyperparameter(estimator_hp)
             scenario_dict = {
@@ -57,7 +59,10 @@ class BASELINE(BaseOptimizer):
             # Observe the reward.
             runkeys = list(runhistory.data.keys())
             for key in runkeys[self.cnts[best_arm]:]:
-                reward = 1 - runhistory.data[key][0]
+                if self.task_type == 'continuous':
+                    reward = -runhistory.data[key][0]
+                else:
+                    reward = 1 - runhistory.data[key][0]
                 self.rewards[best_arm].append(reward)
                 self.configs_list.append(runhistory.ids_config[key[0]])
                 self.config_values.append(reward)

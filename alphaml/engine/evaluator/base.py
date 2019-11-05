@@ -38,7 +38,7 @@ class BaseClassificationEvaluator(object):
         # Build the corresponding estimator.
         classifier_type, estimator = self.set_config(config)
         save_path = kwargs['save_path']
-        # TODO: how to parallize.
+        # TODO: how to parallelize.
         if hasattr(estimator, 'n_jobs'):
             setattr(estimator, 'n_jobs', multiprocessing.cpu_count() - 1)
         start_time = time.time()
@@ -59,7 +59,8 @@ class BaseClassificationEvaluator(object):
             y_pred = estimator.predict(self.data_manager.val_X)
             metric = self.metric_func(self.data_manager.val_y, y_pred)
 
-        self.logger.info('<EVALUATE %s-%.2f TAKES %.2f SECONDS>' % (classifier_type, 1-metric, time.time() - start_time))
+        self.logger.info(
+            '<EVALUATE %s-%.2f TAKES %.2f SECONDS>' % (classifier_type, 1 - metric, time.time() - start_time))
         # Turn it to a minimization problem.
         return 1 - metric
 
@@ -115,15 +116,15 @@ class BaseRegressionEvaluator(object):
         # Build the corresponding estimator.
         regressor_type, estimator = self.set_config(config)
         save_path = kwargs['save_path']
-        # TODO: how to parallize.
+        # TODO: how to parallelize.
         if hasattr(estimator, 'n_jobs'):
             setattr(estimator, 'n_jobs', multiprocessing.cpu_count() - 1)
         start_time = time.time()
         self.logger.info('<START TO FIT> %s' % regressor_type)
-        self.logger.info('<CONFIG> %s' % config)
+        self.logger.info('<CONFIG> %s' % config.get_dictionary())
         # Fit the estimator on the training data.
         estimator.fit(self.data_manager.train_X, self.data_manager.train_y)
-
+        self.logger.info('<FIT MODEL> finished!')
         with open(save_path, 'wb') as f:
             pkl.dump(estimator, f)
             self.logger.info('<MODEL SAVED IN %s>' % save_path)
@@ -132,8 +133,7 @@ class BaseRegressionEvaluator(object):
         y_pred = estimator.predict(self.data_manager.val_X)
         metric = self.metric_func(self.data_manager.val_y, y_pred)
 
-        self.logger.info('<EVALUATE %s TAKES %.2f SECONDS>' % (regressor_type, time.time() - start_time))
-        # Turn it to a minimization problem.
+        self.logger.info('<EVALUATE %s-%.2f TAKES %.2f SECONDS>' % (regressor_type, metric, time.time() - start_time))
         return metric
 
     def set_config(self, config):

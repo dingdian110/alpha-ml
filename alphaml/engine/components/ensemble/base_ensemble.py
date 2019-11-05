@@ -51,7 +51,7 @@ class BaseEnsembleModel(object):
             else:
                 return 1
 
-        best_performance = -1
+        best_performance = float('-INF')
         try:
             # SMAC
             estimator_set = set([self.model_info[0][i]['estimator'] for i in range(model_len)])
@@ -86,7 +86,7 @@ class BaseEnsembleModel(object):
         self.config_list = []
 
         for i in index_list:
-            if (best_performance - self.model_info[1][i]) / best_performance < 0.15:
+            if abs((best_performance - self.model_info[1][i]) / best_performance) < 0.15:
                 self.logger.info('------------------')
                 self.config_list.append(self.model_info[0][i])
                 self.logger.info(str(self.model_info[0][i]))
@@ -132,7 +132,7 @@ class BaseEnsembleModel(object):
         return estimator
 
     def get_proba_predictions(self, estimator, X):
-        if self.task_type == CLASSIFICATION or HYPEROPT_CLASSIFICATION:
+        if self.task_type in [CLASSIFICATION, HYPEROPT_CLASSIFICATION]:
             from sklearn.metrics import roc_auc_score
             if self.metric == roc_auc_score:
                 return estimator.predict_proba(X)[:, 1:2]
