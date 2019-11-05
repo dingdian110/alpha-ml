@@ -23,6 +23,7 @@ class XGBoostRegressor(BaseRegressionModel):
         self.n_jobs = -1
         self.random_state = random_state
         self.estimator = None
+        self.time_limit = None
 
     def fit(self, X, Y):
         self.n_estimators = int(self.n_estimators)
@@ -41,7 +42,7 @@ class XGBoostRegressor(BaseRegressionModel):
         parameters['scale_pos_weight'] = self.scale_pos_weight
 
         parameters['objective'] = 'reg:linear'
-        #parameters['eval_metric'] = 'rmse'
+        parameters['eval_metric'] = 'rmse'
 
         parameters['tree_method'] = 'hist'
         parameters['booster'] = 'gbtree'
