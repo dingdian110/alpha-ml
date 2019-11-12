@@ -40,7 +40,7 @@ def test_cash_module():
             # include_models=['liblinear_svc', 'libsvm_svc', 'xgboost', 'random_forest', 'logistic_regression', 'mlp'],
             include_models=['logistic_regression'],
             optimizer='smbo',
-            ensemble_method='stacking',
+            ensemble_method='ensemble_selection',
             ensemble_size=args.ensemble_size,
         ).fit(dm, metric='auc', update_mode=2, runcount=args.run_count)
 

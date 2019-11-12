@@ -180,7 +180,20 @@ class EnsembleSelection(BaseEnsembleModel):
 
         self.weights_ = weights
 
-    def predict(self, X):
+    def calculate_score(self, pred, y_true):
+        if self.task_type in [CLASSIFICATION, HYPEROPT_CLASSIFICATION]:
+            from sklearn.metrics import roc_auc_score
+            if self.metric == roc_auc_score:
+                pred = pred[:, 1:2]
+            else:
+                pred = np.argmax(pred, axis=1)
+            score = self.metric(y_true, pred)
+        elif self.task_type == REGRESSION:
+            score = -self.metric(y_true, pred)
+        # We want to maximize score
+        return score
+
+    def get_predictions(self, X):
         predictions = []
         for estimator in self.ensemble_models:
             pred = self.get_proba_predictions(estimator, X)
@@ -202,29 +215,19 @@ class EnsembleSelection(BaseEnsembleModel):
         else:
             raise ValueError("The dimensions of ensemble predictions"
                              " and ensemble weights do not match!")
-
         if len(pred.shape) > 1 and pred.shape[1] == 1:
             pred = np.reshape(pred, (pred.shape[0]))
+        return pred
+
+    def predict(self, X):
+        pred = self.get_predictions(X)
         if self.task_type in [CLASSIFICATION, HYPEROPT_CLASSIFICATION]:
-            from sklearn.metrics import roc_auc_score
-            if self.metric == roc_auc_score:
-                return pred
-            else:
-                return np.argmax(pred, axis=-1)
+            return np.argmax(pred, axis=-1)
         elif self.task_type == REGRESSION:
             return pred
         else:
             raise ValueError('No prediction warnings!')
 
-    def calculate_score(self, pred, y_true):
-        if self.task_type in [CLASSIFICATION, HYPEROPT_CLASSIFICATION]:
-            from sklearn.metrics import roc_auc_score
-            if self.metric == roc_auc_score:
-                pred = pred
-            else:
-                pred = np.argmax(pred, axis=1)
-            score = self.metric(y_true, pred)
-        elif self.task_type == REGRESSION:
-            score = -self.metric(y_true, pred)
-        # We want to maximize score
-        return score
+    def predict_proba(self, X):
+        pred = self.get_predictions(X)
+        return pred
