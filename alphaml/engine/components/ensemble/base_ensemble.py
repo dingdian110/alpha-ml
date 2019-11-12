@@ -17,11 +17,12 @@ FAILED = -2147483646.0
 
 
 class BaseEnsembleModel(object):
-    def __init__(self, model_info, ensemble_size, task_type, metric, model_type='ml'):
+    def __init__(self, model_info, ensemble_size, task_type, metric, model_type='ml', threshold=0.2):
         self.model_info = model_info
         self.model_type = model_type
         self.metric = metric
         self.ensemble_models = list()
+        self.threshold = threshold
         self.logger = logging.getLogger()
         if task_type in ['binary', 'multiclass', 'img_binary', 'img_multiclass', 'img_multilabel-indicator']:
             self.task_type = CLASSIFICATION
@@ -86,7 +87,7 @@ class BaseEnsembleModel(object):
         self.config_list = []
 
         for i in index_list:
-            if abs((best_performance - self.model_info[1][i]) / best_performance) < 0.15:
+            if abs((best_performance - self.model_info[1][i]) / best_performance) < self.threshold:
                 self.logger.info('------------------')
                 self.config_list.append(self.model_info[0][i])
                 self.logger.info(str(self.model_info[0][i]))
