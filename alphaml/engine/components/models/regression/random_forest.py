@@ -7,6 +7,8 @@ from alphaml.engine.components.models.base_model import BaseRegressionModel, Ite
 from alphaml.utils.constants import *
 from alphaml.utils.common import check_none, check_for_bool
 
+import time
+
 
 class RandomForest(
     IterativeComponentWithSampleWeight,
@@ -29,6 +31,8 @@ class RandomForest(
         self.random_state = random_state
         self.n_jobs = n_jobs
         self.estimator = None
+        self.start_time = time.time()
+        self.time_limit = None
 
     def iterative_fit(self, X, y, sample_weight=None, n_iter=1, refit=False):
         from sklearn.ensemble import RandomForestRegressor

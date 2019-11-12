@@ -1,5 +1,6 @@
 import numpy as np
 import sklearn.ensemble
+import time
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import UniformFloatHyperparameter, \
     UniformIntegerHyperparameter, UnParametrizedHyperparameter, Constant, \
@@ -32,6 +33,8 @@ class GradientBoostingRegressor(IterativeComponentWithSampleWeight, BaseRegressi
         self.verbose = verbose
         self.estimator = None
         self.fully_fit_ = False
+        self.start_time = time.time()
+        self.time_limit = None
 
     def iterative_fit(self, X, y, sample_weight=None, n_iter=1, refit=False):
 

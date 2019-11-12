@@ -36,17 +36,13 @@ class BaseClassificationEvaluator(object):
         self.data_manager = None
         self.metric_func = None
         self.logger = logging.getLogger(__name__)
-        self.train_X = None
-        self.train_y = None
-        self.val_X = None
-        self.val_y = None
 
     @save_ease(save_dir='./data/save_models')
     def __call__(self, config, **kwargs):
         # Build the corresponding estimator.
         classifier_type, estimator = self.set_config(config)
         save_path = kwargs['save_path']
-        # TODO: how to parallize.
+        # TODO: how to parallelize.
         if hasattr(estimator, 'n_jobs'):
             setattr(estimator, 'n_jobs', multiprocessing.cpu_count() - 1)
         start_time = time.time()
@@ -163,29 +159,26 @@ class BaseRegressionEvaluator(object):
         self.data_manager = None
         self.metric_func = None
         self.logger = logging.getLogger(__name__)
-        self.train_X = None
-        self.train_y = None
-        self.val_X = None
-        self.val_y = None
 
     @save_ease(save_dir='./data/save_models')
     def __call__(self, config, **kwargs):
         # Build the corresponding estimator.
         regressor_type, estimator = self.set_config(config)
         save_path = kwargs['save_path']
-        # TODO: how to parallize.
+        # TODO: how to parallelize.
         if hasattr(estimator, 'n_jobs'):
             setattr(estimator, 'n_jobs', multiprocessing.cpu_count() - 1)
         start_time = time.time()
         self.logger.info('<START TO FIT> %s' % regressor_type)
-        self.logger.info('<CONFIG> %s' % config)
+        self.logger.info('<CONFIG> %s' % config.get_dictionary())
         if not self.kfold:
             # Split data
             data_X, data_y = self.data_manager.train_X, self.data_manager.train_y
             train_X, val_X, train_y, val_y = train_test_split(data_X, data_y, test_size=self.val_size)
+
             # Fit the estimator on the training data.
             estimator.fit(train_X, train_y)
-
+            self.logger.info('<FIT MODEL> finished!')
             with open(save_path, 'wb') as f:
                 pkl.dump(estimator, f)
                 self.logger.info('<MODEL SAVED IN %s>' % save_path)

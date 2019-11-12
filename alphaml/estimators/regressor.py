@@ -10,10 +10,10 @@ from alphaml.utils.metrics_util import get_metric
 
 
 class Regressor(BaseEstimator):
-    """This class implements the classification task. """
+    """This class implements the regression task. """
 
     def fit(self, data, **kwargs):
-        """Fit the classifier to given training data.
+        """Fit the regressor to given training data.
 
         Parameters
         ----------

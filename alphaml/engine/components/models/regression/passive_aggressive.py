@@ -9,6 +9,8 @@ from alphaml.utils.model_util import softmax
 from alphaml.utils.common import check_none, check_for_bool
 from alphaml.engine.components.models.base_model import BaseRegressionModel, IterativeComponentWithSampleWeight
 
+import time
+
 
 class PassiveAggressive(
     IterativeComponentWithSampleWeight,
@@ -22,6 +24,8 @@ class PassiveAggressive(
         self.loss = loss
         self.random_state = random_state
         self.estimator = None
+        self.start_time = time.time()
+        self.time_limit = None
 
     def iterative_fit(self, X, y, n_iter=2, refit=False, sample_weight=None):
         from sklearn.linear_model.passive_aggressive import \
