@@ -55,9 +55,11 @@ class BaseClassificationEvaluator(object):
 
         if not self.kfold:
             data_X, data_y = self.data_manager.train_X, self.data_manager.train_y
+            # TODO: Specify random_state
             train_X, val_X, train_y, val_y = train_test_split(data_X, data_y,
                                                               test_size=self.val_size,
-                                                              stratify=data_y)
+                                                              stratify=data_y,
+                                                              random_state=42, )
 
             # Fit the estimator on the training data.
             estimator.fit(train_X, train_y)
@@ -123,27 +125,45 @@ class BaseClassificationEvaluator(object):
         return classifier_type, estimator
 
     @save_ease(save_dir='data/save_models')
-    def fit_predict(self, config, test_X=None, **kwargs):
+    def fit(self, config, **kwargs):
         # Build the corresponding estimator.
         save_path = kwargs['save_path']
-        estimator_name = config['estimator']
-        if os.path.exists(save_path) and estimator_name != 'xgboost':
-            with open(save_path, 'rb') as f:
-                estimator = pkl.load(f)
-                print("Estimator loaded from", save_path)
-        else:
-            _, estimator = self.set_config(config)
-            # Fit the estimator on the training data.
-            estimator.fit(self.data_manager.train_X, self.data_manager.train_y)
+        _, estimator = self.set_config(config)
+        # Fit the estimator on the training data.
+        estimator.fit(self.data_manager.train_X, self.data_manager.train_y)
+        with open(save_path, 'wb') as f:
+            pkl.dump(estimator, f)
+            self.logger.info("Estimator retrained!")
+
+    # Do not remove config
+    @save_ease(save_dir='data/save_models')
+    def predict(self, config, test_X=None, **kwargs):
+        save_path = kwargs['save_path']
+        assert os.path.exists(save_path)
+        with open(save_path, 'rb') as f:
+            estimator = pkl.load(f)
+            print("Estimator loaded from", save_path)
 
         # Inference.
         if test_X is None:
             test_X = self.data_manager.test_X
 
-        if self.metric_func == roc_auc_score:
-            y_pred = estimator.predict_proba(test_X)[:, 1]
-        else:
-            y_pred = estimator.predict(test_X)
+        y_pred = estimator.predict(test_X)
+        return y_pred
+
+    @save_ease(save_dir='data/save_models')
+    def predict_proba(self, config, test_X=None, **kwargs):
+        save_path = kwargs['save_path']
+        assert os.path.exists(save_path)
+        with open(save_path, 'rb') as f:
+            estimator = pkl.load(f)
+            print("Estimator loaded from", save_path)
+
+        # Inference.
+        if test_X is None:
+            test_X = self.data_manager.test_X
+
+        y_pred = estimator.predict_proba(test_X)
         return y_pred
 
 
@@ -174,7 +194,8 @@ class BaseRegressionEvaluator(object):
         if not self.kfold:
             # Split data
             data_X, data_y = self.data_manager.train_X, self.data_manager.train_y
-            train_X, val_X, train_y, val_y = train_test_split(data_X, data_y, test_size=self.val_size)
+            # TODO: Specify random_state
+            train_X, val_X, train_y, val_y = train_test_split(data_X, data_y, test_size=self.val_size, random_state=42)
 
             # Fit the estimator on the training data.
             estimator.fit(train_X, train_y)
@@ -229,21 +250,28 @@ class BaseRegressionEvaluator(object):
         return regressor_type, estimator
 
     @save_ease(save_dir='data/save_models')
-    def fit_predict(self, config, test_X=None, **kwargs):
+    def fit(self, config, **kwargs):
         # Build the corresponding estimator.
         save_path = kwargs['save_path']
-        estimator_name = config['estimator']
-        if os.path.exists(save_path) and estimator_name != 'xgboost':
-            with open(save_path, 'rb') as f:
-                estimator = pkl.load(f)
-                print("Estimator loaded from", save_path)
-        else:
-            _, estimator = self.set_config(config)
-            # Fit the estimator on the training data.
-            estimator.fit(self.data_manager.train_X, self.data_manager.train_y)
+        _, estimator = self.set_config(config)
+        # Fit the estimator on the training data.
+        estimator.fit(self.data_manager.train_X, self.data_manager.train_y)
+        with open(save_path, 'wb') as f:
+            pkl.dump(estimator, f)
+            self.logger.info("Estimator retrained!")
+
+    # Do not remove config
+    @save_ease(save_dir='data/save_models')
+    def predict(self, config, test_X=None, **kwargs):
+        save_path = kwargs['save_path']
+        assert os.path.exists(save_path)
+        with open(save_path, 'rb') as f:
+            estimator = pkl.load(f)
+            print("Estimator loaded from", save_path)
 
         # Inference.
         if test_X is None:
             test_X = self.data_manager.test_X
+
         y_pred = estimator.predict(test_X)
         return y_pred

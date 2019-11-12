@@ -21,7 +21,9 @@ class HyperoptClassificationEvaluator(BaseClassificationEvaluator):
     This Base Evaluator class must have: 1) data_manager and metric_func, 2) __call__ and fit_predict.
     """
 
-    def __init__(self):
+    def __init__(self, val_size=0.7, kfold=None):
+        self.val_size = val_size
+        self.kfold = kfold
         self.data_manager = None
         self.metric_func = None
         self.logger = logging.getLogger(__name__)
@@ -69,25 +71,43 @@ class HyperoptClassificationEvaluator(BaseClassificationEvaluator):
         return classifier_type, estimator
 
     @save_ease(save_dir='data/save_models')
-    def fit_predict(self, config, test_X=None, **kwargs):
+    def fit(self, config, test_X=None, **kwargs):
         # Build the corresponding estimator.
         save_path = kwargs['save_path']
-        estimator_name = config['estimator'][0]
-        if os.path.exists(save_path) and estimator_name != 'xgboost':
-            with open(save_path, 'rb') as f:
-                estimator = pkl.load(f)
-                print("Estimator loaded from", save_path)
-        else:
-            _, estimator = self.set_config(config)
-            # Fit the estimator on the training data.
-            estimator.fit(self.data_manager.train_X, self.data_manager.train_y)
+
+        _, estimator = self.set_config(config)
+        # Fit the estimator on the training data.
+        estimator.fit(self.data_manager.train_X, self.data_manager.train_y)
+        with open(save_path, 'wb') as f:
+            pkl.dump(estimator, f)
+            self.logger.info("Estimator retrained!")
+
+    @save_ease(save_dir='data/save_models')
+    def predict(self, config, test_X=None, **kwargs):
+        save_path = kwargs['save_path']
+        assert os.path.exists(save_path)
+        with open(save_path, 'rb') as f:
+            estimator = pkl.load(f)
+            print("Estimator loaded from", save_path)
 
         # Inference.
         if test_X is None:
             test_X = self.data_manager.test_X
 
-        if self.metric_func == roc_auc_score:
-            y_pred = estimator.predict_proba(test_X)[:, 1]
-        else:
-            y_pred = estimator.predict(test_X)
+        y_pred = estimator.predict(test_X)
+        return y_pred
+
+    @save_ease(save_dir='data/save_models')
+    def predict_proba(self, config, test_X=None, **kwargs):
+        save_path = kwargs['save_path']
+        assert os.path.exists(save_path)
+        with open(save_path, 'rb') as f:
+            estimator = pkl.load(f)
+            print("Estimator loaded from", save_path)
+
+        # Inference.
+        if test_X is None:
+            test_X = self.data_manager.test_X
+
+        y_pred = estimator.predict_proba(test_X)
         return y_pred

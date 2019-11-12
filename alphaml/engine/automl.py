@@ -118,12 +118,25 @@ class AutoML(object):
         if self.ensemble_model is None:
             # For traditional ML task:
             #   fit the optimized model on the whole training data and predict the input data's labels.
-            pred = self.evaluator.fit_predict(self.optimizer.incumbent, X)
+            self.evaluator.fit(self.optimizer.incumbent)
+            pred = self.evaluator.predict(self.optimizer.incumbent, X)
             return pred
         else:
             # Predict the result.
-            pred1 = self.ensemble_model.predict(X)
-            return pred1
+            pred = self.ensemble_model.predict(X)
+            return pred
+
+    def predict_proba(self, X, **kwargs):
+        if self.ensemble_model is None:
+            # For traditional ML task:
+            #   fit the optimized model on the whole training data and predict the input data's labels.
+            self.evaluator.fit(self.optimizer.incumbent)
+            pred = self.evaluator.predict_proba(self.optimizer.incumbent, X)
+            return pred
+        else:
+            # Predict the result.
+            pred = self.ensemble_model.predict_proba(X)
+            return pred
 
     def score(self, X, y):
         pred_y = self.predict(X)

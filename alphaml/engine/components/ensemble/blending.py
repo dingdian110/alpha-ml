@@ -10,7 +10,7 @@ class Blending(BaseEnsembleModel):
         super().__init__(model_info, ensemble_size, task_type, metric, model_type)
 
         # We use Xgboost as default meta-learner
-        if self.task_type == CLASSIFICATION:
+        if self.task_type in [CLASSIFICATION, HYPEROPT_CLASSIFICATION]:
             if meta_learner == 'logistic':
                 from sklearn.linear_model.logistic import LogisticRegression
                 self.meta_learner = LogisticRegression(max_iter=1000)
@@ -29,18 +29,11 @@ class Blending(BaseEnsembleModel):
                 self.meta_learner = XGBRegressor(max_depth=4, learning_rate=0.05, n_estimators=70)
 
     def fit(self, dm: DataManager):
-        x, y = dm.train_X, dm.train_y
-        if dm.val_X is not None:
-            y = list(y)
-            y.extend(list(dm.val_y))
-            y = np.array(y)
-            x = np.vstack((dm.train_X, dm.val_X))
-
         # Split training data for phase 1 and phase 2
-        if self.task_type == CLASSIFICATION:
-            x_p1, x_p2, y_p1, y_p2 = train_test_split(x, y, test_size=0.2, stratify=dm.train_y)
+        if self.task_type in [CLASSIFICATION, HYPEROPT_CLASSIFICATION]:
+            x_p1, x_p2, y_p1, y_p2 = train_test_split(dm.train_X, dm.train_y, test_size=0.2, stratify=dm.train_y)
         elif self.task_type == REGRESSION:
-            x_p1, x_p2, y_p1, y_p2 = train_test_split(x, y, test_size=0.2)
+            x_p1, x_p2, y_p1, y_p2 = train_test_split(dm.train_X, dm.train_y, test_size=0.2)
         feature_p2 = None
         if self.model_type == 'ml':
             # Train basic models using a part of training data
@@ -48,29 +41,19 @@ class Blending(BaseEnsembleModel):
                 estimator = self.get_estimator(config, x_p1, y_p1)
                 self.ensemble_models.append(estimator)
                 pred = self.get_proba_predictions(estimator, x_p2)
-                if self.task_type == CLASSIFICATION:
-                    from sklearn.metrics import roc_auc_score
-                    if self.metric == roc_auc_score:
-                        shape = np.array(pred).shape
-                        n_dim = shape[1]
-                        # Initialize training matrix for phase 2
-                        if feature_p2 is None:
-                            num_samples = len(x_p2)
-                            feature_p2 = np.zeros((num_samples, self.ensemble_size * n_dim))
-                        feature_p2[:, i * n_dim:(i + 1) * n_dim] = pred
+                if self.task_type in [CLASSIFICATION, HYPEROPT_CLASSIFICATION]:
+                    n_dim = np.array(pred).shape[1]
+                    if n_dim == 2:
+                        # Binary classificaion
+                        n_dim = 1
+                    # Initialize training matrix for phase 2
+                    if feature_p2 is None:
+                        num_samples = len(x_p2)
+                        feature_p2 = np.zeros((num_samples, self.ensemble_size * n_dim))
+                    if n_dim == 1:
+                        feature_p2[:, i * n_dim:(i + 1) * n_dim] = pred[:, 1:2]
                     else:
-                        n_dim = np.array(pred).shape[1]
-                        if n_dim == 2:
-                            # Binary classificaion
-                            n_dim = 1
-                        # Initialize training matrix for phase 2
-                        if feature_p2 is None:
-                            num_samples = len(x_p2)
-                            feature_p2 = np.zeros((num_samples, self.ensemble_size * n_dim))
-                        if n_dim == 1:
-                            feature_p2[:, i * n_dim:(i + 1) * n_dim] = pred[:, 1:2]
-                        else:
-                            feature_p2[:, i * n_dim:(i + 1) * n_dim] = pred
+                        feature_p2[:, i * n_dim:(i + 1) * n_dim] = pred
 
                 elif self.task_type == REGRESSION:
                     shape = np.array(pred).shape
@@ -87,12 +70,12 @@ class Blending(BaseEnsembleModel):
             pass
         return self
 
-    def predict(self, X):
+    def get_feature(self, X):
         # Predict the labels via blending
         feature_p2 = None
         for i, model in enumerate(self.ensemble_models):
             pred = self.get_proba_predictions(model, X)
-            if self.task_type == CLASSIFICATION:
+            if self.task_type in [CLASSIFICATION, HYPEROPT_CLASSIFICATION]:
                 n_dim = np.array(pred).shape[1]
                 if n_dim == 2:
                     # Binary classificaion
@@ -107,17 +90,22 @@ class Blending(BaseEnsembleModel):
                     feature_p2[:, i * n_dim:(i + 1) * n_dim] = pred
 
             elif self.task_type == REGRESSION:
-                shape = np.array(pred).shape
-                n_dim = shape[1]
+                n_dim = np.array(pred).shape[1]
                 # Initialize training matrix for phase 2
                 if feature_p2 is None:
                     num_samples = len(X)
                     feature_p2 = np.zeros((num_samples, self.ensemble_size * n_dim))
                 feature_p2[:, i * n_dim:(i + 1) * n_dim] = pred
+        return feature_p2
+
+    def predict(self, X):
+        feature_p2 = self.get_feature(X)
         # Get predictions from meta-learner
-        from sklearn.metrics import roc_auc_score
-        if self.metric == roc_auc_score:
-            final_pred = self.meta_learner.predict_proba(feature_p2)
-        else:
-            final_pred = self.meta_learner.predict(feature_p2)
+        final_pred = self.meta_learner.predict(feature_p2)
+        return final_pred
+
+    def predict_proba(self, X):
+        feature_p2 = self.get_feature(X)
+        # Get predictions from meta-learner
+        final_pred = self.meta_learner.predict_proba(feature_p2)
         return final_pred

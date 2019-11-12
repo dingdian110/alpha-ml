@@ -112,10 +112,10 @@ class BaseEnsembleModel(object):
         if if_show:
             self.logger.info("Estimator path: " + save_path)
             return None
-        if if_load and os.path.exists(save_path) and estimator_name != 'xgboost':
+        if if_load and os.path.exists(save_path):
             with open(save_path, 'rb') as f:
                 estimator = pkl.load(f)
-                # print("Estimator loaded from", save_path)
+                self.logger.info("Estimator loaded from " + save_path)
         else:
             save_path = kwargs['save_path']
             if self.task_type == CLASSIFICATION:
@@ -133,11 +133,7 @@ class BaseEnsembleModel(object):
 
     def get_proba_predictions(self, estimator, X):
         if self.task_type in [CLASSIFICATION, HYPEROPT_CLASSIFICATION]:
-            from sklearn.metrics import roc_auc_score
-            if self.metric == roc_auc_score:
-                return estimator.predict_proba(X)[:, 1:2]
-            else:
-                return estimator.predict_proba(X)
+            return estimator.predict_proba(X)
         elif self.task_type == REGRESSION:
             pred = estimator.predict(X)
             shape = pred.shape

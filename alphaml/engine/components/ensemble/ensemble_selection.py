@@ -2,14 +2,16 @@ from alphaml.engine.components.ensemble.base_ensemble import *
 from alphaml.engine.components.data_manager import DataManager
 import numpy as np
 from collections import Counter
+from sklearn.model_selection import train_test_split
 
 
+# EnsembleSelection cannot be used with a k-fold evaluator
 class EnsembleSelection(BaseEnsembleModel):
     def __init__(self, model_info, ensemble_size, task_type, metric, model_type='ml', mode='fast',
                  sorted_initialization=False, n_best=20):
         super().__init__(model_info, ensemble_size, task_type, metric, model_type)
         self.sorted_initialization = sorted_initialization
-        self.config_list = self.model_info[0]
+        self.config_list = self.model_info[0]  # Get the original config list
         if n_best < self.ensemble_size:
             self.n_best = n_best
         else:
@@ -18,19 +20,25 @@ class EnsembleSelection(BaseEnsembleModel):
         self.random_state = np.random.RandomState(42)
 
     def fit(self, dm: DataManager):
-        # Train the basic models on this training set.
+        data_X, data_y = dm.train_X, dm.train_y
+        # TODO: Specify random_state and test_size (the same size in evaluator)
+        train_X, val_X, train_y, val_y = train_test_split(data_X, data_y, test_size=0.7, random_state=42)
+        # Load the basic models on this training set and make predictions.
         if self.model_type == 'ml':
             predictions = []
-            for config in self.config_list:
+            for i, config in enumerate(self.config_list):
+                if self.model_info[1][i] == FAILED:
+                    print("Failed")
+                    continue
                 try:
-                    estimator = self.get_estimator(config, dm.train_X, dm.train_y, if_load=True)
+                    estimator = self.get_estimator(config, train_X, train_y, if_load=True)
                     self.ensemble_models.append(estimator)
-                    pred = self.get_proba_predictions(estimator, dm.val_X)
+                    pred = self.get_proba_predictions(estimator, val_X)
                     predictions.append(pred)
 
                 except ValueError as err:
                     pass
-            self._fit(predictions, dm.val_y)
+            self._fit(predictions, val_y)
         elif self.model_type == 'dl':
             pass
 
@@ -197,7 +205,7 @@ class EnsembleSelection(BaseEnsembleModel):
 
         if len(pred.shape) > 1 and pred.shape[1] == 1:
             pred = np.reshape(pred, (pred.shape[0]))
-        if self.task_type == CLASSIFICATION or HYPEROPT_CLASSIFICATION:
+        if self.task_type in [CLASSIFICATION, HYPEROPT_CLASSIFICATION]:
             from sklearn.metrics import roc_auc_score
             if self.metric == roc_auc_score:
                 return pred
@@ -209,7 +217,7 @@ class EnsembleSelection(BaseEnsembleModel):
             raise ValueError('No prediction warnings!')
 
     def calculate_score(self, pred, y_true):
-        if self.task_type == CLASSIFICATION or HYPEROPT_CLASSIFICATION:
+        if self.task_type in [CLASSIFICATION, HYPEROPT_CLASSIFICATION]:
             from sklearn.metrics import roc_auc_score
             if self.metric == roc_auc_score:
                 pred = pred

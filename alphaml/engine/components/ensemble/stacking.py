@@ -5,11 +5,11 @@ from sklearn.model_selection import StratifiedKFold, KFold
 
 
 class Stacking(BaseEnsembleModel):
-    def __init__(self, model_info, ensemble_size, task_type, metric, model_type='ml', meta_learner='xgboost', kfold=5):
+    def __init__(self, model_info, ensemble_size, task_type, metric, model_type='ml', meta_learner='xgboost', kfold=3):
         super().__init__(model_info, ensemble_size, task_type, metric, model_type)
         self.kfold = kfold
         # We use Xgboost as default meta-learner
-        if self.task_type == CLASSIFICATION:
+        if self.task_type in [CLASSIFICATION, HYPEROPT_CLASSIFICATION]:
             if meta_learner == 'logistic':
                 from sklearn.linear_model.logistic import LogisticRegression
                 self.meta_learner = LogisticRegression(max_iter=1000)
@@ -29,15 +29,8 @@ class Stacking(BaseEnsembleModel):
                 self.meta_learner = XGBRegressor(max_depth=4, learning_rate=0.05, n_estimators=70)
 
     def fit(self, dm: DataManager):
-        x, y = dm.train_X, dm.train_y
-        if dm.val_X is not None:
-            y = list(y)
-            y.extend(list(dm.val_y))
-            y = np.array(y)
-            x = np.vstack((dm.train_X, dm.val_X))
-
         # Split training data for phase 1 and phase 2
-        if self.task_type == CLASSIFICATION:
+        if self.task_type in [CLASSIFICATION, HYPEROPT_CLASSIFICATION]:
             kf = StratifiedKFold(n_splits=self.kfold)
         elif self.task_type == REGRESSION:
             kf = KFold(n_splits=self.kfold)
@@ -45,13 +38,13 @@ class Stacking(BaseEnsembleModel):
         if self.model_type == 'ml':
             # Train basic models using a part of training data
             for i, config in enumerate(self.config_list):
-                for j, (train, test) in enumerate(kf.split(x, y)):
-                    x_p1, x_p2, y_p1, _ = x[train], x[test], y[train], y[test]
+                for j, (train, test) in enumerate(kf.split(dm.train_X, dm.train_y)):
+                    x_p1, x_p2, y_p1, _ = dm.train_X[train], dm.train_X[test], dm.train_y[train], dm.train_y[test]
                     estimator = self.get_estimator(config, x_p1, y_p1)
                     # The final list will contain self.kfold * self.ensemble_size models
                     self.ensemble_models.append(estimator)
                     pred = self.get_proba_predictions(estimator, x_p2)
-                    if self.task_type == CLASSIFICATION:
+                    if self.task_type in [CLASSIFICATION, HYPEROPT_CLASSIFICATION]:
                         n_dim = np.array(pred).shape[1]
                         if n_dim == 2:
                             # Binary classificaion
@@ -73,47 +66,33 @@ class Stacking(BaseEnsembleModel):
                             feature_p2 = np.zeros((num_samples, self.ensemble_size * n_dim))
                         feature_p2[test, i * n_dim:(i + 1) * n_dim] = pred
             # Train model for stacking using the other part of training data
-            self.meta_learner.fit(feature_p2, y)
+            self.meta_learner.fit(feature_p2, dm.train_y)
         elif self.model_type == 'dl':
             pass
         return self
 
-    def predict(self, X):
+    def get_feature(self, X):
         # Predict the labels via stacking
         feature_p2 = None
         for i, model in enumerate(self.ensemble_models):
             pred = self.get_proba_predictions(model, X)
-            if self.task_type == CLASSIFICATION:
-                from sklearn.metrics import roc_auc_score
-                if self.metric == roc_auc_score:
-                    shape = np.array(pred).shape
-                    n_dim = shape[1]
-                    # Initialize training matrix for phase 2
-                    if feature_p2 is None:
-                        num_samples = len(X)
-                        feature_p2 = np.zeros((num_samples, self.ensemble_size * n_dim))
-                    index = i % self.kfold
-                    # Get average predictions
+            if self.task_type in [CLASSIFICATION, HYPEROPT_CLASSIFICATION]:
+                n_dim = np.array(pred).shape[1]
+                if n_dim == 2:
+                    n_dim = 1
+                if feature_p2 is None:
+                    num_samples = len(X)
+                    feature_p2 = np.zeros((num_samples, self.ensemble_size * n_dim))
+                index = i % self.kfold
+                # Get average predictions
+                if n_dim == 1:
+                    feature_p2[:, index * n_dim:(index + 1) * n_dim] = feature_p2[:,
+                                                                       index * n_dim:(index + 1) * n_dim] + \
+                                                                       pred[:, 1:2] / self.kfold
+                else:
                     feature_p2[:, index * n_dim:(index + 1) * n_dim] = feature_p2[:,
                                                                        index * n_dim:(index + 1) * n_dim] + \
                                                                        pred / self.kfold
-                else:
-                    n_dim = np.array(pred).shape[1]
-                    if n_dim == 2:
-                        n_dim = 1
-                    if feature_p2 is None:
-                        num_samples = len(X)
-                        feature_p2 = np.zeros((num_samples, self.ensemble_size * n_dim))
-                    index = i % self.kfold
-                    # Get average predictions
-                    if n_dim == 1:
-                        feature_p2[:, index * n_dim:(index + 1) * n_dim] = feature_p2[:,
-                                                                           index * n_dim:(index + 1) * n_dim] + \
-                                                                           pred[:, 1:2] / self.kfold
-                    else:
-                        feature_p2[:, index * n_dim:(index + 1) * n_dim] = feature_p2[:,
-                                                                           index * n_dim:(index + 1) * n_dim] + \
-                                                                           pred / self.kfold
             elif self.task_type == REGRESSION:
                 shape = np.array(pred).shape
                 n_dim = shape[1]
@@ -126,10 +105,16 @@ class Stacking(BaseEnsembleModel):
                 feature_p2[:, index * n_dim:(index + 1) * n_dim] = feature_p2[:,
                                                                    index * n_dim:(index + 1) * n_dim] + \
                                                                    pred / self.kfold
+        return feature_p2
+
+    def predict(self, X):
+        feature_p2 = self.get_feature(X)
         # Get predictions from meta-learner
-        from sklearn.metrics import roc_auc_score
-        if self.metric == roc_auc_score:
-            final_pred = self.meta_learner.predict_proba(feature_p2)
-        else:
-            final_pred = self.meta_learner.predict(feature_p2)
+        final_pred = self.meta_learner.predict(feature_p2)
+        return final_pred
+
+    def predict_proba(self, X):
+        feature_p2 = self.get_feature(X)
+        # Get predictions from meta-learner
+        final_pred = self.meta_learner.predict_proba(feature_p2)
         return final_pred
