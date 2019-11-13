@@ -28,7 +28,7 @@ class BaseEnsembleModel(object):
             self.task_type = CLASSIFICATION
         elif task_type in ['continuous']:
             self.task_type = REGRESSION
-        elif 'hyperopt' in task_type:
+        elif 'tpe' in task_type:
             self.task_type = HYPEROPT_CLASSIFICATION
         else:
             raise ValueError('Undefined Task Type: %s' % task_type)

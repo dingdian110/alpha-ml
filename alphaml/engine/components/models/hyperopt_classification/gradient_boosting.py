@@ -27,6 +27,7 @@ class GradientBoostingClassifier(IterativeComponentWithSampleWeight, BaseClassif
         self.min_impurity_decrease = min_impurity_decrease
         self.random_state = random_state
         self.verbose = verbose
+        self.time_limit = None
         self.estimator = None
         self.fully_fit_ = False
 

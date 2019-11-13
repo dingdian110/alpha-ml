@@ -142,7 +142,7 @@ class BaseClassificationEvaluator(object):
         assert os.path.exists(save_path)
         with open(save_path, 'rb') as f:
             estimator = pkl.load(f)
-            print("Estimator loaded from", save_path)
+            self.logger.info("Estimator loaded from " + save_path)
 
         # Inference.
         if test_X is None:
@@ -157,7 +157,7 @@ class BaseClassificationEvaluator(object):
         assert os.path.exists(save_path)
         with open(save_path, 'rb') as f:
             estimator = pkl.load(f)
-            print("Estimator loaded from", save_path)
+            self.logger.info("Estimator loaded from " + save_path)
 
         # Inference.
         if test_X is None:

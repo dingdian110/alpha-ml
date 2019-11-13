@@ -23,6 +23,7 @@ class XGBoostClassifier(BaseClassificationModel):
         self.random_state = random_state
         self.num_cls = -1
         self.estimator = None
+        self.time_limit = None
 
     def fit(self, X, Y):
         self.n_estimators = int(self.n_estimators)

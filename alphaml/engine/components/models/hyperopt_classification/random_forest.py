@@ -29,6 +29,7 @@ class RandomForest(
         self.n_jobs = n_jobs
         self.class_weight = class_weight
         self.estimator = None
+        self.time_limit = None
 
     def iterative_fit(self, X, y, sample_weight=None, n_iter=1, refit=False):
         from sklearn.ensemble import RandomForestClassifier

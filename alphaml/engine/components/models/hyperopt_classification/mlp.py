@@ -26,6 +26,7 @@ class MLP(
         self.random_state = random_state
         self.estimator = None
         self.fully_fit_ = False
+        self.time_limit = None
 
     def iterative_fit(self, X, y, n_iter=2, refit=False, sample_weight=None):
         from sklearn.neural_network import MLPClassifier

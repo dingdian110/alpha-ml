@@ -23,7 +23,7 @@ class ExtraTreesClassifier(IterativeComponentWithSampleWeight, BaseClassificatio
         self.bootstrap = bootstrap
         self.n_jobs = -1
         self.random_state = random_state
-
+        self.time_limit = None
         self.estimator = None
 
     def fit(self, X, y, sample_weight=None):
