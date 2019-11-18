@@ -7,9 +7,9 @@ from sklearn.model_selection import train_test_split
 
 # EnsembleSelection cannot be used with a k-fold evaluator
 class EnsembleSelection(BaseEnsembleModel):
-    def __init__(self, model_info, ensemble_size, task_type, metric, model_type='ml', mode='fast',
+    def __init__(self, model_info, ensemble_size, task_type, metric, evaluator, model_type='ml', mode='fast',
                  sorted_initialization=False, n_best=20):
-        super().__init__(model_info, ensemble_size, task_type, metric, model_type)
+        super().__init__(model_info, ensemble_size, task_type, metric, evaluator, model_type)
         self.sorted_initialization = sorted_initialization
         self.config_list = self.model_info[0]  # Get the original config list
         if n_best < self.ensemble_size:

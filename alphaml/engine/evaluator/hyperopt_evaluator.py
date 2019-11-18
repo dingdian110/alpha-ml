@@ -3,12 +3,14 @@ import logging
 import multiprocessing
 import pickle as pkl
 import os
+
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import train_test_split
-from sklearn.model_selection import KFold, StratifiedKFold
-from alphaml.engine.components.models.hyperopt_classification import _hyperopt_classifiers
+from sklearn.model_selection import StratifiedKFold
+from alphaml.engine.components.models.classification import _classifiers
 from alphaml.engine.evaluator.base import BaseClassificationEvaluator
 from alphaml.utils.save_ease import save_ease
+from alphaml.utils.constants import FAILED
 
 
 def get_dictionary(config):
@@ -35,30 +37,83 @@ class HyperoptClassificationEvaluator(BaseClassificationEvaluator):
         # Build the corresponding estimator.
         classifier_type, estimator = self.set_config(config)
         save_path = kwargs['save_path']
-        # TODO: how to parallize.
+        # TODO: how to parallelize.
         if hasattr(estimator, 'n_jobs'):
             setattr(estimator, 'n_jobs', multiprocessing.cpu_count() - 1)
         start_time = time.time()
         self.logger.info('<START TO FIT> %s' % classifier_type)
         self.logger.info('<CONFIG> %s' % config)
-        # Fit the estimator on the training data.
-        estimator.fit(self.data_manager.train_X, self.data_manager.train_y)
+        # Split data
+        if self.kfold:
+            if not isinstance(self.kfold, int) or self.kfold < 2:
+                raise ValueError("Kfold must be an integer larger than 2!")
 
-        with open(save_path, 'wb') as f:
-            pkl.dump(estimator, f)
-            self.logger.info('<MODEL SAVED IN %s>' % save_path)
+        if not self.kfold:
+            data_X, data_y = self.data_manager.train_X, self.data_manager.train_y
+            # TODO: Specify random_state
+            train_X, val_X, train_y, val_y = train_test_split(data_X, data_y,
+                                                              test_size=self.val_size,
+                                                              stratify=data_y,
+                                                              random_state=42, )
 
-        # Validate it on val data.
-        if self.metric_func == roc_auc_score:
-            y_pred = estimator.predict_proba(self.data_manager.val_X)[:, 1]
-            metric = self.metric_func(self.data_manager.val_y, y_pred)
+            # Fit the estimator on the training data.
+            estimator.fit(train_X, train_y)
+            self.logger.info('<FIT MODEL> finished!')
+            with open(save_path, 'wb') as f:
+                pkl.dump(estimator, f)
+                self.logger.info('<MODEL SAVED IN %s>' % save_path)
+
+            # In case of failed estimator
+            try:
+                # Validate it on val data.
+                if self.metric_func == roc_auc_score:
+                    y_pred = estimator.predict_proba(val_X)[:, 1]
+                    metric = self.metric_func(val_y, y_pred)
+                else:
+                    y_pred = estimator.predict(val_X)
+                    metric = self.metric_func(val_y, y_pred)
+            except ValueError:
+                return -FAILED
+
+            self.logger.info(
+                '<EVALUATE %s-%.2f TAKES %.2f SECONDS>' % (classifier_type, 1 - metric, time.time() - start_time))
+            # Turn it to a minimization problem.
+            return 1 - metric
+
         else:
-            y_pred = estimator.predict(self.data_manager.val_X)
-            metric = self.metric_func(self.data_manager.val_y, y_pred)
+            kfold = StratifiedKFold(n_splits=self.kfold, shuffle=True)
+            metric = 0
+            for i, (train_index, valid_index) in enumerate(
+                    kfold.split(self.data_manager.train_X, self.data_manager.train_y)):
+                train_X = self.data_manager.train_X[train_index]
+                val_X = self.data_manager.train_X[valid_index]
+                train_y = self.data_manager.train_y[train_index]
+                val_y = self.data_manager.train_y[valid_index]
 
-        self.logger.info('<EVALUATE %s TAKES %.2f SECONDS>' % (classifier_type, time.time() - start_time))
-        # Turn it to a minimization problem.
-        return 1 - metric
+                # Fit the estimator on the training data.
+                estimator.fit(train_X, train_y)
+                self.logger.info('<FIT MODEL> %d/%d finished!' % (i + 1, self.kfold))
+                with open(save_path, 'wb') as f:
+                    pkl.dump(estimator, f)
+                    self.logger.info('<MODEL SAVED IN %s>' % save_path)
+
+                # In case of failed estimator
+                try:
+                    # Validate it on val data.
+                    if self.metric_func == roc_auc_score:
+                        y_pred = estimator.predict_proba(val_X)[:, 1]
+                        metric += self.metric_func(val_y, y_pred) / self.kfold
+                    else:
+                        y_pred = estimator.predict(val_X)
+                        metric += self.metric_func(val_y, y_pred) / self.kfold
+                except ValueError:
+                    return -FAILED
+
+            self.logger.info('<FIT MODEL> finished!')
+            self.logger.info(
+                '<EVALUATE %s-%.2f TAKES %.2f SECONDS>' % (classifier_type, 1 - metric, time.time() - start_time))
+            # Turn it to a minimization problem.
+            return 1 - metric
 
     def set_config(self, config):
         assert isinstance(config, dict)
@@ -66,7 +121,7 @@ class HyperoptClassificationEvaluator(BaseClassificationEvaluator):
         if not hasattr(self, 'estimator'):
             # Build the corresponding estimator.
             params_num = len(config.keys())
-            estimator = _hyperopt_classifiers[classifier_type](*[None] * params_num)
+            estimator = _classifiers[classifier_type](*[None] * params_num)
         else:
             estimator = self.estimator
         estimator.set_hyperparameters(config)

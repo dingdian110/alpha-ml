@@ -1,6 +1,8 @@
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import CategoricalHyperparameter, \
-    Constant, UniformIntegerHyperparameter
+    UniformIntegerHyperparameter
+from hyperopt import hp
+import numpy as np
 
 from alphaml.utils.constants import *
 from alphaml.engine.components.models.base_model import BaseClassificationModel
@@ -56,14 +58,22 @@ class KNearestNeighborsClassifier(BaseClassificationModel):
                 'output': (PREDICTIONS,)}
 
     @staticmethod
-    def get_hyperparameter_search_space(dataset_properties=None):
-        cs = ConfigurationSpace()
+    def get_hyperparameter_search_space(dataset_properties=None, optimizer='smac'):
+        if optimizer == 'smac':
+            cs = ConfigurationSpace()
+            n_neighbors = UniformIntegerHyperparameter(
+                name="n_neighbors", lower=1, upper=100, log=True, default_value=1)
+            weights = CategoricalHyperparameter(
+                name="weights", choices=["uniform", "distance"], default_value="uniform")
+            p = CategoricalHyperparameter(name="p", choices=[1, 2], default_value=2)
+            cs.add_hyperparameters([n_neighbors, weights, p])
 
-        n_neighbors = UniformIntegerHyperparameter(
-            name="n_neighbors", lower=1, upper=100, log=True, default_value=1)
-        weights = CategoricalHyperparameter(
-            name="weights", choices=["uniform", "distance"], default_value="uniform")
-        p = CategoricalHyperparameter(name="p", choices=[1, 2], default_value=2)
-        cs.add_hyperparameters([n_neighbors, weights, p])
+            return cs
+        elif optimizer == 'tpe':
+            space = {'n_neighbors': hp.randint('knn_n_neighbors', 100) + 1,
+                     'weights': hp.choice('knn_weights', ['uniform', 'distance']),
+                     'p': hp.choice('knn_p', [1, 2])}
 
-        return cs
+            init_trial = {'n_neighbors': 1, 'weights': "uniform", 'p': 2}
+
+            return space

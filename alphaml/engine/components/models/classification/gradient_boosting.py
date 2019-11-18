@@ -1,4 +1,5 @@
 import numpy as np
+from hyperopt import hp
 import time
 import sklearn.ensemble
 from ConfigSpace.configuration_space import ConfigurationSpace
@@ -121,36 +122,56 @@ class GradientBoostingClassifier(IterativeComponentWithSampleWeight, BaseClassif
                 'output': (PREDICTIONS,)}
 
     @staticmethod
-    def get_hyperparameter_search_space(dataset_properties=None):
-        cs = ConfigurationSpace()
-        loss = Constant("loss", "deviance")
-        learning_rate = UniformFloatHyperparameter(
-            name="learning_rate", lower=0.01, upper=1, default_value=0.1, log=True)
-        # n_estimators = UniformIntegerHyperparameter(
-        #     "n_estimators", 100, 100, default_value=100)
-        n_estimators = Constant("n_estimators", 100)
-        max_depth = UniformIntegerHyperparameter(
-            name="max_depth", lower=1, upper=8, default_value=3)
-        criterion = CategoricalHyperparameter(
-            'criterion', ['friedman_mse', 'mse'],
-            default_value='mse')
-        min_samples_split = UniformIntegerHyperparameter(
-            name="min_samples_split", lower=2, upper=20, default_value=2)
-        min_samples_leaf = UniformIntegerHyperparameter(
-            name="min_samples_leaf", lower=1, upper=20, default_value=1)
-        min_weight_fraction_leaf = UnParametrizedHyperparameter("min_weight_fraction_leaf", 0.)
-        subsample = UniformFloatHyperparameter(
-            name="subsample", lower=0.1, upper=1.0, default_value=1.0)
-        max_features = UniformFloatHyperparameter(
-            "max_features", 0.1, 1.0, default_value=1)
-        max_leaf_nodes = UnParametrizedHyperparameter(
-            name="max_leaf_nodes", value="None")
-        min_impurity_decrease = UnParametrizedHyperparameter(
-            name='min_impurity_decrease', value=0.0)
-        cs.add_hyperparameters([loss, learning_rate, n_estimators, max_depth,
-                                criterion, min_samples_split, min_samples_leaf,
-                                min_weight_fraction_leaf, subsample,
-                                max_features, max_leaf_nodes,
-                                min_impurity_decrease])
+    def get_hyperparameter_search_space(dataset_properties=None, optimizer='smac'):
+        if optimizer == 'smac':
+            cs = ConfigurationSpace()
+            loss = Constant("loss", "deviance")
+            learning_rate = UniformFloatHyperparameter(
+                name="learning_rate", lower=0.01, upper=1, default_value=0.1, log=True)
+            # n_estimators = UniformIntegerHyperparameter(
+            #     "n_estimators", 100, 100, default_value=100)
+            n_estimators = Constant("n_estimators", 100)
+            max_depth = UniformIntegerHyperparameter(
+                name="max_depth", lower=1, upper=8, default_value=3)
+            criterion = CategoricalHyperparameter(
+                'criterion', ['friedman_mse', 'mse'],
+                default_value='mse')
+            min_samples_split = UniformIntegerHyperparameter(
+                name="min_samples_split", lower=2, upper=20, default_value=2)
+            min_samples_leaf = UniformIntegerHyperparameter(
+                name="min_samples_leaf", lower=1, upper=20, default_value=1)
+            min_weight_fraction_leaf = UnParametrizedHyperparameter("min_weight_fraction_leaf", 0.)
+            subsample = UniformFloatHyperparameter(
+                name="subsample", lower=0.1, upper=1.0, default_value=1.0)
+            max_features = UniformFloatHyperparameter(
+                "max_features", 0.1, 1.0, default_value=1)
+            max_leaf_nodes = UnParametrizedHyperparameter(
+                name="max_leaf_nodes", value="None")
+            min_impurity_decrease = UnParametrizedHyperparameter(
+                name='min_impurity_decrease', value=0.0)
+            cs.add_hyperparameters([loss, learning_rate, n_estimators, max_depth,
+                                    criterion, min_samples_split, min_samples_leaf,
+                                    min_weight_fraction_leaf, subsample,
+                                    max_features, max_leaf_nodes,
+                                    min_impurity_decrease])
+            return cs
+        elif optimizer == 'tpe':
+            space = {'loss': hp.choice('gb_loss', ["deviance"]),
+                     'learning_rate': hp.loguniform('gb_learning_rate', np.log(0.01), np.log(1)),
+                     # 'n_estimators': hp.randint('gb_n_estimators', 451) + 50,
+                     'n_estimators': hp.choice('gb_n_estimators', [100]),
+                     'max_depth': hp.randint('gb_max_depth', 8) + 1,
+                     'criterion': hp.choice('gb_criterion', ['friedman_mse', 'mse', 'mae']),
+                     'min_samples_split': hp.randint('gb_min_samples_split', 19) + 2,
+                     'min_samples_leaf': hp.randint('gb_min_samples_leaf', 20) + 1,
+                     'min_weight_fraction_leaf': hp.choice('gb_min_weight_fraction_leaf', [0]),
+                     'subsample': hp.uniform('gb_subsample', 0.1, 1),
+                     'max_features': hp.uniform('gb_max_features', 0.1, 1),
+                     'max_leaf_nodes': hp.choice('gb_max_leaf_nodes', [None]),
+                     'min_impurity_decrease': hp.choice('gb_min_impurity_decrease', [0])}
 
-        return cs
+            init_trial = {'loss': "deviance", 'learning_rate': 0.1, 'n_estimators': 100, 'max_depth': 3,
+                          'criterion': "friedman_mse", 'min_samples_split': 2, 'min_samples_leaf': 1,
+                          'min_weight_fraction_leaf': 0, 'subsample': 1, 'max_features': 1,
+                          'max_leaf_nodes': None, 'min_impurity_decrease': 0}
+            return space

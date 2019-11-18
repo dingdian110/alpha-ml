@@ -1,6 +1,8 @@
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import UniformFloatHyperparameter, \
     UniformIntegerHyperparameter, CategoricalHyperparameter
+from hyperopt import hp
+import numpy as np
 
 from alphaml.engine.components.models.base_model import BaseClassificationModel
 from alphaml.utils.constants import *
@@ -62,17 +64,24 @@ class AdaboostClassifier(BaseClassificationModel):
                 'output': (PREDICTIONS,)}
 
     @staticmethod
-    def get_hyperparameter_search_space(dataset_properties=None):
-        cs = ConfigurationSpace()
+    def get_hyperparameter_search_space(dataset_properties=None, optimizer='smac'):
+        if optimizer == 'smac':
+            cs = ConfigurationSpace()
+            n_estimators = UniformIntegerHyperparameter(
+                name="n_estimators", lower=50, upper=500, default_value=50, log=False)
+            learning_rate = UniformFloatHyperparameter(
+                name="learning_rate", lower=0.01, upper=2, default_value=0.1, log=True)
+            algorithm = CategoricalHyperparameter(
+                name="algorithm", choices=["SAMME.R", "SAMME"], default_value="SAMME.R")
+            max_depth = UniformIntegerHyperparameter(
+                name="max_depth", lower=1, upper=10, default_value=1, log=False)
+            cs.add_hyperparameters([n_estimators, learning_rate, algorithm, max_depth])
+            return cs
+        elif optimizer == 'tpe':
+            space = {'n_estimators': hp.randint('ab_n_estimators', 451) + 50,
+                     'learning_rate': hp.loguniform('ab_learning_rate', np.log(0.01), np.log(2)),
+                     'algorithm': hp.choice('ab_algorithm', ["SAMME.R", "SAMME"]),
+                     'max_depth': hp.randint('ab_max_depth', 10) + 1}
 
-        n_estimators = UniformIntegerHyperparameter(
-            name="n_estimators", lower=50, upper=500, default_value=50, log=False)
-        learning_rate = UniformFloatHyperparameter(
-            name="learning_rate", lower=0.01, upper=2, default_value=0.1, log=True)
-        algorithm = CategoricalHyperparameter(
-            name="algorithm", choices=["SAMME.R", "SAMME"], default_value="SAMME.R")
-        max_depth = UniformIntegerHyperparameter(
-            name="max_depth", lower=1, upper=10, default_value=1, log=False)
-
-        cs.add_hyperparameters([n_estimators, learning_rate, algorithm, max_depth])
-        return cs
+            init_trial = {'n_estimators': 50, 'learning_rate': 0.1, 'algorithm': "SAMME.R", 'max_depth': 1}
+            return space

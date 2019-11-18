@@ -5,8 +5,9 @@ from sklearn.model_selection import StratifiedKFold, KFold
 
 
 class Stacking(BaseEnsembleModel):
-    def __init__(self, model_info, ensemble_size, task_type, metric, model_type='ml', meta_learner='xgboost', kfold=3):
-        super().__init__(model_info, ensemble_size, task_type, metric, model_type)
+    def __init__(self, model_info, ensemble_size, task_type, metric, evaluator, model_type='ml', meta_learner='xgboost',
+                 kfold=3):
+        super().__init__(model_info, ensemble_size, task_type, metric, evaluator, model_type)
         self.kfold = kfold
         # We use Xgboost as default meta-learner
         if self.task_type in [CLASSIFICATION, HYPEROPT_CLASSIFICATION]:

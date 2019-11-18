@@ -1,5 +1,5 @@
 import numpy as np
-
+from hyperopt import hp
 from ConfigSpace.configuration_space import ConfigurationSpace
 
 from alphaml.engine.components.models.base_model import BaseClassificationModel, IterativeComponent
@@ -84,7 +84,9 @@ class GaussianNB(IterativeComponent, BaseClassificationModel):
                 'output': (PREDICTIONS,)}
 
     @staticmethod
-    def get_hyperparameter_search_space(dataset_properties=None):
-        cs = ConfigurationSpace()
-        return cs
-
+    def get_hyperparameter_search_space(dataset_properties=None, optimizer='smac'):
+        if optimizer == 'smac':
+            cs = ConfigurationSpace()
+            return cs
+        elif optimizer == 'tpe':
+            return {}

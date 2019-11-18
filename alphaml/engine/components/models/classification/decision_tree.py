@@ -1,5 +1,5 @@
 import numpy as np
-
+from hyperopt import hp
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import UniformFloatHyperparameter, \
     UniformIntegerHyperparameter, CategoricalHyperparameter, \
@@ -87,25 +87,43 @@ class DecisionTree(BaseClassificationModel):
                 'output': (PREDICTIONS,)}
 
     @staticmethod
-    def get_hyperparameter_search_space(dataset_properties=None):
-        cs = ConfigurationSpace()
+    def get_hyperparameter_search_space(dataset_properties=None, optimizer='smac'):
+        if optimizer == 'smac':
+            cs = ConfigurationSpace()
+            criterion = CategoricalHyperparameter(
+                "criterion", ["gini", "entropy"], default_value="gini")
+            max_depth_factor = UniformFloatHyperparameter(
+                'max_depth_factor', 0., 2., default_value=0.5)
+            min_samples_split = UniformIntegerHyperparameter(
+                "min_samples_split", 2, 20, default_value=2)
+            min_samples_leaf = UniformIntegerHyperparameter(
+                "min_samples_leaf", 1, 20, default_value=1)
+            min_weight_fraction_leaf = Constant("min_weight_fraction_leaf", 0.0)
+            max_features = UnParametrizedHyperparameter('max_features', 1.0)
+            max_leaf_nodes = UnParametrizedHyperparameter("max_leaf_nodes", "None")
+            min_impurity_decrease = UnParametrizedHyperparameter('min_impurity_decrease', 0.0)
 
-        criterion = CategoricalHyperparameter(
-            "criterion", ["gini", "entropy"], default_value="gini")
-        max_depth_factor = UniformFloatHyperparameter(
-            'max_depth_factor', 0., 2., default_value=0.5)
-        min_samples_split = UniformIntegerHyperparameter(
-            "min_samples_split", 2, 20, default_value=2)
-        min_samples_leaf = UniformIntegerHyperparameter(
-            "min_samples_leaf", 1, 20, default_value=1)
-        min_weight_fraction_leaf = Constant("min_weight_fraction_leaf", 0.0)
-        max_features = UnParametrizedHyperparameter('max_features', 1.0)
-        max_leaf_nodes = UnParametrizedHyperparameter("max_leaf_nodes", "None")
-        min_impurity_decrease = UnParametrizedHyperparameter('min_impurity_decrease', 0.0)
+            cs.add_hyperparameters([criterion, max_features, max_depth_factor,
+                                    min_samples_split, min_samples_leaf,
+                                    min_weight_fraction_leaf, max_leaf_nodes,
+                                    min_impurity_decrease])
+            return cs
+        elif optimizer == 'tpe':
+            space = {'criterion': hp.choice('dt_criterion', ["gini", "entropy"]),
+                     'max_depth_factor': hp.uniform('dt_max_depth_factor', 0, 2),
+                     'min_samples_split': hp.randint('dt_min_samples_split', 19) + 2,
+                     'min_samples_leaf': hp.randint('dt_min_samples_leaf', 20) + 1,
+                     'min_weight_fraction_leaf': hp.choice('dt_min_weight_fraction_leaf', [0]),
+                     'max_features': hp.choice('dt_max_features', [1.0]),
+                     'max_leaf_nodes': hp.choice('dt_max_leaf_nodes', [None]),
+                     'min_impurity_decrease': hp.choice('dt_min_impurity_decrease', [0.0])}
 
-        cs.add_hyperparameters([criterion, max_features, max_depth_factor,
-                                min_samples_split, min_samples_leaf,
-                                min_weight_fraction_leaf, max_leaf_nodes,
-                                min_impurity_decrease])
-
-        return cs
+            init_trial = {'criterion': "gini",
+                          'max_depth_factor': 0.5,
+                          'min_samples_split': 2,
+                          'min_samples_leaf': 1,
+                          'min_weight_fraction_leaf': 0,
+                          'max_features': 1,
+                          'max_leaf_nodes': None,
+                          'min_impurity_decrease': 0}
+            return space

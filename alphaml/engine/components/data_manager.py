@@ -1,81 +1,135 @@
 import numpy as np
 import pandas as pd
 
-from sklearn.preprocessing import LabelEncoder
-from alphaml.engine.components.data_preprocessing.imputer import impute_df
+from alphaml.utils.constants import *
+from alphaml.utils.feature_util import is_discrete, detect_abnormal_type
 
-_COL_TYPE = ["Discrete", "Numerical", "Categorical", "One-Hot"]
-
-
-class Transformer(object):
-    def __init__(self, idx, transformer):
-        self.col_index = idx
-        self.transformer = transformer
+default_missing_values = ["n/a", "na", "--", "-", "?"]
 
 
 class DataManager(object):
     """
     This class implements the wrapper for data used in the ML task.
-
     It finishes the following preprocesses:
     1) detect the type of each feature (numerical, categorical, textual, ...)
-    2) process the raw features:
-        e.g, one-hot the categorical features; impute the missing values;
-             encode the textual feature.
-       the `info` will record the transformer objects (e.g., label encoder, one-hot encoder)
-       during these processing.
-       when processing the test data, such objects will be used again.
     """
 
     # X,y should be None if using DataManager().load_csv(...)
-    def __init__(self, X=None, y=None):
-        self.info = dict()
-        self.info['task_type'] = None
-        self.info['preprocess_transforms'] = list()
-        self.info['feature_type'] = list()
-        self.train_X = np.array(X)
-        self.train_y = np.array(y)
+    def __init__(self, X=None, y=None, na_values=default_missing_values):
+        self.na_values = na_values
+        self.feature_types = None
+        self.missing_flags = None
+        self.train_X, self.train_y = None, None
+        self.test_X, self.test_y = None, None
+        self.label_name = None
 
-        if X is not None and y is not None:
-            self.set_col_type(self.train_X, None)
+        if X is not None:
+            self.train_X = np.array(X)
+            self.train_y = np.array(y)
+            self.set_feat_types(pd.DataFrame(self.train_X), [])
 
-        self.test_X = None
-        self.test_y = None
+    def set_feat_types(self, df, columns_missed):
+        self.missing_flags = list()
+        for idx, col_name in enumerate(df.columns):
+            self.missing_flags.append(True if col_name in columns_missed else False)
 
-    def set_col_type(self, data, label_col):
-        col_num = data.shape[1]
-        for col_id in range(col_num):
-            if label_col is not None and (col_id == label_col or col_id - label_col == col_num):
-                continue
-            col = data[:, col_id]
-            try:
-                col_f = col.astype(np.float64)
-                col_i = col_f.astype(np.int32)
-                if all(col_f == col_i) is True:
-                    self.info['feature_type'].append("Discrete")
+        self.feature_types = list()
+        for idx, col_name in enumerate(df.columns):
+            col_vals = df[col_name].values
+            dtype = df[col_name].dtype
+
+            cleaned_vals = col_vals
+            if col_name in columns_missed:
+                cleaned_vals = np.array([val for val in col_vals if not pd.isnull(val)])
+
+            if dtype in [np.int, np.int16, np.int32, np.int64]:
+                feat_type = DISCRETE
+            elif dtype in [np.float, np.float16, np.float32, np.float64, np.double]:
+                feat_type = DISCRETE if is_discrete(cleaned_vals) else NUMERICAL
+            else:
+                flag, cand_values, ab_idx, is_str = detect_abnormal_type(col_vals)
+                if flag:
+                    # Set the invalid element to NaN.
+                    df.at[ab_idx, col_name] = np.nan
+                    # Refresh the cleaned column.
+                    cleaned_vals = np.array([val for val in df[col_name].values if not pd.isnull(val)])
+                    if is_str:
+                        feat_type = CATEGORICAL
+                    else:
+                        feat_type = DISCRETE if is_discrete(cleaned_vals) else NUMERICAL
                 else:
-                    self.info['feature_type'].append("Numerical")
-            except:
-                self.info['feature_type'].append("Categorical")
+                    feat_type = CATEGORICAL
+            self.feature_types.append(feat_type)
 
-    def load_train_csv(self, file_location, label_col=-1, keep_default_na=True, na_values=None):
-        df = impute_df(pd.read_csv(file_location, keep_default_na=keep_default_na, na_values=na_values))
-        data = df.values
+    def clean_data_with_nan(self, df, label_col, phase='train', drop_index=None, has_label=True):
+        columns_missed = df.columns[df.isnull().any()].tolist()
+
+        if self.label_name is None:
+            if phase != 'train':
+                print('Warning: Label is not specified! set label_col=%d by default.' % label_col)
+            label_colname = df.columns[label_col]
+        else:
+            label_colname = self.label_name
+
+        self.label_name = label_colname
+        if label_colname in columns_missed:
+            labels = df[label_colname].values
+            row_idx = [idx for idx, val in enumerate(labels) if np.isnan(val)]
+            # Delete the row with NaN label.
+            df.drop(df.index[row_idx], inplace=True)
+
+        if phase == 'train':
+            self.train_y = df[label_colname].values
+        else:
+            self.test_y = df[label_colname].values
+
+        if drop_index:
+            drop_col = [df.columns[index] for index in drop_index]
+            df.drop(drop_col, axis=1, inplace=True)
+
+        # Delete the label column.
+        if has_label:
+            df.drop(label_colname, axis=1, inplace=True)
+
+    def load_train_csv(self, file_location, label_col=-1, drop_index=None,
+                       keep_default_na=True, na_values=None, header='infer',
+                       sep=','):
+        # Set the NA values.
+        if na_values is not None:
+            na_set = set(self.na_values)
+            for item in na_values:
+                na_set.add(item)
+            self.na_values = list(na_set)
+
+        if file_location.endswith('csv'):
+            df = pd.read_csv(file_location, keep_default_na=keep_default_na,
+                             na_values=self.na_values, header=header, sep=sep)
+        elif file_location.endswith('xls'):
+            df = pd.read_csv(file_location, keep_default_na=keep_default_na,
+                             na_values=self.na_values, header=header)
+        else:
+            raise ValueError('Unsupported file format: %s!' % file_location.split('.')[-1])
+
+        # Drop the row with all NaNs.
+        df.dropna(how='all')
+        columns_missed = df.columns[df.isnull().any()].tolist()
+
+        self.clean_data_with_nan(df, label_col, drop_index=drop_index)
+
         # set the feature types
-        if not self.info['feature_type']:
-            self.set_col_type(data, label_col)
-        swap_data = data[:, -1]
-        data[:, -1] = data[:, label_col]
-        data[:, label_col] = swap_data
-        self.train_X = data[:, :-1]
-        self.train_y = LabelEncoder().fit_transform(data[:, -1])
+        self.set_feat_types(df, columns_missed)
+        self.train_X = df
+        return df, self.train_y
 
-    def load_test_csv(self, file_location, keep_default_na=True, na_values=None):
-        df = impute_df(pd.read_csv(file_location, keep_default_na=keep_default_na, na_values=na_values))
-        self.test_X = df.values
-
-    def set_testX(self, X_test):
-        self.test_X = X_test
-
-    def set_testy(self, y_test):
-        self.test_y = y_test
+    def load_test_csv(self, file_location, has_label=False, label_col=-1,
+                      drop_index=None, keep_default_na=True, header='infer',
+                      sep=','):
+        df = pd.read_csv(file_location, keep_default_na=keep_default_na,
+                         na_values=self.na_values, header=header, sep=sep)
+        # Drop the row with all NaNs.
+        df.dropna(how='all')
+        columns_missed = df.columns[df.isnull().any()].tolist()
+        self.clean_data_with_nan(df, label_col, phase='test', drop_index=drop_index, has_label=has_label)
+        self.set_feat_types(df, columns_missed)
+        self.test_X = df
+        return df

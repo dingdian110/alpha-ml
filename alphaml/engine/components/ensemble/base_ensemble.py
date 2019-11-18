@@ -1,4 +1,4 @@
-from alphaml.utils.common import get_max_index
+from alphaml.utils.constants import *
 from alphaml.engine.evaluator.base import BaseClassificationEvaluator, BaseRegressionEvaluator
 from alphaml.engine.evaluator.hyperopt_evaluator import HyperoptClassificationEvaluator
 from alphaml.utils.save_ease import save_ease
@@ -9,18 +9,13 @@ import functools
 import math
 import logging
 
-CLASSIFICATION = 1
-REGRESSION = 2
-HYPEROPT_CLASSIFICATION = 3
-
-FAILED = -2147483646.0
-
 
 class BaseEnsembleModel(object):
-    def __init__(self, model_info, ensemble_size, task_type, metric, model_type='ml', threshold=0.2):
+    def __init__(self, model_info, ensemble_size, task_type, metric, evaluator, model_type='ml', threshold=0.2):
         self.model_info = model_info
         self.model_type = model_type
         self.metric = metric
+        self.evaluator = evaluator
         self.ensemble_models = list()
         self.threshold = threshold
         self.logger = logging.getLogger()
@@ -28,8 +23,6 @@ class BaseEnsembleModel(object):
             self.task_type = CLASSIFICATION
         elif task_type in ['continuous']:
             self.task_type = REGRESSION
-        elif 'tpe' in task_type:
-            self.task_type = HYPEROPT_CLASSIFICATION
         else:
             raise ValueError('Undefined Task Type: %s' % task_type)
 
@@ -106,9 +99,6 @@ class BaseEnsembleModel(object):
     @save_ease(save_dir='./data/save_models')
     def get_estimator(self, config, x, y, if_load=False, if_show=False, **kwargs):
         save_path = kwargs['save_path']
-        estimator_name = config['estimator']
-        if isinstance(estimator_name, tuple):
-            estimator_name = estimator_name[0]
         if if_show:
             self.logger.info("Estimator path: " + save_path)
             return None
@@ -118,13 +108,7 @@ class BaseEnsembleModel(object):
                 self.logger.info("Estimator loaded from " + save_path)
         else:
             save_path = kwargs['save_path']
-            if self.task_type == CLASSIFICATION:
-                evaluator = BaseClassificationEvaluator()
-            elif self.task_type == REGRESSION:
-                evaluator = BaseRegressionEvaluator()
-            elif self.task_type == HYPEROPT_CLASSIFICATION:
-                evaluator = HyperoptClassificationEvaluator()
-            _, estimator = evaluator.set_config(config)
+            _, estimator = self.evaluator.set_config(config)
             estimator.fit(x, y)
             with open(save_path, 'wb') as f:
                 pkl.dump(estimator, f)
@@ -132,7 +116,7 @@ class BaseEnsembleModel(object):
         return estimator
 
     def get_proba_predictions(self, estimator, X):
-        if self.task_type in [CLASSIFICATION, HYPEROPT_CLASSIFICATION]:
+        if self.task_type == CLASSIFICATION:
             return estimator.predict_proba(X)
         elif self.task_type == REGRESSION:
             pred = estimator.predict(X)

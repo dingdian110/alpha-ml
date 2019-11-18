@@ -9,6 +9,7 @@ from sklearn.model_selection import KFold, StratifiedKFold
 from alphaml.engine.components.models.classification import _classifiers
 from alphaml.engine.components.models.regression import _regressors
 from alphaml.utils.save_ease import save_ease
+from alphaml.utils.constants import FAILED
 
 
 def update_config(config):
@@ -68,13 +69,17 @@ class BaseClassificationEvaluator(object):
                 pkl.dump(estimator, f)
                 self.logger.info('<MODEL SAVED IN %s>' % save_path)
 
-            # Validate it on val data.
-            if self.metric_func == roc_auc_score:
-                y_pred = estimator.predict_proba(val_X)[:, 1]
-                metric = self.metric_func(val_y, y_pred)
-            else:
-                y_pred = estimator.predict(val_X)
-                metric = self.metric_func(val_y, y_pred)
+            # In case of failed estimator
+            try:
+                # Validate it on val data.
+                if self.metric_func == roc_auc_score:
+                    y_pred = estimator.predict_proba(val_X)[:, 1]
+                    metric = self.metric_func(val_y, y_pred)
+                else:
+                    y_pred = estimator.predict(val_X)
+                    metric = self.metric_func(val_y, y_pred)
+            except ValueError:
+                return -FAILED
 
             self.logger.info(
                 '<EVALUATE %s-%.2f TAKES %.2f SECONDS>' % (classifier_type, 1 - metric, time.time() - start_time))
@@ -98,13 +103,17 @@ class BaseClassificationEvaluator(object):
                     pkl.dump(estimator, f)
                     self.logger.info('<MODEL SAVED IN %s>' % save_path)
 
-                # Validate it on val data.
-                if self.metric_func == roc_auc_score:
-                    y_pred = estimator.predict_proba(val_X)[:, 1]
-                    metric += self.metric_func(val_y, y_pred) / self.kfold
-                else:
-                    y_pred = estimator.predict(val_X)
-                    metric += self.metric_func(val_y, y_pred) / self.kfold
+                # In case of failed estimator
+                try:
+                    # Validate it on val data.
+                    if self.metric_func == roc_auc_score:
+                        y_pred = estimator.predict_proba(val_X)[:, 1]
+                        metric += self.metric_func(val_y, y_pred) / self.kfold
+                    else:
+                        y_pred = estimator.predict(val_X)
+                        metric += self.metric_func(val_y, y_pred) / self.kfold
+                except ValueError:
+                    return -FAILED
 
             self.logger.info('<FIT MODEL> finished!')
             self.logger.info(
@@ -204,9 +213,13 @@ class BaseRegressionEvaluator(object):
                 pkl.dump(estimator, f)
                 self.logger.info('<MODEL SAVED IN %s>' % save_path)
 
-            # Validate it on val data.
-            y_pred = estimator.predict(val_X)
-            metric = self.metric_func(val_y, y_pred)
+            # In case of failed estimator
+            try:
+                # Validate it on val data.
+                y_pred = estimator.predict(val_X)
+                metric = self.metric_func(val_y, y_pred)
+            except ValueError:
+                return -FAILED
 
             self.logger.info(
                 '<EVALUATE %s-%.2f TAKES %.2f SECONDS>' % (regressor_type, metric, time.time() - start_time))
@@ -228,9 +241,13 @@ class BaseRegressionEvaluator(object):
                     pkl.dump(estimator, f)
                     self.logger.info('<MODEL SAVED IN %s>' % save_path)
 
-                # Validate it on val data.
-                y_pred = estimator.predict(val_X)
-                metric += self.metric_func(val_y, y_pred) / self.kfold
+                # In case of failed estimator
+                try:
+                    # Validate it on val data.
+                    y_pred = estimator.predict(val_X)
+                    metric += self.metric_func(val_y, y_pred) / self.kfold
+                except ValueError:
+                    return -FAILED
 
             self.logger.info('<FIT MODEL> finished!')
             self.logger.info(

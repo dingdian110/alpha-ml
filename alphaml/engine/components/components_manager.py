@@ -3,7 +3,7 @@ from ConfigSpace.hyperparameters import CategoricalHyperparameter
 
 
 class ComponentsManager(object):
-    def get_hyperparameter_search_space(self, task_type, include=None, exclude=None):
+    def get_hyperparameter_search_space(self, task_type, optimizer='smac', include=None, exclude=None):
         if task_type in ['binary', 'multiclass']:
             from alphaml.engine.components.models.classification import _classifiers
             builtin_models = _classifiers.keys()
@@ -16,10 +16,6 @@ class ComponentsManager(object):
             from alphaml.engine.components.models.image_classification import _img_classifiers
             builtin_models = _img_classifiers.keys()
             builtin_estimators = _img_classifiers
-        elif 'tpe_' in task_type:
-            from alphaml.engine.components.models.hyperopt_classification import _hyperopt_classifiers
-            builtin_models = _hyperopt_classifiers
-            builtin_estimators = _hyperopt_classifiers
         else:
             raise ValueError('Undefined Task Type: %s' % task_type)
 
@@ -38,12 +34,13 @@ class ComponentsManager(object):
                 if model in model_candidates:
                     model_candidates.remove(model)
 
-        return self.get_configuration_space(builtin_estimators, list(model_candidates))
+        return self.get_configuration_space(builtin_estimators, list(model_candidates), optimizer=optimizer)
 
-    def get_configuration_space(self, builtin_estimators, model_candidates):
+    def get_configuration_space(self, builtin_estimators, model_candidates, optimizer='smac'):
         config_dict = dict()
         for model_item in model_candidates:
-            sub_configuration_space = builtin_estimators[model_item].get_hyperparameter_search_space()
+            sub_configuration_space = builtin_estimators[model_item].get_hyperparameter_search_space(
+                optimizer=optimizer)
             config_dict[model_item] = sub_configuration_space
         return config_dict
 

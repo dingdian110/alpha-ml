@@ -1,4 +1,5 @@
 import numpy as np
+from hyperopt import hp
 import time
 
 from ConfigSpace.configuration_space import ConfigurationSpace
@@ -44,6 +45,19 @@ class MLP(
         # iterations than max_iter. If max_iter == 1, it has to spend at least
         # one iteration and will always spend at least one iteration, so we
         # cannot know about convergence.
+
+        if isinstance(self.solver, tuple):
+            nested_solver = self.solver
+            self.solver = nested_solver[0]
+            if self.solver == 'sgd':
+                self.momentum = nested_solver[1]['momentum']
+                self.nesterovs_momentum = nested_solver[1]['nesterovs_momentum']
+                nested_learning_rate = nested_solver[1]['learning_rate']
+                self.learning_rate = nested_learning_rate[0]
+                if self.learning_rate == 'invscaling':
+                    self.power_t = nested_learning_rate[1]['power_t']
+            elif self.solver == 'adam':
+                self.beta1 = nested_solver[1]['beta1']
 
         if refit:
             self.estimator = None
@@ -118,46 +132,67 @@ class MLP(
                 'output': (PREDICTIONS,)}
 
     @staticmethod
-    def get_hyperparameter_search_space(dataset_properties=None):
-        cs = ConfigurationSpace()
+    def get_hyperparameter_search_space(dataset_properties=None, optimizer='smac'):
+        if optimizer == 'smac':
+            cs = ConfigurationSpace()
 
-        hidden_size = UniformIntegerHyperparameter("hidden_size", 100, 500, default_value=200)
-        activation = CategoricalHyperparameter("activation", ["identity", "logistic", "tanh", "relu"],
-                                               default_value="relu")
-        solver = CategoricalHyperparameter("solver", ["sgd", "adam"], default_value="adam")
+            hidden_size = UniformIntegerHyperparameter("hidden_size", 100, 500, default_value=200)
+            activation = CategoricalHyperparameter("activation", ["identity", "logistic", "tanh", "relu"],
+                                                   default_value="relu")
+            solver = CategoricalHyperparameter("solver", ["sgd", "adam"], default_value="adam")
 
-        alpha = UniformFloatHyperparameter(
-            "alpha", 1e-7, 1., log=True, default_value=0.0001)
+            alpha = UniformFloatHyperparameter(
+                "alpha", 1e-7, 1., log=True, default_value=0.0001)
 
-        learning_rate = CategoricalHyperparameter(
-            "learning_rate", ["adaptive", "invscaling", "constant"],
-            default_value="constant")
+            learning_rate = CategoricalHyperparameter(
+                "learning_rate", ["adaptive", "invscaling", "constant"],
+                default_value="constant")
 
-        learning_rate_init = UniformFloatHyperparameter(
-            "learning_rate_init", 1e-4, 3e-1, default_value=0.001, log=True)
+            learning_rate_init = UniformFloatHyperparameter(
+                "learning_rate_init", 1e-4, 3e-1, default_value=0.001, log=True)
 
-        tol = UniformFloatHyperparameter("tol", 1e-5, 1e-2, log=True,
-                                         default_value=1e-4)
-        momentum = UniformFloatHyperparameter("momentum", 0.6, 1, q=0.05, default_value=0.9)
+            tol = UniformFloatHyperparameter("tol", 1e-5, 1e-1, log=True,
+                                             default_value=1e-4)
+            momentum = UniformFloatHyperparameter("momentum", 0.6, 1, q=0.05, default_value=0.9)
 
-        nesterovs_momentum = CategoricalHyperparameter("nesterovs_momentum", [True, False], default_value=True)
-        beta1 = UniformFloatHyperparameter("beta1", 0.6, 1, default_value=0.9)
-        power_t = UniformFloatHyperparameter("power_t", 1e-5, 1, log=True,
-                                             default_value=0.5)
-        cs.add_hyperparameters(
-            [hidden_size, activation, solver, alpha, learning_rate, learning_rate_init, tol, momentum,
-             nesterovs_momentum, beta1,
-             power_t])
+            nesterovs_momentum = CategoricalHyperparameter("nesterovs_momentum", [True, False], default_value=True)
+            beta1 = UniformFloatHyperparameter("beta1", 0.6, 1, default_value=0.9)
+            power_t = UniformFloatHyperparameter("power_t", 1e-5, 1, log=True,
+                                                 default_value=0.5)
+            cs.add_hyperparameters(
+                [hidden_size, activation, solver, alpha, learning_rate, learning_rate_init, tol, momentum,
+                 nesterovs_momentum, beta1,
+                 power_t])
 
-        learning_rate_condition = EqualsCondition(learning_rate, solver, "sgd")
-        momentum_condition = EqualsCondition(momentum, solver, "sgd")
-        nesterovs_momentum_condition = EqualsCondition(nesterovs_momentum, solver, "sgd")
-        beta1_condition = EqualsCondition(beta1, solver, "adam")
+            learning_rate_condition = EqualsCondition(learning_rate, solver, "sgd")
+            momentum_condition = EqualsCondition(momentum, solver, "sgd")
+            nesterovs_momentum_condition = EqualsCondition(nesterovs_momentum, solver, "sgd")
+            beta1_condition = EqualsCondition(beta1, solver, "adam")
 
-        power_t_condition = EqualsCondition(power_t, learning_rate,
-                                            "invscaling")
+            power_t_condition = EqualsCondition(power_t, learning_rate,
+                                                "invscaling")
 
-        cs.add_conditions([learning_rate_condition, momentum_condition,
-                           nesterovs_momentum_condition, beta1_condition, power_t_condition])
+            cs.add_conditions([learning_rate_condition, momentum_condition,
+                               nesterovs_momentum_condition, beta1_condition, power_t_condition])
 
-        return cs
+            return cs
+        elif optimizer == 'tpe':
+            space = {'hidden_size': hp.randint("mlp_hidden_size", 450) + 50,
+                     'activation': hp.choice('mlp_activation', ["identity", "logistic", "tanh", "relu"]),
+                     'solver': hp.choice('mlp_solver',
+                                         [("sgd", {'learning_rate': hp.choice('mlp_learning_rate', [("adaptive", {}),
+                                                                                                    ("constant", {}),
+                                                                                                    ("invscaling", {
+                                                                                                        'power_t': hp.uniform(
+                                                                                                            'mlp_power_t',
+                                                                                                            1e-5,
+                                                                                                            1)})]),
+                                                   'momentum': hp.uniform('mlp_momentum', 0.6, 1),
+                                                   'nesterovs_momentum': hp.choice('mlp_nesterovs_momentum',
+                                                                                   [True, False])}),
+                                          ("adam", {'beta1': hp.uniform('mlp_beta1', 0.6, 1)})]),
+                     'alpha': hp.loguniform('mlp_alpha', np.log(1e-7), np.log(1e-1)),
+                     'learning_rate_init': hp.loguniform('mlp_learning_rate_init', np.log(1e-6), np.log(1e-1)),
+                     'tol': hp.loguniform('mlp_tol', np.log(1e-5), np.log(1e-1))}
+
+            return space

@@ -1,6 +1,9 @@
 from ConfigSpace.configuration_space import ConfigurationSpace
 from ConfigSpace.hyperparameters import UniformFloatHyperparameter, \
     UniformIntegerHyperparameter, CategoricalHyperparameter
+import numpy as np
+from hyperopt import hp
+
 from alphaml.utils.constants import *
 from alphaml.engine.components.models.base_model import BaseClassificationModel
 
@@ -45,29 +48,40 @@ class Logistic_Regression(BaseClassificationModel):
     @staticmethod
     def get_properties(dataset_properties=None):
         return {'shortname': 'Logistic-Regression',
-            'name': 'Logistic Regression Classification',
-            'handles_regression': False,
-            'handles_classification': True,
-            'handles_multiclass': True,
-            'handles_multilabel': False,
-            'is_deterministic': True,
-            'input': (DENSE, SPARSE, UNSIGNED_DATA),
-            'output': (PREDICTIONS,)}
+                'name': 'Logistic Regression Classification',
+                'handles_regression': False,
+                'handles_classification': True,
+                'handles_multiclass': True,
+                'handles_multilabel': False,
+                'is_deterministic': True,
+                'input': (DENSE, SPARSE, UNSIGNED_DATA),
+                'output': (PREDICTIONS,)}
 
     @staticmethod
-    def get_hyperparameter_search_space(dataset_properties=None):
-        C = UniformFloatHyperparameter("C", 0.03125, 10, log=True,
-                                       default_value=1.0)
-        tol = UniformFloatHyperparameter("tol", 1e-6, 1e-2, default_value=1e-4,
-                                         log=True)
+    def get_hyperparameter_search_space(dataset_properties=None, optimizer='smac'):
+        if optimizer == 'smac':
+            C = UniformFloatHyperparameter("C", 0.03125, 10, log=True,
+                                           default_value=1.0)
+            tol = UniformFloatHyperparameter("tol", 1e-6, 1e-2, default_value=1e-4,
+                                             log=True)
 
-        max_iter = UniformFloatHyperparameter("max_iter", 100, 1000, q=100, default_value=100)
+            max_iter = UniformFloatHyperparameter("max_iter", 100, 1000, q=100, default_value=100)
 
-        penalty = CategoricalHyperparameter(name="penalty",
-                                           choices=["l1", "l2"],
-                                           default_value="l2")
-        solver = CategoricalHyperparameter(name="solver", choices=["liblinear", "saga"], default_value="liblinear")
+            penalty = CategoricalHyperparameter(name="penalty",
+                                                choices=["l1", "l2"],
+                                                default_value="l2")
+            solver = CategoricalHyperparameter(name="solver", choices=["liblinear", "saga"], default_value="liblinear")
 
-        cs = ConfigurationSpace()
-        cs.add_hyperparameters([C, penalty, solver, tol, max_iter])
-        return cs
+            cs = ConfigurationSpace()
+            cs.add_hyperparameters([C, penalty, solver, tol, max_iter])
+            return cs
+        elif optimizer == 'tpe':
+            space = {'C': hp.loguniform('lr_C', np.log(0.03125), np.log(10)),
+                     'tol': hp.loguniform('lr_tol', np.log(1e-6), np.log(1e-2)),
+                     'max_iter': hp.uniform('lr_max_iter', 100, 1000),
+                     'penalty': hp.choice('lr_penalty', ["l1", "l2"]),
+                     'solver': hp.choice('lr_solver', ["liblinear", "saga"])}
+
+            init_trial = {'C': 1, 'tol': 1e-4, 'max_iter': 100, 'penalty': "l2", 'solver': "liblinear"}
+
+            return space

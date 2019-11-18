@@ -16,7 +16,7 @@ class SMAC_SMBO(BaseOptimizer):
         # Scenario object
         config_space = ComponentsManager.build_hierarchical_configspace(self.config_space)
         scenario_dict = {
-            'abort_on_first_run_crash': True,
+            'abort_on_first_run_crash': False,
             "run_obj": "quality",
             "cs": config_space,
             "deterministic": "true"

@@ -29,16 +29,16 @@ def test_cash_module():
     for i in range(1):
         x, y, _ = load_data('boston')
 
-        dm = DataManager(x, y, val_size=0.33, random_state=random.randint(1, 255), stratify=False)
+        dm = DataManager(x, y)
         cls = Regressor(
-            optimizer='baseline',
+            optimizer='smbo',
             ensemble_method='bagging',
             ensemble_size=args.ensemble_size,
         ).fit(dm, metric='mse', update_mode=2, runcount=args.run_count)
 
-        pred = cls.predict(dm.val_X)
+        pred = cls.predict(dm.train_X)
         print(pred)
-        result.append(mean_squared_error(dm.val_y, pred))
+        result.append(mean_squared_error(dm.train_y, pred))
         print(result)
 
 

@@ -59,8 +59,8 @@ class AutoML(object):
         self.metric = kwargs['metric']
         print(data.train_X.shape[1])
         # Get the configuration space for the automl task.
-        config_space = self.component_manager.get_hyperparameter_search_space(
-            task_type, self.include_models, self.exclude_models)
+        config_space = self.component_manager.get_hyperparameter_search_space(task_type, include=self.include_models,
+                                                                              exclude=self.exclude_models)
 
         self.logger.debug('The optimizer type is: %s' % self.optimizer_type)
 
@@ -75,17 +75,19 @@ class AutoML(object):
             self.optimizer.run()
         elif self.optimizer_type == 'tpe':
             self.evaluator = HyperoptClassificationEvaluator()
-            task_type = 'tpe_' + task_type
-            config_space = self.component_manager.get_hyperparameter_search_space(
-                task_type, self.include_models, self.exclude_models)
+            config_space = self.component_manager.get_hyperparameter_search_space(task_type,
+                                                                                  include=self.include_models,
+                                                                                  exclude=self.exclude_models,
+                                                                                  optimizer='tpe')
             self.optimizer = TPE_SMBO(self.evaluator, config_space, data, self.seed, **kwargs)
             self.optimizer.run()
         elif self.optimizer_type == 'mono_tpe_smbo':
             # Create optimizer.
             self.evaluator = HyperoptClassificationEvaluator()
-            task_type = 'tpe_' + task_type
-            config_space = self.component_manager.get_hyperparameter_search_space(
-                task_type, self.include_models, self.exclude_models)
+            config_space = self.component_manager.get_hyperparameter_search_space(task_type,
+                                                                                  include=self.include_models,
+                                                                                  exclude=self.exclude_models,
+                                                                                  optimizer='tpe')
             self.optimizer = MONO_MAB_TPE_SMBO(self.evaluator, config_space, data, self.seed, **kwargs)
             self.optimizer.run()
         else:
@@ -97,14 +99,14 @@ class AutoML(object):
             self.ensemble_model = None
         else:
             if self.ensemble_method == 'bagging':
-                self.ensemble_model = Bagging(model_infos, self.ensemble_size, task_type, self.metric)
+                self.ensemble_model = Bagging(model_infos, self.ensemble_size, task_type, self.metric, self.evaluator)
             elif self.ensemble_method == 'blending':
-                self.ensemble_model = Blending(model_infos, self.ensemble_size, task_type, self.metric)
+                self.ensemble_model = Blending(model_infos, self.ensemble_size, task_type, self.metric, self.evaluator)
             elif self.ensemble_method == 'stacking':
-                self.ensemble_model = Stacking(model_infos, self.ensemble_size, task_type, self.metric)
+                self.ensemble_model = Stacking(model_infos, self.ensemble_size, task_type, self.metric, self.evaluator)
             elif self.ensemble_method == 'ensemble_selection':
                 self.ensemble_model = EnsembleSelection(model_infos, self.ensemble_size, task_type, self.metric,
-                                                        n_best=20)
+                                                        self.evaluator, n_best=20)
             else:
                 raise ValueError('UNSUPPORTED ensemble method: %s' % self.ensemble_method)
 
